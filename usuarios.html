@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Usuarios — Sanmy Taller Mecánico</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html { height: 100%; height: 100dvh; }
+        body { height: 100dvh; overflow: hidden; background: #eef2f7; color: #1e293b; display: flex; flex-direction: column; }
+
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .nav-item { flex: 1 1 0; min-width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 4px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(8px,0.8vw,10px); text-align: center; text-decoration: none; cursor: pointer; }
+        .nav-item .ico { font-size: clamp(14px,1.5vw,18px); line-height: 1; }
+        .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .cuerpo { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: clamp(10px,1.6vw,20px); gap: 12px; }
+        .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+        .barra h2 { font-size: clamp(16px,2vw,22px); color: #1e3a5f; margin-right: auto; }
+        .barra input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; min-width: 200px; font-size: 14px; }
+        .resumen { font-size: 13px; color: #64748b; }
+        .sesion { font-size: 12px; color: #475569; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 10px; }
+        .sesion a { color: #2563eb; font-weight: bold; text-decoration: none; margin-left: 6px; }
+
+        .tabla-wrap { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead th { position: sticky; top: 0; background: #1e3a5f; color: #fff; text-align: left; padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+        tbody td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody tr.inactivo { opacity: .55; }
+        .badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: bold; }
+        .badge.admin { background: #fee2e2; color: #b91c1c; }
+        .badge.gerente { background: #fef3c7; color: #b45309; }
+        .badge.recepcion { background: #dbeafe; color: #1d4ed8; }
+        .badge.tecnico { background: #dcfce7; color: #15803d; }
+        .badge.off { background: #f1f5f9; color: #64748b; }
+        .vacio { padding: 24px; text-align: center; color: #94a3b8; }
+        .btn-nuevo { border: none; border-radius: 8px; padding: 9px 16px; font-weight: bold; font-size: 14px; cursor: pointer; background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+        .btn-edit { border: none; border-radius: 6px; padding: 5px 10px; font-weight: bold; font-size: 12px; cursor: pointer; background: #dbeafe; color: #1d4ed8; margin-right: 4px; }
+        .btn-del { border: none; border-radius: 6px; padding: 5px 10px; font-weight: bold; font-size: 12px; cursor: pointer; background: #fee2e2; color: #b91c1c; }
+
+        .modal { position: fixed; inset: 0; background: rgba(15,29,51,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+        .modal.activa { display: flex; }
+        .modal-box { background: #fff; border-radius: 14px; padding: 20px; width: min(480px,100%); max-height: 92dvh; overflow: auto; }
+        .modal-box h3 { color: #1e3a5f; margin-bottom: 12px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .campo { margin-bottom: 8px; }
+        .campo.full { grid-column: 1 / -1; }
+        .campo label { font-size: 12px; color: #475569; font-weight: bold; display: block; margin-bottom: 4px; }
+        .campo input, .campo select { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .campo .ayuda { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+        .modal-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; flex-wrap: wrap; }
+        .btn-g { border: none; border-radius: 8px; padding: 9px 16px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-g.primario { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+        .btn-g.sec { background: #e2e8f0; color: #1e3a5f; }
+        #modal-estado { font-size: 13px; color: #dc2626; min-height: 18px; margin-top: 4px; }
+        .chk-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .chk-row input { width: auto; }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN</a>
+        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAG.</a>
+        <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS</a>
+        <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item activo" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+    </nav>
+
+    <div class="cuerpo">
+        <div class="barra">
+            <h2>👤 Usuarios del taller</h2>
+            <span class="resumen" id="resumen"></span>
+            <span class="sesion" id="sesion-info"></span>
+            <label style="font-size:13px;display:flex;align-items:center;gap:6px;">
+                <input type="checkbox" id="ver-inactivos" onchange="cargar()"> Ver inactivos
+            </label>
+            <input type="search" id="buscar" placeholder="Buscar…" oninput="programar()">
+            <button type="button" class="btn-nuevo" onclick="abrirNuevo()">➕ Nuevo usuario</button>
+        </div>
+        <div class="tabla-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th><th>Usuario acceso</th><th>Rol</th><th>Teléfono</th><th>Correo</th><th>Estado</th><th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                    <tr><td colspan="7" class="vacio">Cargando…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-box">
+            <h3 id="modal-titulo">Nuevo usuario</h3>
+            <div class="grid2">
+                <div class="campo"><label>Nombre *</label><input id="f-nombre" type="text" placeholder="Nombre"></div>
+                <div class="campo"><label>Apellido</label><input id="f-apellido" type="text" placeholder="Apellido"></div>
+                <div class="campo"><label>Usuario de acceso *</label><input id="f-usuario" type="text" placeholder="Ej. jperez" autocomplete="off"><div class="ayuda">Minúsculas, sin espacios</div></div>
+                <div class="campo"><label>Rol *</label>
+                    <select id="f-rol">
+                        <option value="tecnico">Técnico</option>
+                        <option value="recepcion">Recepción</option>
+                        <option value="gerente">Gerente</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="campo"><label id="lbl-password">Contraseña *</label><input id="f-password" type="password" placeholder="Mínimo 4 caracteres" autocomplete="new-password"></div>
+                <div class="campo"><label>Teléfono</label><input id="f-tel" type="text" placeholder="8888-8888"></div>
+                <div class="campo full"><label>Correo</label><input id="f-email" type="email" placeholder="correo@ejemplo.com"></div>
+                <div class="campo full chk-row" id="fila-activo" style="display:none;">
+                    <input type="checkbox" id="f-activo" checked>
+                    <label for="f-activo" style="margin:0;font-size:13px;">Usuario activo</label>
+                </div>
+            </div>
+            <div id="modal-estado"></div>
+            <div class="modal-acciones">
+                <button type="button" class="btn-g sec" onclick="cerrarModal()">Cancelar</button>
+                <button type="button" class="btn-g primario" id="btn-guardar" onclick="guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        var timer = null;
+        var editId = null;
+        var ROL_LABELS = { admin: 'Administrador', gerente: 'Gerente', recepcion: 'Recepción', tecnico: 'Técnico' };
+
+        function programar() { if (timer) clearTimeout(timer); timer = setTimeout(cargar, 300); }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function pintarSesion() {
+            var u = UsuarioSesion.get();
+            var el = document.getElementById('sesion-info');
+            if (!u) {
+                el.innerHTML = 'Sin sesión <a href="/login.html?return=/usuarios.html">Iniciar sesión</a>';
+                return;
+            }
+            el.innerHTML = esc(u.nombre_completo || u.nombre) + ' · ' + esc(u.rol) +
+                ' <a href="#" onclick="cerrarSesion();return false;">Salir</a>';
+        }
+
+        function cerrarSesion() {
+            UsuarioSesion.clear();
+            pintarSesion();
+        }
+
+        async function cargar() {
+            var tbody = document.getElementById('tbody');
+            var q = document.getElementById('buscar').value.trim();
+            var todos = document.getElementById('ver-inactivos').checked;
+            try {
+                var data = await TallerAPI.getUsuarios({ todos: todos, q: q });
+                var filas = data.filas || [];
+                document.getElementById('resumen').textContent = filas.length + ' usuario(s)';
+                if (!filas.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="vacio">No hay usuarios. Pulse «Nuevo usuario».</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = filas.map(function (u) {
+                    var rol = u.rol || 'tecnico';
+                    return '<tr class="' + (u.activo ? '' : 'inactivo') + '">' +
+                        '<td><strong>' + esc(u.nombre_completo || u.nombre) + '</strong></td>' +
+                        '<td>' + esc(u.usuario || '—') + '</td>' +
+                        '<td><span class="badge ' + esc(rol) + '">' + esc(ROL_LABELS[rol] || rol) + '</span></td>' +
+                        '<td>' + esc(u.telefono || '—') + '</td>' +
+                        '<td>' + esc(u.email || '—') + '</td>' +
+                        '<td><span class="badge ' + (u.activo ? 'tecnico' : 'off') + '">' + (u.activo ? 'Activo' : 'Inactivo') + '</span></td>' +
+                        '<td>' +
+                        '<button class="btn-edit" onclick=\'editar(' + JSON.stringify(u) + ')\'>✏️ Editar</button>' +
+                        (u.activo ? '<button class="btn-del" onclick="desactivar(' + u.id + ',\'' + esc(u.nombre_completo || u.nombre).replace(/'/g, "\\'") + '\')">🚫</button>' : '') +
+                        '</td></tr>';
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="7" class="vacio">Error: ' + esc(e.message) + '</td></tr>';
+            }
+        }
+
+        function abrirNuevo() {
+            editId = null;
+            document.getElementById('modal-titulo').textContent = 'Nuevo usuario';
+            document.getElementById('lbl-password').textContent = 'Contraseña *';
+            document.getElementById('f-nombre').value = '';
+            document.getElementById('f-apellido').value = '';
+            document.getElementById('f-usuario').value = '';
+            document.getElementById('f-rol').value = 'tecnico';
+            document.getElementById('f-password').value = '';
+            document.getElementById('f-tel').value = '';
+            document.getElementById('f-email').value = '';
+            document.getElementById('f-activo').checked = true;
+            document.getElementById('fila-activo').style.display = 'none';
+            document.getElementById('modal-estado').textContent = '';
+            document.getElementById('modal').classList.add('activa');
+        }
+
+        function editar(u) {
+            editId = u.id;
+            document.getElementById('modal-titulo').textContent = 'Editar usuario';
+            document.getElementById('lbl-password').textContent = 'Nueva contraseña (opcional)';
+            document.getElementById('f-nombre').value = u.nombre || '';
+            document.getElementById('f-apellido').value = u.apellido || '';
+            document.getElementById('f-usuario').value = u.usuario || '';
+            document.getElementById('f-rol').value = u.rol || 'tecnico';
+            document.getElementById('f-password').value = '';
+            document.getElementById('f-tel').value = u.telefono || '';
+            document.getElementById('f-email').value = u.email || '';
+            document.getElementById('f-activo').checked = u.activo !== false;
+            document.getElementById('fila-activo').style.display = 'flex';
+            document.getElementById('modal-estado').textContent = '';
+            document.getElementById('modal').classList.add('activa');
+        }
+
+        function cerrarModal() { document.getElementById('modal').classList.remove('activa'); }
+
+        async function guardar() {
+            var estado = document.getElementById('modal-estado');
+            var datos = {
+                nombre: document.getElementById('f-nombre').value.trim(),
+                apellido: document.getElementById('f-apellido').value.trim(),
+                usuario: document.getElementById('f-usuario').value.trim(),
+                rol: document.getElementById('f-rol').value,
+                telefono: document.getElementById('f-tel').value.trim(),
+                email: document.getElementById('f-email').value.trim()
+            };
+            var pass = document.getElementById('f-password').value;
+            if (!datos.nombre) { estado.textContent = 'El nombre es obligatorio.'; return; }
+            if (!datos.usuario) { estado.textContent = 'El usuario de acceso es obligatorio.'; return; }
+            if (!editId && (!pass || pass.length < 4)) {
+                estado.textContent = 'La contraseña debe tener al menos 4 caracteres.';
+                return;
+            }
+            if (pass) datos.password = pass;
+            if (editId) datos.activo = document.getElementById('f-activo').checked;
+
+            var btn = document.getElementById('btn-guardar');
+            btn.disabled = true;
+            try {
+                if (editId) await TallerAPI.actualizarUsuario(editId, datos);
+                else await TallerAPI.crearUsuario(datos);
+                cerrarModal();
+                cargar();
+            } catch (e) {
+                estado.textContent = 'No se pudo guardar: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function desactivar(id, nombre) {
+            if (!confirm('¿Desactivar al usuario «' + nombre + '»? No podrá iniciar sesión.')) return;
+            try {
+                await TallerAPI.desactivarUsuario(id);
+                cargar();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        document.getElementById('modal').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModal();
+        });
+
+        pintarSesion();
+        cargar();
+    </script>
+</body>
+</html>

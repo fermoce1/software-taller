@@ -1,0 +1,16 @@
+{
+  "name": "sanmy-taller",
+  "version": "1.0.0",
+  "description": "Sanmy Taller Mecánico — órdenes, vehículos, fotos y cobro",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "pdfkit": "^0.19.1",
+    "qrcode": "^1.5.4"
+  }
+}

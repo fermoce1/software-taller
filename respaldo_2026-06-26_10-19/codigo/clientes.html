@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Clientes — Sanmy Taller Mecánico</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html { height: 100%; height: 100dvh; }
+        body { height: 100dvh; overflow: hidden; background: #eef2f7; color: #1e293b; display: flex; flex-direction: column; }
+
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .nav-item { flex: 1 1 0; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
+        .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
+        .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .cuerpo { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: clamp(10px,1.6vw,20px); gap: 12px; }
+        .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+        .barra h2 { font-size: clamp(16px,2vw,22px); color: #1e3a5f; margin-right: auto; }
+        .barra input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; min-width: 220px; font-size: 14px; }
+        .resumen { font-size: 13px; color: #64748b; }
+
+        .tabla-wrap { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead th { position: sticky; top: 0; background: #1e3a5f; color: #fff; text-align: left; padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+        tbody td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; }
+        tbody tr:hover { background: #f8fafc; }
+        .badge { display: inline-block; background: #e0e7ff; color: #1e3a5f; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: bold; }
+        .saldo { color: #b91c1c; font-weight: bold; }
+        .saldo.cero { color: #16a34a; }
+        .vacio { padding: 24px; text-align: center; color: #94a3b8; }
+        .veh { font-size: 12px; color: #475569; }
+        .btn-nuevo { border: none; border-radius: 8px; padding: 9px 16px; font-weight: bold; font-size: 14px; cursor: pointer; background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+        .btn-edit { border: none; border-radius: 6px; padding: 5px 10px; font-weight: bold; font-size: 12px; cursor: pointer; background: #dbeafe; color: #1d4ed8; }
+        .modal { position: fixed; inset: 0; background: rgba(15,29,51,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+        .modal.activa { display: flex; }
+        .modal-box { background: #fff; border-radius: 14px; padding: 20px; width: min(460px,100%); max-height: 92dvh; overflow: auto; }
+        .modal-box h3 { color: #1e3a5f; margin-bottom: 12px; }
+        .campo { margin-bottom: 10px; }
+        .campo label { font-size: 12px; color: #475569; font-weight: bold; display: block; margin-bottom: 4px; }
+        .campo input { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .modal-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+        .btn-g { border: none; border-radius: 8px; padding: 9px 16px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-g.primario { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+        .btn-g.sec { background: #e2e8f0; color: #1e3a5f; }
+        #modal-estado { font-size: 13px; color: #dc2626; min-height: 18px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
+        <a class="nav-item activo" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
+        <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+    </nav>
+
+    <div class="cuerpo">
+        <div class="barra">
+            <h2>👥 Clientes</h2>
+            <span class="resumen" id="resumen"></span>
+            <input type="search" id="buscar" placeholder="Buscar nombre, cédula o teléfono…" oninput="programar()">
+            <button type="button" class="btn-nuevo" onclick="abrirNuevo()">➕ Nuevo cliente</button>
+        </div>
+        <div class="tabla-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th><th>Identificación</th><th>Teléfono</th>
+                        <th>Vehículos</th><th>Órdenes</th><th>Saldo pendiente</th><th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                    <tr><td colspan="7" class="vacio">Cargando…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-box">
+            <h3 id="modal-titulo">Nuevo cliente</h3>
+            <div class="campo"><label>Nombre *</label><input id="f-nombre" type="text" placeholder="Nombre del cliente"></div>
+            <div class="campo"><label>Identificación / cédula</label><input id="f-id" type="text" placeholder="1-2345-6789"></div>
+            <div class="campo"><label>Teléfono</label><input id="f-tel" type="text" placeholder="8888-8888"></div>
+            <div class="campo"><label>Correo (opcional)</label><input id="f-email" type="email" placeholder="cliente@correo.com"></div>
+            <div id="modal-estado"></div>
+            <div class="modal-acciones">
+                <button type="button" class="btn-g sec" onclick="cerrarModal()">Cancelar</button>
+                <button type="button" class="btn-g primario" id="btn-guardar" onclick="guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        var timer = null;
+        function programar() { if (timer) clearTimeout(timer); timer = setTimeout(cargar, 300); }
+
+        function fmtColones(v) {
+            var n = Number(v) || 0;
+            return '₡' + n.toLocaleString('es-CR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        async function cargar() {
+            var tbody = document.getElementById('tbody');
+            var q = document.getElementById('buscar').value.trim();
+            try {
+                var data = await TallerAPI.getTallerClientes(q);
+                var filas = data.filas || [];
+                document.getElementById('resumen').textContent = filas.length + ' cliente(s)';
+                if (!filas.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="vacio">No hay clientes. Pulse «Nuevo cliente» o se crean al ingresar una orden.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = filas.map(function (c) {
+                    var saldoCero = Number(c.saldo_pendiente) <= 0;
+                    return '<tr>' +
+                        '<td><strong>' + esc(c.nombre) + '</strong></td>' +
+                        '<td>' + esc(c.identificacion || '—') + '</td>' +
+                        '<td>' + esc(c.telefono || '—') + '</td>' +
+                        '<td><span class="badge">' + (c.vehiculos || 0) + '</span></td>' +
+                        '<td><span class="badge">' + (c.ordenes || 0) + '</span></td>' +
+                        '<td class="saldo ' + (saldoCero ? 'cero' : '') + '">' + (saldoCero ? 'Al día' : fmtColones(c.saldo_pendiente)) + '</td>' +
+                        '<td><button class="btn-edit" onclick=\'editar(' + JSON.stringify(c) + ')\'>✏️ Editar</button></td>' +
+                        '</tr>';
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="7" class="vacio">Error: ' + esc(e.message) + '</td></tr>';
+            }
+        }
+
+        var editId = null;
+        function abrirNuevo() {
+            editId = null;
+            document.getElementById('modal-titulo').textContent = 'Nuevo cliente';
+            document.getElementById('f-nombre').value = '';
+            document.getElementById('f-id').value = '';
+            document.getElementById('f-tel').value = '';
+            document.getElementById('f-email').value = '';
+            document.getElementById('modal-estado').textContent = '';
+            document.getElementById('modal').classList.add('activa');
+        }
+        function editar(c) {
+            editId = c.id;
+            document.getElementById('modal-titulo').textContent = 'Editar cliente';
+            document.getElementById('f-nombre').value = c.nombre || '';
+            document.getElementById('f-id').value = c.identificacion || '';
+            document.getElementById('f-tel').value = c.telefono || '';
+            document.getElementById('f-email').value = c.email || '';
+            document.getElementById('modal-estado').textContent = '';
+            document.getElementById('modal').classList.add('activa');
+        }
+        function cerrarModal() { document.getElementById('modal').classList.remove('activa'); }
+
+        async function guardar() {
+            var estado = document.getElementById('modal-estado');
+            var datos = {
+                nombre: document.getElementById('f-nombre').value.trim(),
+                identificacion: document.getElementById('f-id').value.trim(),
+                telefono: document.getElementById('f-tel').value.trim(),
+                email: document.getElementById('f-email').value.trim()
+            };
+            if (!datos.nombre) { estado.textContent = 'El nombre es obligatorio.'; return; }
+            var btn = document.getElementById('btn-guardar');
+            btn.disabled = true;
+            try {
+                if (editId) await TallerAPI.actualizarCliente(editId, datos);
+                else await TallerAPI.crearCliente(datos);
+                cerrarModal();
+                cargar();
+            } catch (e) {
+                estado.textContent = 'No se pudo guardar: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('modal').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModal();
+        });
+
+        cargar();
+    </script>
+</body>
+</html>

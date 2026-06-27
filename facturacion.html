@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Facturación — Sanmy Taller Mecánico</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html { height: 100%; height: 100dvh; }
+        body { height: 100dvh; overflow: hidden; background: #eef2f7; color: #1e293b; display: flex; flex-direction: column; }
+
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .nav-item { flex: 1 1 0; min-width: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
+        .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
+        .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .cuerpo { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: clamp(10px,1.6vw,20px); gap: 12px; }
+        .tabs { display: flex; gap: 8px; flex-shrink: 0; }
+        .tab { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 8px 18px; font-weight: bold; font-size: 14px; cursor: pointer; color: #1e3a5f; }
+        .tab.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .tarjetas { display: flex; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
+        .tarjeta { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; min-width: 170px; }
+        .tarjeta .lbl { font-size: 12px; color: #64748b; font-weight: bold; }
+        .tarjeta .val { font-size: clamp(18px,2.2vw,26px); font-weight: bold; color: #1e3a5f; margin-top: 2px; }
+        .tarjeta.verde .val { color: #15803d; }
+
+        .barra { display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+        .barra input[type=search] { flex: 1; min-width: 180px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 9px; font-size: 14px; }
+
+        .tabla-wrap { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead th { position: sticky; top: 0; background: #1e3a5f; color: #fff; text-align: left; padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+        tbody td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; }
+        tbody tr:hover { background: #f8fafc; }
+        .num { text-align: right; }
+        .mono { font-family: "Consolas", monospace; font-size: 12px; color: #475569; }
+        .btn { border: none; border-radius: 6px; padding: 5px 10px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-azul { background: #dbeafe; color: #1d4ed8; text-decoration: none; }
+        .btn-hacienda { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; }
+        .btn-hacienda:disabled { opacity: .6; cursor: default; }
+        .btn-print { background: #e2e8f0; color: #1e3a5f; }
+        .acc-wrap { display: flex; gap: 5px; flex-wrap: wrap; }
+        .vacio { padding: 24px; text-align: center; color: #94a3b8; }
+
+        .estado-pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: bold; }
+        .estado-pill.acept { background: #dcfce7; color: #15803d; }
+        .estado-pill.sim { background: #e0e7ff; color: #4338ca; }
+        .estado-pill.pend { background: #fef9c3; color: #854d0e; }
+        .estado-pill.rech { background: #fee2e2; color: #b91c1c; }
+
+        .panel-cfg { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: clamp(14px,2vw,24px); }
+        .panel-cfg h3 { color: #1e3a5f; margin-bottom: 4px; }
+        .panel-cfg .sub { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; max-width: 820px; }
+        .campo { display: flex; flex-direction: column; gap: 4px; }
+        .campo.full { grid-column: 1 / -1; }
+        .campo label { font-size: 12px; color: #475569; font-weight: bold; }
+        .campo input, .campo select { padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .acciones-cfg { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+        .btn-guardar { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; padding: 10px 18px; font-size: 14px; }
+        .btn-probar { background: #e0e7ff; color: #1e3a5f; padding: 10px 18px; font-size: 14px; }
+        .cfg-msg { margin-top: 12px; font-size: 13px; min-height: 18px; }
+        .nota-fe { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 16px; max-width: 820px; }
+        .solo-api { display: none; }
+        body.modo-api .solo-api { display: flex; }
+
+        .ticket-layout { display: grid; grid-template-columns: 1fr min(320px, 38vw); gap: 16px; flex: 1; min-height: 0; }
+        .ticket-form { overflow: auto; padding-right: 4px; }
+        .ticket-preview-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; min-height: 0; }
+        .ticket-preview-wrap h4 { font-size: 13px; color: #475569; margin-bottom: 8px; }
+        .ticket-preview { flex: 1; overflow: auto; background: #fff; border: 1px dashed #cbd5e1; padding: 10px; font-family: Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.35; white-space: pre-wrap; word-break: break-word; }
+        .chk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 12px; margin-top: 8px; }
+        .chk-grid label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: normal; color: #334155; cursor: pointer; }
+        .seccion-ticket { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px dashed #e2e8f0; }
+        .seccion-ticket h4 { color: #1e3a5f; font-size: 14px; margin-bottom: 8px; }
+        .imp-lista { display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow: auto; margin-bottom: 10px; }
+        .imp-item { padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-size: 13px; }
+        .imp-item.activo { border-color: #2563eb; background: #eff6ff; }
+        .imp-item .meta { font-size: 11px; color: #64748b; margin-top: 2px; }
+        textarea.campo-txt { width: 100%; min-height: 70px; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; resize: vertical; font-family: inherit; }
+        .panel-tico { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 18px 20px; max-width: 960px; }
+        .panel-tico h3 { margin: 0 0 8px; font-size: 18px; color: #0f172a; }
+        .panel-tico .sub { color: #64748b; font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+        .tico-pasos { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 16px; margin: 14px 0; }
+        .tico-pasos ol { margin: 8px 0 0 20px; font-size: 13px; line-height: 1.6; }
+        .tico-warn { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #92400e; margin: 10px 0; }
+        .tico-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 12px 0; }
+        .tico-resumen .item { background: #f8fafc; border-radius: 8px; padding: 10px; border: 1px solid #e2e8f0; }
+        .tico-resumen .lbl { font-size: 11px; color: #64748b; }
+        .tico-resumen .val { font-size: 16px; font-weight: 700; color: #0f172a; }
+        .tico-lineas { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        .tico-lineas th, .tico-lineas td { border: 1px solid #e2e8f0; padding: 7px 8px; text-align: left; }
+        .tico-lineas th { background: #f1f5f9; }
+        .tico-lineas .num { text-align: right; white-space: nowrap; }
+        .tico-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+        .btn-tico { background: #047857; color: #fff; border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .btn-tico:hover { background: #065f46; }
+        .btn-tico.sec { background: #2563eb; }
+        .btn-tico.sec:hover { background: #1d4ed8; }
+        #tico-texto { width: 100%; min-height: 220px; font-family: Consolas, monospace; font-size: 12px; margin-top: 10px; }
+
+        .panel-proforma { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: clamp(14px,2vw,22px); max-width: 960px; }
+        .pf-lineas { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+        .pf-lineas th { text-align: left; color: #64748b; font-size: 11px; padding: 4px; }
+        .pf-lineas td { padding: 3px 4px; vertical-align: middle; }
+        .pf-lineas input, .pf-lineas select { width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
+        .pf-lineas .num { text-align: right; }
+        .pf-totales { margin-top: 12px; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 14px; max-width: 320px; margin-left: auto; }
+        .pf-totales div { display: flex; justify-content: space-between; padding: 2px 0; }
+        .pf-totales .grande { font-size: 18px; font-weight: bold; color: #1e3a5f; }
+        .btn-fact { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; padding: 10px 18px; font-size: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-sec-fact { background: #e2e8f0; color: #1e3a5f; padding: 10px 16px; font-size: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
+        .pf-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; max-width: 640px; }
+        .pf-pick { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .pf-pick .meta { font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
+        <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
+        <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
+        <a class="nav-item activo" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
+        <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+    </nav>
+
+    <div class="cuerpo">
+        <div class="tabs">
+            <button type="button" class="tab activo" id="tab-emitidas" onclick="verTab('emitidas')">🧾 Facturas emitidas</button>
+            <button type="button" class="tab" id="tab-proforma" onclick="verTab('proforma')">📄 Desde proforma</button>
+            <button type="button" class="tab" id="tab-ticket" onclick="verTab('ticket')">🎫 Diseño de Ticket</button>
+            <button type="button" class="tab" id="tab-tico" onclick="verTab('tico')">🏛️ TicoFactura (gratis)</button>
+            <button type="button" class="tab" id="tab-config" onclick="verTab('config')">⚙️ Configuración FE</button>
+        </div>
+
+        <!-- EMITIDAS -->
+        <div id="vista-emitidas" style="display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;">
+            <div class="tarjetas">
+                <div class="tarjeta verde"><div class="lbl">Total facturado (últimas)</div><div class="val" id="card-total">₡0</div></div>
+                <div class="tarjeta"><div class="lbl">Facturas emitidas</div><div class="val" id="card-cant">0</div></div>
+                <div class="tarjeta"><div class="lbl">Modo actual</div><div class="val" id="card-modo" style="font-size:18px;">—</div></div>
+            </div>
+            <div class="barra">
+                <input type="search" id="buscar" placeholder="Buscar cliente, consecutivo, clave, código o nombre de producto…" oninput="programarBuscarEmitidas()">
+                <button type="button" class="btn btn-azul" style="padding:9px 14px;font-size:13px;" onclick="cargarEmitidas()">↻ Actualizar</button>
+            </div>
+            <div class="tabla-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Consecutivo</th><th>Cliente</th><th>Orden</th><th class="num">Total</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr>
+                    </thead>
+                    <tbody id="tbody-emitidas"><tr><td colspan="7" class="vacio">Cargando…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DESDE PROFORMA -->
+        <div id="vista-proforma" style="display:none;flex:1;min-height:0;overflow:auto;">
+            <div class="panel-proforma">
+                <div id="pf-sin-seleccion">
+                    <h3 style="color:#1e3a5f;margin-bottom:6px;">📄 Convertir proforma a factura</h3>
+                    <p class="sub" style="color:#64748b;font-size:13px;margin-bottom:12px;">Seleccione una proforma pendiente o venga desde Proformas con el botón «Convertir a factura».</p>
+                    <div id="pf-lista-pendientes" class="pf-lista"><p class="vacio">Cargando proformas…</p></div>
+                </div>
+                <div id="pf-editor" style="display:none;">
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px;">
+                        <h3 id="pf-titulo" style="color:#1e3a5f;margin:0;">🧾 Convertir proforma</h3>
+                        <a class="btn-sec-fact" href="/proformas.html">← Volver a proformas</a>
+                    </div>
+                    <p id="pf-info" style="font-size:13px;color:#64748b;margin-bottom:12px;"></p>
+                    <div class="form-grid" style="max-width:640px;margin-bottom:12px;">
+                        <div class="campo"><label for="pf-nombre">Cliente</label><input id="pf-nombre" type="text"></div>
+                        <div class="campo"><label for="pf-cedula">Identificación (FE)</label><input id="pf-cedula" type="text" placeholder="1-2345-6789"></div>
+                        <div class="campo"><label for="pf-metodo">Método de pago</label>
+                            <select id="pf-metodo"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="sinpe">SINPE</option><option value="otro">Otro</option></select>
+                        </div>
+                    </div>
+                    <p style="font-size:12px;font-weight:bold;color:#475569;margin-bottom:4px;">Detalle — puede modificar antes de facturar</p>
+                    <table class="pf-lineas">
+                        <thead><tr><th style="width:90px;">Tipo</th><th>Descripción</th><th style="width:54px;">Cant.</th><th style="width:90px;">Precio</th><th style="width:28px;"></th></tr></thead>
+                        <tbody id="pf-lineas-body"></tbody>
+                    </table>
+                    <button type="button" class="btn btn-azul" style="margin-top:6px;padding:6px 12px;" onclick="agregarFilaProforma()">➕ Agregar línea</button>
+                    <div class="pf-totales">
+                        <div><span>Subtotal</span><span id="pf-sub">₡0</span></div>
+                        <div><span>IVA (<span id="pf-iva-pct">13</span>%)</span><span id="pf-iva">₡0</span></div>
+                        <div class="grande"><span>Total</span><span id="pf-total">₡0</span></div>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer;">
+                        <input type="checkbox" id="pf-fe"> Emitir factura electrónica (Hacienda)
+                    </label>
+                    <p style="font-size:11px;color:#64748b;margin-top:4px;">Sin marcar: tiquete interno. Con marcar: envío automático si tiene Almendro configurado.</p>
+                    <div id="pf-estado" class="cfg-msg"></div>
+                    <div class="acciones-cfg">
+                        <button type="button" class="btn-fact" id="btn-pf-emitir" onclick="confirmarProformaFactura()">🧾 Emitir factura</button>
+                        <button type="button" class="btn-sec-fact" onclick="cancelarEditorProforma()">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DISEÑO TICKET -->
+        <div id="vista-ticket" style="display:none;flex:1;min-height:0;">
+            <div class="panel-cfg ticket-layout">
+                <div class="ticket-form">
+                    <h3>🎫 Diseño de Ticket / Factura impresa</h3>
+                    <p class="sub">Configure cabecera, pie, campos visibles e impresora — igual que SolverMedia Hostelería.</p>
+
+                    <div class="seccion-ticket">
+                        <h4>📋 Cabecera y pie</h4>
+                        <div class="form-grid">
+                            <div class="campo full"><label>Nombre del negocio (título principal)</label>
+                                <input id="tk-nombre" type="text" placeholder="Sanmy Taller Mecánico" oninput="actualizarPreviewTicket()"></div>
+                            <div class="campo full"><label>Cabecera adicional (líneas extra bajo el nombre)</label>
+                                <textarea id="tk-cabecera" class="campo-txt" placeholder="Ej. Ced. jurídica 3-101-123456&#10;Tel: 2222-3333&#10;San José, Costa Rica" oninput="actualizarPreviewTicket()"></textarea></div>
+                            <div class="campo full"><label>Pie de ticket (comentario final)</label>
+                                <textarea id="tk-pie" class="campo-txt" placeholder="Gracias por su preferencia" oninput="actualizarPreviewTicket()"></textarea></div>
+                        </div>
+                    </div>
+
+                    <div class="seccion-ticket">
+                        <h4>⚙️ Formato de impresión</h4>
+                        <div class="form-grid">
+                            <div class="campo"><label>Caracteres por línea (ancho impresora)</label>
+                                <select id="tk-chars" onchange="actualizarPreviewTicket()">
+                                    <option value="32">32 — 58 mm</option>
+                                    <option value="42">42 — 70 mm</option>
+                                    <option value="48" selected>48 — 80 mm</option>
+                                </select></div>
+                            <div class="campo"><label>Líneas en blanco al final</label>
+                                <input id="tk-blancos" type="number" min="0" max="10" value="3" oninput="actualizarPreviewTicket()"></div>
+                            <div class="campo"><label>Carácter separador</label>
+                                <input id="tk-sep" type="text" maxlength="1" value="-" oninput="actualizarPreviewTicket()"></div>
+                            <div class="campo"><label>Formato por defecto al imprimir</label>
+                                <select id="tk-formato-def">
+                                    <option value="80">Tiquete 80 mm</option>
+                                    <option value="carta">Hoja completa</option>
+                                </select></div>
+                        </div>
+                    </div>
+
+                    <div class="seccion-ticket">
+                        <h4>📝 Detalles del ticket (qué mostrar)</h4>
+                        <div class="chk-grid" id="tk-campos"></div>
+                    </div>
+
+                    <div class="seccion-ticket" style="border-bottom:none;">
+                        <h4>🖨️ Impresoras</h4>
+                        <div class="imp-lista" id="imp-lista"></div>
+                        <div class="form-grid">
+                            <div class="campo"><label>Nombre</label><input id="imp-nombre" type="text" placeholder="Impresora facturas"></div>
+                            <div class="campo"><label>Rol</label>
+                                <select id="imp-rol"><option value="factura">Facturas / tickets</option><option value="recibo">Recibos</option><option value="general">General</option></select></div>
+                            <div class="campo"><label>Conexión</label>
+                                <select id="imp-conexion" onchange="toggleImpRed()"><option value="sistema">Windows</option><option value="red">Red IP</option></select></div>
+                            <div class="campo" id="campo-imp-win"><label>Impresora Windows</label>
+                                <select id="imp-win"><option value="">— Predeterminada —</option></select></div>
+                            <div class="campo" id="campo-imp-ip" style="display:none;"><label>IP impresora</label><input id="imp-ip" type="text" placeholder="192.168.1.100"></div>
+                            <div class="campo" id="campo-imp-puerto" style="display:none;"><label>Puerto</label><input id="imp-puerto" type="number" value="9100"></div>
+                            <div class="campo"><label>Ancho ticket</label>
+                                <select id="imp-ancho"><option value="58">58 mm</option><option value="80" selected>80 mm</option></select></div>
+                            <div class="campo"><label>Copias</label><input id="imp-copias" type="number" min="1" max="5" value="1"></div>
+                        </div>
+                        <div class="chk-grid" style="margin-top:8px;">
+                            <label><input type="checkbox" id="imp-activa" checked> Impresora activa</label>
+                            <label><input type="checkbox" id="imp-pred"> Predeterminada</label>
+                        </div>
+                        <div class="acciones-cfg" style="margin-top:10px;">
+                            <button type="button" class="btn btn-guardar" onclick="guardarImpresora()">💾 Guardar impresora</button>
+                            <button type="button" class="btn btn-probar" onclick="probarImpresoraSel()">🖨️ Probar impresión</button>
+                            <button type="button" class="btn btn-azul" style="padding:10px 14px;" onclick="nuevaImpresora()">➕ Nueva</button>
+                            <button type="button" class="btn" style="background:#fee2e2;color:#b91c1c;padding:10px 14px;" onclick="eliminarImpresoraSel()">🗑️ Eliminar</button>
+                        </div>
+                    </div>
+
+                    <div class="acciones-cfg">
+                        <button type="button" class="btn btn-guardar" onclick="guardarTicketConfig()">💾 Guardar diseño de ticket</button>
+                    </div>
+                    <div class="cfg-msg" id="tk-msg"></div>
+                </div>
+                <div class="ticket-preview-wrap">
+                    <h4>Vista previa (datos de ejemplo)</h4>
+                    <div class="ticket-preview" id="tk-preview">Cargando…</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TICOFACTURA MANUAL -->
+        <div id="vista-tico" style="display:none;flex:1;min-height:0;overflow:auto;">
+            <div class="panel-tico">
+                <h3>🏛️ Prueba con TicoFactura (TRIBU-CR — gratis)</h3>
+                <p class="sub">
+                    TicoFactura no tiene API: usted factura manualmente en el portal de Hacienda.
+                    Sanmy prepara los datos de la orden para copiarlos línea por línea.
+                </p>
+                <div class="barra" style="margin-bottom:0;">
+                    <label style="font-size:13px;font-weight:600;">Número de orden Sanmy</label>
+                    <input type="number" id="tico-orden-id" placeholder="Ej. 12" min="1" style="max-width:140px;">
+                    <button type="button" class="btn btn-azul" onclick="cargarGuiaTico()">📋 Preparar datos</button>
+                    <a class="btn btn-tico sec" href="https://ovitribucr.hacienda.go.cr" target="_blank" rel="noopener">🔗 Abrir TRIBU-CR</a>
+                </div>
+                <div id="tico-msg" class="cfg-msg" style="margin-top:10px;"></div>
+                <div id="tico-warns"></div>
+                <div id="tico-contenido" style="display:none;">
+                    <div class="tico-pasos">
+                        <strong>Pasos en TicoFactura</strong>
+                        <ol id="tico-pasos-list"></ol>
+                    </div>
+                    <div class="tico-resumen" id="tico-resumen"></div>
+                    <div class="tabla-wrap">
+                        <table class="tico-lineas">
+                            <thead>
+                                <tr><th>#</th><th>Descripción</th><th>CABYS</th><th class="num">Cant.</th><th class="num">P. unit.</th><th class="num">IVA</th><th class="num">Total</th></tr>
+                            </thead>
+                            <tbody id="tico-lineas-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="tico-acciones">
+                        <button type="button" class="btn-tico" onclick="copiarGuiaTico()">📋 Copiar todo al portapapeles</button>
+                        <button type="button" class="btn-tico sec" onclick="window.open('https://ovitribucr.hacienda.go.cr','_blank')">🏛️ Ir a facturar</button>
+                    </div>
+                    <textarea id="tico-texto" readonly></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONFIG FE -->
+        <div id="vista-config" style="display:none;flex:1;min-height:0;">
+            <div class="panel-cfg">
+                <h3>⚙️ Configuración de factura electrónica</h3>
+                <p class="sub">Datos del emisor y modo de operación. En modo simulación se generan facturas de prueba sin enviarlas a Hacienda.</p>
+
+                <div class="nota-fe" id="fe-almendro-auto" style="background:#eff6ff;border-color:#93c5fd;color:#1e40af;display:none;">
+                    <strong>⚡ Envío automático con Almendro (~$36/año)</strong><br>
+                    Con modo <strong>API / Hacienda</strong> + token de Almendro, al cobrar una orden Sanmy envía la factura a Hacienda sin pasos extra.
+                    Solo confirme el cobro con nombre y cédula del cliente.
+                </div>
+
+                <div class="nota-fe">
+                    <strong>Modo simulación:</strong> ideal para pruebas; genera clave local (no va a Hacienda).<br>
+                    <strong>Modo API (Hacienda):</strong> envío automático al cobrar — recomendado con Almendro.<br>
+                    <strong>Sin proveedor aún:</strong> deje modo Simulación y complete los datos del emisor.
+                </div>
+
+                <div class="nota-fe" id="fe-checklist" style="background:#f0fdf4;border-color:#86efac;color:#166534;">
+                    <strong>Lista para cuando tenga proveedor:</strong>
+                    <ul style="margin:8px 0 0 18px;font-size:12px;line-height:1.5;">
+                        <li id="chk-emisor">Datos del emisor (cédula, nombre)</li>
+                        <li id="chk-proveedor">Proveedor seleccionado</li>
+                        <li id="chk-url">URL de API configurada</li>
+                        <li id="chk-token">Token de API</li>
+                        <li id="chk-atv">Llave criptográfica activa en TRIBU-CR</li>
+                    </ul>
+                </div>
+
+                <div class="form-grid">
+                    <div class="campo">
+                        <label for="fe-modo">Modo de operación</label>
+                        <select id="fe-modo" onchange="aplicarModo()">
+                            <option value="simulacion">Simulación (pruebas)</option>
+                            <option value="api">API / Hacienda (real)</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="fe-proveedor">Proveedor de facturación</label>
+                        <select id="fe-proveedor" onchange="aplicarProveedorFe()">
+                            <option value="pendiente">Sin proveedor (solo simulación)</option>
+                            <option value="generico">API genérica (JSON Sanmy)</option>
+                            <option value="almendro">Almendro — API desde ~$36/año</option>
+                            <option value="factun">Factun — API (consultar planes)</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="fe-actividad">Actividad económica</label>
+                        <input id="fe-actividad" type="text" placeholder="Ej. 452000">
+                    </div>
+
+                    <div class="campo">
+                        <label for="fe-cedula">Cédula / identificación del emisor *</label>
+                        <input id="fe-cedula" type="text" placeholder="Ej. 3-101-123456">
+                    </div>
+                    <div class="campo">
+                        <label for="fe-nombre">Nombre o razón social *</label>
+                        <input id="fe-nombre" type="text" placeholder="Sanmy Taller Mecánico">
+                    </div>
+                    <div class="campo">
+                        <label for="fe-email">Correo del emisor</label>
+                        <input id="fe-email" type="email" placeholder="taller@correo.com">
+                    </div>
+
+                    <div class="campo">
+                        <label for="fe-sucursal">Sucursal</label>
+                        <input id="fe-sucursal" type="text" placeholder="001">
+                    </div>
+                    <div class="campo">
+                        <label for="fe-terminal">Terminal</label>
+                        <input id="fe-terminal" type="text" placeholder="001">
+                    </div>
+
+                    <div class="campo full solo-api">
+                        <label for="fe-url">URL de la API del proveedor (modo API)</label>
+                        <input id="fe-url" type="text" placeholder="https://api.miproveedor.com/facturas">
+                    </div>
+                    <div class="campo full solo-api">
+                        <label for="fe-url-sandbox">URL sandbox / pruebas (opcional)</label>
+                        <input id="fe-url-sandbox" type="text" placeholder="https://sandbox.../vouchers">
+                    </div>
+                    <div class="campo full solo-api">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="fe-sandbox"> Usar ambiente de pruebas (sandbox)
+                        </label>
+                    </div>
+                    <div class="campo full solo-api">
+                        <label for="fe-token">Token de autenticación (Bearer)</label>
+                        <input id="fe-token" type="text" placeholder="Token del proveedor">
+                    </div>
+                </div>
+
+                <div class="acciones-cfg">
+                    <button type="button" class="btn btn-guardar" onclick="guardarConfig()">💾 Guardar configuración</button>
+                    <button type="button" class="btn btn-probar" onclick="probarConexion()">🔌 Probar conexión</button>
+                </div>
+                <div class="cfg-msg" id="cfg-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        function fmt(v) { var n = Number(v) || 0; return '₡' + n.toLocaleString('es-CR', { maximumFractionDigits: 0 }); }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        var facturasCache = [];
+        var buscarEmitidasTimer = null;
+        var impresorasCache = [];
+        var impresoraEditId = null;
+        var ivaRatePf = 0.13;
+        var proformaOrdenId = null;
+        var ticketCamposDefs = [
+            { key: 'mostrar_cliente', label: 'Cliente' },
+            { key: 'mostrar_identificacion', label: 'Identificación' },
+            { key: 'mostrar_telefono', label: 'Teléfono' },
+            { key: 'mostrar_placa', label: 'Placa' },
+            { key: 'mostrar_vehiculo', label: 'Vehículo' },
+            { key: 'mostrar_color', label: 'Color' },
+            { key: 'mostrar_km', label: 'Kilometraje' },
+            { key: 'mostrar_diagnostico', label: 'Diagnóstico' },
+            { key: 'mostrar_empleado', label: 'Empleado / técnico' },
+            { key: 'mostrar_metodo_pago', label: 'Método de pago' },
+            { key: 'mostrar_subtotal_iva', label: 'Subtotal e IVA' },
+            { key: 'mostrar_fe', label: 'Datos factura electrónica' }
+        ];
+
+        function verTab(t) {
+            document.getElementById('tab-emitidas').classList.toggle('activo', t === 'emitidas');
+            document.getElementById('tab-proforma').classList.toggle('activo', t === 'proforma');
+            document.getElementById('tab-ticket').classList.toggle('activo', t === 'ticket');
+            document.getElementById('tab-tico').classList.toggle('activo', t === 'tico');
+            document.getElementById('tab-config').classList.toggle('activo', t === 'config');
+            document.getElementById('vista-emitidas').style.display = t === 'emitidas' ? 'flex' : 'none';
+            document.getElementById('vista-proforma').style.display = t === 'proforma' ? 'flex' : 'none';
+            document.getElementById('vista-ticket').style.display = t === 'ticket' ? 'flex' : 'none';
+            document.getElementById('vista-tico').style.display = t === 'tico' ? 'flex' : 'none';
+            document.getElementById('vista-config').style.display = t === 'config' ? 'flex' : 'none';
+            if (t === 'config') cargarConfig();
+            if (t === 'ticket') cargarTicketDesign();
+            if (t === 'proforma' && !proformaOrdenId) cargarListaProformasPendientes();
+        }
+
+        function estadoPill(estado) {
+            var e = String(estado || '').toLowerCase();
+            if (e === 'aceptado' || e === 'aceptada') return '<span class="estado-pill acept">Aceptada</span>';
+            if (e === 'simulado' || e === 'simulada') return '<span class="estado-pill sim">Simulada</span>';
+            if (e === 'tiquete') return '<span class="estado-pill pend">Tiquete</span>';
+            if (e === 'rechazado' || e === 'rechazada' || e === 'error') return '<span class="estado-pill rech">Rechazada</span>';
+            return '<span class="estado-pill pend">' + esc(estado || 'Pendiente') + '</span>';
+        }
+
+        function fechaCorta(s) {
+            if (!s) return '—';
+            var d = new Date(String(s).replace(' ', 'T'));
+            if (isNaN(d.getTime())) return esc(s);
+            return d.toLocaleDateString('es-CR') + ' ' + d.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function programarBuscarEmitidas() {
+            if (buscarEmitidasTimer) clearTimeout(buscarEmitidasTimer);
+            buscarEmitidasTimer = setTimeout(cargarEmitidas, 300);
+        }
+
+        async function cargarEmitidas() {
+            var tbody = document.getElementById('tbody-emitidas');
+            var q = (document.getElementById('buscar').value || '').trim();
+            tbody.innerHTML = '<tr><td colspan="7" class="vacio">Cargando…</td></tr>';
+            try {
+                var data = await TallerAPI.getFeRecientes(100, q);
+                facturasCache = (data && data.facturas) ? data.facturas : [];
+                var total = facturasCache.reduce(function (s, f) { return s + (Number(f.total) || 0); }, 0);
+                document.getElementById('card-total').textContent = fmt(total);
+                document.getElementById('card-cant').textContent = facturasCache.length + (q ? ' encontrada(s)' : '');
+                renderEmitidas();
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="7" class="vacio">Error: ' + esc(e.message) + '</td></tr>';
+            }
+        }
+
+        function renderEmitidas() {
+            var tbody = document.getElementById('tbody-emitidas');
+            var q = (document.getElementById('buscar').value || '').trim();
+            var filas = facturasCache;
+            if (!filas.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="vacio">' + (q ? 'Sin facturas con ese producto o criterio.' : 'Aún no hay facturas. Se generan al convertir una proforma o cobrar una orden.') + '</td></tr>';
+                return;
+            }
+            tbody.innerHTML = filas.map(function (f) {
+                var ordenCell = f.orden_id
+                    ? '<a class="btn btn-azul" href="/index.html?orden=' + esc(f.orden_id) + '">#' + esc(f.orden_id) + '</a>'
+                    : '—';
+                var est = String(f.estado || '').toLowerCase();
+                var aceptada = (est === 'aceptado' || est === 'aceptada' || est === 'enviado');
+                var simulada = (est === 'simulado' || est === 'simulada');
+                var botones = [];
+                if (aceptada) {
+                    botones.push('<span class="estado-pill acept">✓ En Hacienda</span>');
+                } else if (simulada) {
+                    botones.push('<span class="estado-pill sim">Simulada — cobre con modo API</span>');
+                } else if (est === 'tiquete') {
+                    botones.push('<span class="estado-pill pend">Tiquete interno</span>');
+                } else {
+                    botones.push('<button class="btn btn-hacienda" onclick="enviarHacienda(' + f.id + ', this)">📤 Reenviar a Hacienda</button>');
+                }
+                if (f.orden_id) {
+                    botones.push('<button class="btn btn-print" title="Imprimir tiquete 80mm" onclick="imprimirFactura(' + f.orden_id + ', \'80\')">🧾 80mm</button>');
+                    botones.push('<button class="btn btn-print" title="Imprimir en hoja completa" onclick="imprimirFactura(' + f.orden_id + ', \'carta\')">📄 Hoja</button>');
+                }
+                var accion = '<div class="acc-wrap">' + botones.join('') + '</div>';
+                return '<tr>' +
+                    '<td><strong>' + esc(f.consecutivo || '—') + '</strong></td>' +
+                    '<td>' + esc(f.receptor_nombre || 'Consumidor final') + '</td>' +
+                    '<td>' + ordenCell + '</td>' +
+                    '<td class="num">' + fmt(f.total) + '</td>' +
+                    '<td>' + estadoPill(f.estado) + '</td>' +
+                    '<td>' + fechaCorta(f.fecha_emision) + '</td>' +
+                    '<td>' + accion + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function imprimirFactura(ordenId, formato) {
+            var f = formato || '80';
+            window.open('/factura-imprimir.html?orden=' + encodeURIComponent(ordenId) + '&tipo=factura&formato=' + encodeURIComponent(f), '_blank');
+        }
+
+        function renderChkCampos(cfg) {
+            var cont = document.getElementById('tk-campos');
+            cont.innerHTML = ticketCamposDefs.map(function (c) {
+                var on = cfg && cfg[c.key];
+                return '<label><input type="checkbox" id="tk-' + c.key + '" ' + (on ? 'checked' : '') + ' onchange="actualizarPreviewTicket()"> ' + c.label + '</label>';
+            }).join('');
+        }
+
+        function leerTicketForm() {
+            var datos = {
+                nombre_negocio: getVal('tk-nombre'),
+                cabecera: document.getElementById('tk-cabecera').value,
+                pie: document.getElementById('tk-pie').value,
+                caracteres_linea: getVal('tk-chars') || '48',
+                lineas_blanco_final: document.getElementById('tk-blancos').value,
+                separador: getVal('tk-sep') || '-',
+                formato_defecto: document.getElementById('tk-formato-def').value
+            };
+            ticketCamposDefs.forEach(function (c) {
+                var el = document.getElementById('tk-' + c.key);
+                datos[c.key] = el ? el.checked : true;
+            });
+            return datos;
+        }
+
+        function rellenarTicketForm(cfg) {
+            cfg = cfg || {};
+            setVal('tk-nombre', cfg.nombre_negocio);
+            document.getElementById('tk-cabecera').value = cfg.cabecera || '';
+            document.getElementById('tk-pie').value = cfg.pie || '';
+            setVal('tk-chars', String(cfg.caracteres_linea || 48));
+            document.getElementById('tk-blancos').value = cfg.lineas_blanco_final != null ? cfg.lineas_blanco_final : 3;
+            setVal('tk-sep', cfg.separador || '-');
+            document.getElementById('tk-formato-def').value = cfg.formato_defecto === 'carta' ? 'carta' : '80';
+            renderChkCampos(cfg);
+        }
+
+        var previewTimer = null;
+        async function actualizarPreviewTicket() {
+            var prev = document.getElementById('tk-preview');
+            if (!prev) return;
+            if (previewTimer) clearTimeout(previewTimer);
+            previewTimer = setTimeout(async function () {
+                try {
+                    var r = await TallerAPI.getTicketPreview('factura', leerTicketForm());
+                    prev.textContent = r.texto || '';
+                } catch (e) {
+                    prev.textContent = 'Vista previa: ' + e.message;
+                }
+            }, 250);
+        }
+
+        async function cargarTicketDesign() {
+            try {
+                var data = await TallerAPI.getTicketConfig();
+                rellenarTicketForm(data.config || data);
+                await cargarImpresoras();
+                await actualizarPreviewTicket();
+            } catch (e) {
+                document.getElementById('tk-msg').textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function guardarTicketConfig() {
+            var msg = document.getElementById('tk-msg');
+            try {
+                await TallerAPI.saveTicketConfig(leerTicketForm());
+                msg.style.color = '#15803d';
+                msg.textContent = '✓ Diseño de ticket guardado.';
+                await actualizarPreviewTicket();
+            } catch (e) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'No se pudo guardar: ' + e.message;
+            }
+        }
+
+        function toggleImpRed() {
+            var red = document.getElementById('imp-conexion').value === 'red';
+            document.getElementById('campo-imp-win').style.display = red ? 'none' : 'flex';
+            document.getElementById('campo-imp-ip').style.display = red ? 'flex' : 'none';
+            document.getElementById('campo-imp-puerto').style.display = red ? 'flex' : 'none';
+        }
+
+        async function cargarImpresoras() {
+            var lista = document.getElementById('imp-lista');
+            try {
+                var sys = await TallerAPI.getImpresorasSistema();
+                var sel = document.getElementById('imp-win');
+                sel.innerHTML = '<option value="">— Predeterminada —</option>' +
+                    (sys || []).map(function (n) { return '<option value="' + esc(n) + '">' + esc(n) + '</option>'; }).join('');
+                var data = await TallerAPI.getImpresoras();
+                impresorasCache = data.impresoras || [];
+                if (!impresorasCache.length) {
+                    lista.innerHTML = '<div class="vacio" style="padding:12px;">Sin impresoras. Pulse «Nueva».</div>';
+                    return;
+                }
+                lista.innerHTML = impresorasCache.map(function (imp) {
+                    return '<div class="imp-item' + (String(imp.id) === String(impresoraEditId) ? ' activo' : '') + '" onclick="seleccionarImpresora(' + imp.id + ')">' +
+                        '<strong>' + esc(imp.nombre) + '</strong>' +
+                        '<div class="meta">' + esc(imp.rol) + ' · ' + (imp.ancho_mm || 80) + 'mm · ' + (imp.activa ? 'Activa' : 'Inactiva') +
+                        (imp.predeterminada ? ' · ★' : '') + '</div></div>';
+                }).join('');
+                if (impresoraEditId) {
+                    var imp = impresorasCache.find(function (x) { return String(x.id) === String(impresoraEditId); });
+                    if (imp) rellenarImpForm(imp);
+                }
+            } catch (e) {
+                lista.innerHTML = '<div class="vacio">Error: ' + esc(e.message) + '</div>';
+            }
+        }
+
+        function rellenarImpForm(imp) {
+            imp = imp || {};
+            setVal('imp-nombre', imp.nombre || '');
+            document.getElementById('imp-rol').value = imp.rol || 'factura';
+            document.getElementById('imp-conexion').value = imp.conexion || 'sistema';
+            document.getElementById('imp-win').value = imp.nombre_sistema || '';
+            setVal('imp-ip', imp.ip || '');
+            document.getElementById('imp-puerto').value = imp.puerto || 9100;
+            document.getElementById('imp-ancho').value = String(imp.ancho_mm || 80);
+            document.getElementById('imp-copias').value = imp.copias || 1;
+            document.getElementById('imp-activa').checked = imp.activa !== false;
+            document.getElementById('imp-pred').checked = !!imp.predeterminada;
+            toggleImpRed();
+        }
+
+        function seleccionarImpresora(id) {
+            impresoraEditId = id;
+            var imp = impresorasCache.find(function (x) { return String(x.id) === String(id); });
+            rellenarImpForm(imp);
+            cargarImpresoras();
+        }
+
+        function nuevaImpresora() {
+            impresoraEditId = null;
+            rellenarImpForm({});
+            cargarImpresoras();
+        }
+
+        function leerImpForm() {
+            return {
+                nombre: getVal('imp-nombre'),
+                rol: document.getElementById('imp-rol').value,
+                conexion: document.getElementById('imp-conexion').value,
+                nombre_sistema: document.getElementById('imp-win').value,
+                ip: getVal('imp-ip'),
+                puerto: document.getElementById('imp-puerto').value,
+                ancho_mm: document.getElementById('imp-ancho').value,
+                copias: document.getElementById('imp-copias').value,
+                activa: document.getElementById('imp-activa').checked,
+                predeterminada: document.getElementById('imp-pred').checked
+            };
+        }
+
+        async function guardarImpresora() {
+            var msg = document.getElementById('tk-msg');
+            var datos = leerImpForm();
+            if (!datos.nombre) { msg.style.color = '#b91c1c'; msg.textContent = 'El nombre de la impresora es obligatorio.'; return; }
+            try {
+                if (impresoraEditId) await TallerAPI.actualizarImpresora(impresoraEditId, datos);
+                else {
+                    var r = await TallerAPI.crearImpresora(datos);
+                    impresoraEditId = r.id;
+                }
+                msg.style.color = '#15803d';
+                msg.textContent = '✓ Impresora guardada.';
+                await cargarImpresoras();
+            } catch (e) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'Error impresora: ' + e.message;
+            }
+        }
+
+        async function eliminarImpresoraSel() {
+            if (!impresoraEditId || !confirm('¿Eliminar esta impresora?')) return;
+            try {
+                await TallerAPI.eliminarImpresora(impresoraEditId);
+                impresoraEditId = null;
+                nuevaImpresora();
+                await cargarImpresoras();
+            } catch (e) { alert(e.message); }
+        }
+
+        async function probarImpresoraSel() {
+            if (!impresoraEditId) {
+                alert('Guarde la impresora primero o seleccione una de la lista.');
+                return;
+            }
+            try {
+                var r = await TallerAPI.probarImpresora(impresoraEditId);
+                alert('✓ Ticket de prueba enviado a: ' + (r.impresora || 'impresora'));
+            } catch (e) { alert('Error: ' + e.message); }
+        }
+
+        async function enviarHacienda(id, btn) {
+            if (!confirm('¿Enviar esta factura a Hacienda a través de su proveedor de facturación?')) return;
+            var original = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+            try {
+                var r = await TallerAPI.enviarFacturaHacienda(id);
+                alert('✓ ' + (r.mensaje || 'Factura enviada.') + (r.clave ? '\n\nClave: ' + r.clave : ''));
+                await cargarEmitidas();
+            } catch (e) {
+                alert('✕ No se pudo enviar: ' + e.message);
+                if (btn) { btn.disabled = false; btn.textContent = original; }
+            }
+        }
+
+        function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v == null ? '' : v; }
+        function getVal(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+        var PROV_FE_URLS = {
+            almendro: {
+                prod: 'https://fe.almendro.cr/api/v1/public/vouchers',
+                sandbox: 'https://sandbox.fe.almendro.cr/api/v1/public/vouchers'
+            },
+            factun: { prod: 'https://api.factun.com/v1/comprobantes', sandbox: '' },
+            generico: { prod: '', sandbox: '' }
+        };
+
+        function aplicarProveedorFe() {
+            var prov = document.getElementById('fe-proveedor').value;
+            var urls = PROV_FE_URLS[prov];
+            if (urls && urls.prod) setVal('fe-url', urls.prod);
+            if (urls && urls.sandbox) setVal('fe-url-sandbox', urls.sandbox);
+            if (prov === 'almendro') {
+                setVal('fe-modo', 'api');
+                aplicarModo();
+            }
+            actualizarChecklistFe();
+        }
+
+        function actualizarChecklistFe() {
+            var ced = getVal('fe-cedula');
+            var nom = getVal('fe-nombre');
+            var prov = getVal('fe-proveedor');
+            var url = getVal('fe-url') || (PROV_FE_URLS[prov] && PROV_FE_URLS[prov].prod) || '';
+            var tok = getVal('fe-token');
+            var modo = getVal('fe-modo');
+            var box = document.getElementById('fe-almendro-auto');
+            if (box) box.style.display = (prov === 'almendro' && modo === 'api') ? 'block' : 'none';
+            function pintar(id, ok, txt) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = (ok ? '✓ ' : '○ ') + txt;
+                el.style.color = ok ? '#15803d' : '#64748b';
+            }
+            pintar('chk-emisor', !!(ced && nom), 'Datos del emisor (cédula, nombre)');
+            pintar('chk-proveedor', prov && prov !== 'pendiente', 'Proveedor seleccionado');
+            pintar('chk-url', !!url, 'URL de API configurada');
+            pintar('chk-token', !!tok, 'Token de API (obligatorio para envío automático)');
+            pintar('chk-atv', modo === 'api' && prov === 'almendro' && !!(ced && nom && tok), 'Listo para envío automático al cobrar');
+        }
+
+        function aplicarModo() {
+            var modo = document.getElementById('fe-modo').value;
+            document.body.classList.toggle('modo-api', modo === 'api');
+            actualizarChecklistFe();
+        }
+
+        async function cargarConfig() {
+            var msg = document.getElementById('cfg-msg');
+            msg.textContent = '';
+            try {
+                var data = await TallerAPI.getFeConfig();
+                var cfg = data.config || data || {};
+                setVal('fe-modo', cfg.fe_modo || 'simulacion');
+                setVal('fe-proveedor', cfg.fe_proveedor || 'pendiente');
+                setVal('fe-actividad', cfg.fe_actividad_economica);
+                setVal('fe-cedula', cfg.fe_emisor_cedula);
+                setVal('fe-nombre', cfg.fe_emisor_nombre);
+                setVal('fe-email', cfg.fe_emisor_email);
+                setVal('fe-sucursal', cfg.fe_sucursal);
+                setVal('fe-terminal', cfg.fe_terminal);
+                setVal('fe-url', cfg.fe_api_url);
+                setVal('fe-url-sandbox', cfg.fe_api_url_sandbox);
+                setVal('fe-token', cfg.fe_api_token);
+                var sb = document.getElementById('fe-sandbox');
+                if (sb) sb.checked = cfg.fe_sandbox === '1' || cfg.fe_sandbox === true;
+                aplicarModo();
+                actualizarChecklistFe();
+                document.getElementById('card-modo').textContent = (cfg.fe_modo === 'api') ? 'API / Hacienda' : 'Simulación';
+            } catch (e) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'No se pudo cargar la configuración: ' + e.message;
+            }
+        }
+
+        async function guardarConfig() {
+            var msg = document.getElementById('cfg-msg');
+            var datos = {
+                fe_modo: getVal('fe-modo') || 'simulacion',
+                fe_proveedor: getVal('fe-proveedor') || 'pendiente',
+                fe_sandbox: document.getElementById('fe-sandbox') && document.getElementById('fe-sandbox').checked ? '1' : '0',
+                fe_actividad_economica: getVal('fe-actividad'),
+                fe_emisor_cedula: getVal('fe-cedula'),
+                fe_emisor_nombre: getVal('fe-nombre'),
+                fe_emisor_email: getVal('fe-email'),
+                fe_sucursal: getVal('fe-sucursal'),
+                fe_terminal: getVal('fe-terminal'),
+                fe_api_url: getVal('fe-url'),
+                fe_api_url_sandbox: getVal('fe-url-sandbox'),
+                fe_api_token: getVal('fe-token')
+            };
+            if (!datos.fe_emisor_cedula || !datos.fe_emisor_nombre) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'La cédula y el nombre del emisor son obligatorios.';
+                return;
+            }
+            if (datos.fe_modo === 'api' && !datos.fe_api_url && PROV_FE_URLS[datos.fe_proveedor]) {
+                datos.fe_api_url = PROV_FE_URLS[datos.fe_proveedor].prod || '';
+            }
+            if (datos.fe_modo === 'api' && !datos.fe_api_url) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'En modo API debe indicar la URL del proveedor o seleccionar Almendro.';
+                return;
+            }
+            if (datos.fe_modo === 'api' && !datos.fe_api_token) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'En modo API el token es obligatorio (lo obtiene en el panel de Almendro).';
+                return;
+            }
+            if (datos.fe_modo === 'api' && datos.fe_proveedor === 'pendiente') {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'En modo API seleccione un proveedor o use modo Simulación mientras lo contrata.';
+                return;
+            }
+            try {
+                await TallerAPI.saveFeConfig(datos);
+                msg.style.color = '#15803d';
+                msg.textContent = '✓ Configuración guardada correctamente.';
+                document.getElementById('card-modo').textContent = (datos.fe_modo === 'api') ? 'API / Hacienda' : 'Simulación';
+                actualizarChecklistFe();
+            } catch (e) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'No se pudo guardar: ' + e.message;
+            }
+        }
+
+        async function probarConexion() {
+            var msg = document.getElementById('cfg-msg');
+            msg.style.color = '#475569';
+            msg.textContent = 'Probando…';
+            try {
+                var r = await TallerAPI.probarFeConexion();
+                msg.style.color = r.ok ? '#15803d' : '#b91c1c';
+                msg.textContent = (r.ok ? '✓ ' : '✕ ') + (r.mensaje || 'Sin mensaje');
+            } catch (e) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        var guiaTicoCache = null;
+
+        async function cargarGuiaTico() {
+            var msg = document.getElementById('tico-msg');
+            var ordenRaw = (document.getElementById('tico-orden-id').value || '').trim();
+            var ordenId = parseInt(ordenRaw, 10);
+            if (!ordenId) {
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'Indique el número de orden (ID interno, no el consecutivo impreso).';
+                return;
+            }
+            msg.style.color = '#475569';
+            msg.textContent = 'Preparando datos de la orden #' + ordenId + '…';
+            document.getElementById('tico-contenido').style.display = 'none';
+            try {
+                var g = await TallerAPI.getGuiaTicoFactura(ordenId);
+                guiaTicoCache = g;
+                msg.style.color = '#15803d';
+                msg.textContent = '✓ Orden #' + esc(g.orden_numero) + ' · ' + esc(g.placa || 'sin placa') + ' — listo para copiar en TicoFactura.';
+                var warns = document.getElementById('tico-warns');
+                warns.innerHTML = (g.advertencias && g.advertencias.length)
+                    ? '<div class="tico-warn"><strong>Revise:</strong><ul style="margin:6px 0 0 18px;">' +
+                      g.advertencias.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul></div>'
+                    : '';
+                document.getElementById('tico-pasos-list').innerHTML = (g.pasos || []).map(function (p) {
+                    return '<li>' + esc(p) + '</li>';
+                }).join('');
+                document.getElementById('tico-resumen').innerHTML =
+                    '<div class="item"><div class="lbl">Cliente</div><div class="val" style="font-size:14px;">' + esc(g.receptor.nombre) + '</div></div>' +
+                    '<div class="item"><div class="lbl">Identificación</div><div class="val" style="font-size:14px;">' + esc(g.receptor.identificacion || 'Consumidor final') + '</div></div>' +
+                    '<div class="item"><div class="lbl">Subtotal</div><div class="val">' + fmt(g.subtotal) + '</div></div>' +
+                    '<div class="item"><div class="lbl">IVA</div><div class="val">' + fmt(g.impuesto) + '</div></div>' +
+                    '<div class="item"><div class="lbl">Total</div><div class="val">' + fmt(g.total) + '</div></div>';
+                document.getElementById('tico-lineas-body').innerHTML = (g.lineas || []).map(function (l) {
+                    return '<tr><td>' + esc(l.numero_linea) + '</td><td>' + esc(l.descripcion) + '</td><td>' + esc(l.codigo_cabys) + '</td>' +
+                        '<td class="num">' + esc(l.cantidad) + ' ' + esc(l.unidad_medida) + '</td>' +
+                        '<td class="num">' + fmt(l.precio_unitario) + '</td><td class="num">' + fmt(l.impuesto) + '</td><td class="num">' + fmt(l.total_linea) + '</td></tr>';
+                }).join('');
+                document.getElementById('tico-texto').value = g.texto_copiar || '';
+                document.getElementById('tico-contenido').style.display = 'block';
+            } catch (e) {
+                guiaTicoCache = null;
+                msg.style.color = '#b91c1c';
+                msg.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function copiarGuiaTico() {
+            var txt = guiaTicoCache && guiaTicoCache.texto_copiar
+                ? guiaTicoCache.texto_copiar
+                : (document.getElementById('tico-texto').value || '');
+            if (!txt) return;
+            try {
+                await navigator.clipboard.writeText(txt);
+                document.getElementById('tico-msg').style.color = '#15803d';
+                document.getElementById('tico-msg').textContent = '✓ Texto copiado. Pegue en un bloc de notas mientras factura en TRIBU-CR.';
+            } catch (e) {
+                document.getElementById('tico-texto').select();
+                document.execCommand('copy');
+                document.getElementById('tico-msg').textContent = 'Texto seleccionado — use Ctrl+C si no se copió solo.';
+            }
+        }
+
+        (function initFacturacionPage() {
+            try {
+                TallerAPI.getTallerConfig().then(function (cfg) {
+                    var r = parseFloat(cfg.impuesto_iva);
+                    if (!isNaN(r)) {
+                        ivaRatePf = r;
+                        var pct = document.getElementById('pf-iva-pct');
+                        if (pct) pct.textContent = Math.round(r * 100);
+                    }
+                });
+            } catch (e) { /* 13% */ }
+
+            var params = new URLSearchParams(window.location.search);
+            var tab = params.get('tab');
+            var orden = params.get('orden');
+            var proforma = params.get('proforma');
+            if (proforma) {
+                verTab('proforma');
+                abrirProformaFactura(parseInt(proforma, 10));
+            } else if (tab === 'tico') {
+                verTab('tico');
+                if (orden) {
+                    document.getElementById('tico-orden-id').value = orden;
+                    cargarGuiaTico();
+                }
+            } else if (tab === 'proforma') {
+                verTab('proforma');
+            } else {
+                cargarEmitidas();
+            }
+        })();
+
+        function esProformaFacturada(o) {
+            return o.estado === 'entregado' && (Number(o.saldo_pendiente) || 0) <= 0;
+        }
+
+        async function cargarListaProformasPendientes() {
+            var cont = document.getElementById('pf-lista-pendientes');
+            if (!cont) return;
+            cont.innerHTML = '<p class="vacio">Cargando…</p>';
+            try {
+                var data = await TallerAPI.getTallerOrdenes({ todos: true, proforma: true });
+                var filas = (data.filas || []).filter(function (o) {
+                    return String(o.observaciones || '').toLowerCase().indexOf('proforma') >= 0 && !esProformaFacturada(o);
+                });
+                if (!filas.length) {
+                    cont.innerHTML = '<p class="vacio">No hay proformas pendientes. <a href="/proformas.html">Crear proforma</a></p>';
+                    return;
+                }
+                cont.innerHTML = filas.map(function (o) {
+                    return '<div class="pf-pick">' +
+                        '<div><strong>#' + esc(o.numero) + ' · ' + esc(o.placa) + '</strong><div class="meta">' +
+                        esc(o.cliente_nombre || 'Sin cliente') + ' · ' + fmt(o.total) + '</div></div>' +
+                        '<button type="button" class="btn-fact" onclick="abrirProformaFactura(' + o.id + ')">Convertir a factura</button></div>';
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '<p class="vacio">Error: ' + esc(e.message) + '</p>';
+            }
+        }
+
+        function filaProformaHtml(l) {
+            l = l || {};
+            var tipo = l.tipo || 'repuesto';
+            return '<tr><td><select class="l-tipo">' +
+                '<option value="repuesto"' + (tipo === 'repuesto' ? ' selected' : '') + '>Repuesto</option>' +
+                '<option value="mano_obra"' + (tipo === 'mano_obra' ? ' selected' : '') + '>Mano obra</option>' +
+                '<option value="otro"' + (tipo === 'otro' ? ' selected' : '') + '>Otro</option></select></td>' +
+                '<td><input class="l-desc" type="text" value="' + esc(l.descripcion || '') + '"></td>' +
+                '<td><input class="l-cant num" type="number" step="0.01" value="' + (l.cantidad || 1) + '" oninput="recalcProforma()"></td>' +
+                '<td><input class="l-precio num" type="number" step="0.01" value="' + (l.precio_unitario || 0) + '" oninput="recalcProforma()"></td>' +
+                '<td><button type="button" class="btn btn-print" style="padding:4px 7px;" onclick="this.closest(\'tr\').remove(); recalcProforma();">✕</button></td></tr>';
+        }
+
+        function agregarFilaProforma() {
+            document.getElementById('pf-lineas-body').insertAdjacentHTML('beforeend', filaProformaHtml({}));
+            recalcProforma();
+        }
+
+        function leerLineasProforma() {
+            var filas = [];
+            document.querySelectorAll('#pf-lineas-body tr').forEach(function (tr) {
+                var desc = tr.querySelector('.l-desc').value.trim();
+                var cant = Number(tr.querySelector('.l-cant').value) || 0;
+                var precio = Number(tr.querySelector('.l-precio').value) || 0;
+                var tipo = tr.querySelector('.l-tipo').value;
+                if (desc && cant > 0) filas.push({ tipo: tipo, descripcion: desc, cantidad: cant, precio_unitario: precio });
+            });
+            return filas;
+        }
+
+        function recalcProforma() {
+            var sub = 0;
+            document.querySelectorAll('#pf-lineas-body tr').forEach(function (tr) {
+                sub += (Number(tr.querySelector('.l-cant').value) || 0) * (Number(tr.querySelector('.l-precio').value) || 0);
+            });
+            var iva = Math.round(sub * ivaRatePf);
+            document.getElementById('pf-sub').textContent = fmt(sub);
+            document.getElementById('pf-iva').textContent = fmt(iva);
+            document.getElementById('pf-total').textContent = fmt(sub + iva);
+        }
+
+        function cancelarEditorProforma() {
+            proformaOrdenId = null;
+            document.getElementById('pf-editor').style.display = 'none';
+            document.getElementById('pf-sin-seleccion').style.display = 'block';
+            history.replaceState(null, '', '/facturacion.html?tab=proforma');
+            cargarListaProformasPendientes();
+        }
+
+        async function abrirProformaFactura(id) {
+            if (!id) return;
+            document.getElementById('pf-estado').textContent = '';
+            try {
+                var data = await TallerAPI.getTallerOrden(id);
+                var o = data.orden || {};
+                if (esProformaFacturada(o)) {
+                    alert('Esta proforma ya fue facturada.');
+                    return;
+                }
+                proformaOrdenId = id;
+                document.getElementById('pf-sin-seleccion').style.display = 'none';
+                document.getElementById('pf-editor').style.display = 'block';
+                document.getElementById('pf-titulo').textContent = '🧾 Proforma #' + o.numero + ' → Factura';
+                document.getElementById('pf-info').textContent = (o.placa || '') + ' · ' + (o.marca || '') + ' ' + (o.modelo || '') + ' · ' + (o.cliente_telefono || '');
+                document.getElementById('pf-nombre').value = o.cliente_nombre || '';
+                document.getElementById('pf-cedula').value = o.cliente_identificacion || '';
+                document.getElementById('pf-fe').checked = false;
+                var tbody = document.getElementById('pf-lineas-body');
+                tbody.innerHTML = '';
+                (data.lineas || []).forEach(function (l) { tbody.insertAdjacentHTML('beforeend', filaProformaHtml(l)); });
+                if (!data.lineas || !data.lineas.length) agregarFilaProforma();
+                recalcProforma();
+                verTab('proforma');
+                history.replaceState(null, '', '/facturacion.html?proforma=' + id);
+            } catch (e) {
+                alert('No se pudo cargar la proforma: ' + e.message);
+            }
+        }
+
+        async function confirmarProformaFactura() {
+            if (!proformaOrdenId) return;
+            var estado = document.getElementById('pf-estado');
+            var lineas = leerLineasProforma();
+            if (!lineas.length) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'Agregue al menos una línea con descripción y cantidad.';
+                return;
+            }
+            var nombre = document.getElementById('pf-nombre').value.trim();
+            var cedula = document.getElementById('pf-cedula').value.trim();
+            var emitirFe = document.getElementById('pf-fe').checked;
+            if (emitirFe && (!nombre || !cedula)) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'Para factura electrónica indique nombre e identificación del cliente.';
+                return;
+            }
+            var btn = document.getElementById('btn-pf-emitir');
+            btn.disabled = true;
+            estado.style.color = '#64748b';
+            estado.textContent = 'Emitiendo factura…';
+            try {
+                var payload = {
+                    lineas: lineas,
+                    metodo_pago: document.getElementById('pf-metodo').value,
+                    tipo_cobro: 'contado',
+                    cliente_nombre: nombre,
+                    cliente_identificacion: cedula,
+                    factura_electronica: emitirFe
+                        ? { emitir: true, nombre: nombre, identificacion: cedula, tipo_identificacion: '01' }
+                        : { emitir: false }
+                };
+                var res = await TallerAPI.facturarProforma(proformaOrdenId, payload);
+                var doc = res.factura_electronica;
+                if (doc && doc.ok === false) {
+                    estado.style.color = '#b45309';
+                    estado.textContent = 'Cobro registrado, pero el documento falló: ' + (doc.error || 'error');
+                } else {
+                    estado.style.color = '#15803d';
+                    var msg = '✓ Factura emitida correctamente.';
+                    if (doc && doc.tipo === 'tiquete') msg += ' Tiquete ' + (doc.consecutivo || '');
+                    else if (doc && doc.clave) msg += ' Clave: ' + doc.clave;
+                    else if (doc && doc.consecutivo) msg += ' Consecutivo: ' + doc.consecutivo;
+                    estado.textContent = msg;
+                    window.open('/factura-imprimir.html?orden=' + proformaOrdenId + '&tipo=factura', '_blank');
+                    cargarEmitidas();
+                    setTimeout(function () {
+                        proformaOrdenId = null;
+                        verTab('emitidas');
+                        history.replaceState(null, '', '/facturacion.html');
+                    }, 1500);
+                }
+            } catch (e) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'Error: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

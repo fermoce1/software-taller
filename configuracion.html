@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Configuración — Sanmy Taller</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html, body { height: 100%; background: #eef2f7; color: #1e293b; }
+        body { display: flex; flex-direction: column; min-height: 100dvh; overflow: hidden; }
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(6px,1.2vw,14px);
+            display: flex; gap: clamp(3px,0.5vw,7px); flex-shrink: 0; overflow-x: auto; }
+        .nav-item { flex: 1 1 0; min-width: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: 5px 4px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(8px,0.75vw,10px); text-align: center; text-decoration: none; }
+        .nav-item .ico { font-size: clamp(14px,1.4vw,18px); line-height: 1; }
+        .nav-item:hover { box-shadow: 0 4px 12px rgba(30,58,95,.12); }
+        .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .layout { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+        .sidebar {
+            width: min(240px, 32vw); background: #fff; border-right: 1px solid #cbd5e1;
+            padding: 14px 10px; overflow-y: auto; flex-shrink: 0;
+        }
+        .sidebar h2 { font-size: 15px; color: #1e3a5f; padding: 0 8px 10px; border-bottom: 1px solid #e2e8f0; margin-bottom: 8px; }
+        .menu-cfg { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+        .menu-cfg button {
+            width: 100%; text-align: left; border: none; background: transparent; border-radius: 8px;
+            padding: 10px 12px; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .menu-cfg button:hover { background: #f1f5f9; }
+        .menu-cfg button.activo { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .menu-cfg .ico { font-size: 18px; width: 24px; text-align: center; }
+
+        .contenido { flex: 1; overflow-y: auto; padding: clamp(12px,2vw,22px); }
+        .panel-sec { display: none; max-width: 920px; }
+        .panel-sec.activo { display: block; }
+        .panel-sec h3 { font-size: 20px; color: #0f172a; margin-bottom: 6px; }
+        .panel-sec .sub { font-size: 13px; color: #64748b; margin-bottom: 16px; line-height: 1.5; }
+
+        .card { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 16px; }
+        .campo label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
+        .campo input, .campo select, .campo textarea {
+            width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;
+        }
+        .campo.full { grid-column: 1 / -1; }
+        .campo textarea { min-height: 70px; resize: vertical; font-family: inherit; }
+
+        .btn { border: none; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-prim { background: #2563eb; color: #fff; }
+        .btn-prim:hover { background: #1d4ed8; }
+        .btn-sec { background: #e2e8f0; color: #334155; }
+        .btn-verde { background: #16a34a; color: #fff; }
+        .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
+        .msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
+
+        .nota { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #475569; line-height: 1.55; margin-bottom: 14px; }
+        .nota.azul { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
+        .nota.verde { background: #f0fdf4; border-color: #86efac; color: #166534; }
+
+        .modulos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+        .mod-card {
+            background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px;
+            text-decoration: none; color: inherit; display: block; transition: box-shadow .15s, transform .08s;
+        }
+        .mod-card:hover { box-shadow: 0 8px 20px rgba(30,58,95,.12); transform: translateY(-2px); }
+        .mod-card .ico { font-size: 28px; margin-bottom: 8px; }
+        .mod-card h4 { font-size: 15px; color: #1e3a5f; margin-bottom: 4px; }
+        .mod-card p { font-size: 12px; color: #64748b; line-height: 1.45; }
+
+        .checklist { list-style: none; font-size: 12px; line-height: 1.7; }
+        .checklist li { padding: 2px 0; }
+        body.modo-api .solo-api { display: block; }
+        .solo-api { display: none; }
+
+        .lista-empresas { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .empresa-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+            border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; background: #f8fafc;
+        }
+        .empresa-item:hover { background: #eff6ff; border-color: #93c5fd; }
+        .empresa-item.activa { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 2px #bfdbfe; }
+        .empresa-item .nom { font-weight: 700; color: #1e3a5f; flex: 1; }
+        .empresa-item .meta { font-size: 11px; color: #64748b; }
+        .badge-activa {
+            font-size: 10px; font-weight: bold; background: #16a34a; color: #fff;
+            padding: 2px 8px; border-radius: 999px;
+        }
+        .empresa-banner {
+            background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
+            padding: 10px 12px; font-size: 12px; color: #166534; margin-bottom: 12px;
+        }
+        .modo-datos-box {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 12px 14px; margin-top: 12px;
+        }
+        .modo-datos-box h5 { font-size: 13px; color: #1e3a5f; margin-bottom: 8px; }
+        .modo-datos-opciones { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .modo-datos-opciones label {
+            display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: #334155;
+            cursor: pointer; line-height: 1.45;
+        }
+        .modo-datos-opciones input { margin-top: 3px; flex-shrink: 0; }
+        .check-datos { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #cbd5e1; }
+        .check-datos label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #475569; cursor: pointer; }
+        .badge-aislada {
+            font-size: 10px; font-weight: bold; background: #7c3aed; color: #fff;
+            padding: 2px 8px; border-radius: 999px;
+        }
+        .badge-compartida {
+            font-size: 10px; font-weight: bold; background: #0ea5e9; color: #fff;
+            padding: 2px 8px; border-radius: 999px;
+        }
+
+        @media (max-width: 720px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #cbd5e1; max-height: 42vh; }
+            .menu-cfg { flex-direction: row; flex-wrap: wrap; }
+            .menu-cfg button { flex: 1 1 auto; font-size: 12px; padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN</a>
+        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAG.</a>
+        <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS</a>
+        <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item activo" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
+        <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+    </nav>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h2>⚙️ Configuración</h2>
+            <ul class="menu-cfg">
+                <li><button type="button" class="activo" data-sec="general" onclick="verSec('general', this)"><span class="ico">🏢</span> Empresas</button></li>
+                <li><button type="button" data-sec="fe" onclick="verSec('fe', this)"><span class="ico">🧾</span> Factura electrónica</button></li>
+                <li><button type="button" data-sec="impresion" onclick="verSec('impresion', this)"><span class="ico">🖨️</span> Tickets e impresión</button></li>
+                <li><button type="button" data-sec="usuarios" onclick="verSec('usuarios', this)"><span class="ico">👤</span> Usuarios</button></li>
+                <li><button type="button" data-sec="red" onclick="verSec('red', this)"><span class="ico">📡</span> Red y acceso</button></li>
+                <li><button type="button" data-sec="modulos" onclick="verSec('modulos', this)"><span class="ico">📦</span> Más módulos</button></li>
+            </ul>
+        </aside>
+
+        <main class="contenido">
+            <!-- GENERAL -->
+            <section id="sec-general" class="panel-sec activo">
+                <h3>🏢 Empresas del taller</h3>
+                <p class="sub">Registre varias empresas o razones sociales. La <strong>empresa activa</strong> define facturación, tickets y órdenes. Puede elegir si cada empresa <strong>comparte</strong> clientes e inventario con las demás o trabaja <strong>totalmente aparte</strong>.</p>
+
+                <div class="card">
+                    <div class="empresa-banner" id="empresa-activa-banner">Cargando empresa activa…</div>
+                    <ul id="lista-empresas" class="lista-empresas"></ul>
+                    <div class="acciones" style="margin-top:0;">
+                        <button type="button" class="btn btn-prim" onclick="nuevaEmpresaForm()">➕ Nueva empresa</button>
+                    </div>
+                </div>
+
+                <div class="card" id="card-empresa-form">
+                    <h4 style="font-size:15px;color:#1e3a5f;margin-bottom:12px;" id="empresa-form-titulo">Datos de la empresa</h4>
+                    <div class="form-grid">
+                        <div class="campo full">
+                            <label for="cfg-nombre">Nombre / razón social *</label>
+                            <input id="cfg-nombre" type="text" placeholder="Sanmy Taller Mecánico">
+                        </div>
+                        <div class="campo">
+                            <label for="cfg-cedula">Cédula jurídica / NITE</label>
+                            <input id="cfg-cedula" type="text" placeholder="3-101-123456">
+                        </div>
+                        <div class="campo">
+                            <label for="cfg-telefono">Teléfono</label>
+                            <input id="cfg-telefono" type="tel" placeholder="2222-3333">
+                        </div>
+                        <div class="campo">
+                            <label for="cfg-email">Correo</label>
+                            <input id="cfg-email" type="email" placeholder="taller@correo.com">
+                        </div>
+                        <div class="campo full">
+                            <label for="cfg-direccion">Dirección</label>
+                            <input id="cfg-direccion" type="text" placeholder="San José, Costa Rica">
+                        </div>
+                        <div class="campo">
+                            <label for="cfg-iva">IVA (%)</label>
+                            <select id="cfg-iva">
+                                <option value="0.13">13% (estándar CR)</option>
+                                <option value="0.04">4%</option>
+                                <option value="0.02">2%</option>
+                                <option value="0">Exento (0%)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modo-datos-box">
+                        <h5>📦 Datos con otras empresas</h5>
+                        <div class="modo-datos-opciones">
+                            <label>
+                                <input type="radio" name="modo-datos" id="modo-datos-compartido" value="compartido" checked onchange="aplicarModoDatosUi()">
+                                <span><strong>Compartido</strong> — clientes, repuestos y cuentas por pagar en común entre empresas.</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="modo-datos" id="modo-datos-aislado" value="aislado" onchange="aplicarModoDatosUi()">
+                                <span><strong>Totalmente aparte</strong> — clientes, vehículos, inventario, finanzas, órdenes y facturas propias de esta empresa.</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="modo-datos" id="modo-datos-personalizado" value="personalizado" onchange="aplicarModoDatosUi()">
+                                <span><strong>Personalizado</strong> — elija qué compartir:</span>
+                            </label>
+                        </div>
+                        <div class="check-datos" id="check-datos-custom">
+                            <label><input type="checkbox" id="cfg-compartir-clientes" checked onchange="syncModoDatosDesdeChecks()"> Compartir clientes y vehículos</label>
+                            <label><input type="checkbox" id="cfg-compartir-inventario" checked onchange="syncModoDatosDesdeChecks()"> Compartir inventario (repuestos)</label>
+                        </div>
+                    </div>
+                    <div class="nota azul" style="margin-top:12px;">
+                        La factura electrónica (pestaña FE) se guarda por empresa activa. Cambie de empresa antes de editar otro emisor.
+                    </div>
+                    <div class="acciones">
+                        <button type="button" class="btn btn-verde" onclick="guardarEmpresaForm()">💾 Guardar empresa</button>
+                        <button type="button" class="btn btn-prim" id="btn-activar-empresa" onclick="activarEmpresaForm()">✓ Usar esta empresa</button>
+                        <button type="button" class="btn btn-sec" id="btn-borrar-empresa" onclick="eliminarEmpresaForm()">🗑️ Eliminar</button>
+                    </div>
+                    <div class="msg" id="msg-general"></div>
+                </div>
+            </section>
+
+            <!-- FACTURA ELECTRÓNICA -->
+            <section id="sec-fe" class="panel-sec">
+                <h3>🧾 Factura electrónica (Hacienda CR)</h3>
+                <p class="sub">Configure Almendro u otro proveedor. Con modo API, al cobrar se envía automáticamente a Hacienda.</p>
+                <div class="nota azul" id="fe-almendro-auto" style="display:none;">
+                    <strong>⚡ Envío automático:</strong> con Almendro + token, al confirmar el cobro la factura se envía sola a Hacienda.
+                </div>
+                <div class="card">
+                    <div class="form-grid">
+                        <div class="campo">
+                            <label for="fe-modo">Modo</label>
+                            <select id="fe-modo" onchange="aplicarModoFe()">
+                                <option value="simulacion">Simulación (pruebas)</option>
+                                <option value="api">API / Hacienda (real)</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label for="fe-proveedor">Proveedor</label>
+                            <select id="fe-proveedor" onchange="aplicarProveedorFe()">
+                                <option value="pendiente">Sin proveedor</option>
+                                <option value="generico">API genérica</option>
+                                <option value="almendro">Almendro (~$36/año)</option>
+                                <option value="factun">Factun</option>
+                            </select>
+                        </div>
+                        <div class="campo">
+                            <label for="fe-actividad">Actividad económica</label>
+                            <input id="fe-actividad" type="text" placeholder="452000">
+                        </div>
+                        <div class="campo">
+                            <label for="fe-cedula">Cédula emisor *</label>
+                            <input id="fe-cedula" type="text" placeholder="3-101-123456">
+                        </div>
+                        <div class="campo">
+                            <label for="fe-nombre">Nombre / razón social *</label>
+                            <input id="fe-nombre" type="text" placeholder="Sanmy Taller Mecánico">
+                        </div>
+                        <div class="campo">
+                            <label for="fe-email">Correo emisor</label>
+                            <input id="fe-email" type="email" placeholder="taller@correo.com">
+                        </div>
+                        <div class="campo">
+                            <label for="fe-sucursal">Sucursal</label>
+                            <input id="fe-sucursal" type="text" placeholder="001">
+                        </div>
+                        <div class="campo">
+                            <label for="fe-terminal">Terminal</label>
+                            <input id="fe-terminal" type="text" placeholder="001">
+                        </div>
+                        <div class="campo full solo-api">
+                            <label for="fe-url">URL API</label>
+                            <input id="fe-url" type="text" placeholder="https://fe.almendro.cr/api/v1/public/vouchers">
+                        </div>
+                        <div class="campo full solo-api">
+                            <label for="fe-url-sandbox">URL sandbox (opcional)</label>
+                            <input id="fe-url-sandbox" type="text">
+                        </div>
+                        <div class="campo full solo-api">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="fe-sandbox"> Usar ambiente de pruebas
+                            </label>
+                        </div>
+                        <div class="campo full solo-api">
+                            <label for="fe-token">Token API (Bearer) *</label>
+                            <input id="fe-token" type="password" placeholder="Token de Almendro">
+                        </div>
+                    </div>
+                    <div class="nota verde" style="margin-top:14px;">
+                        <strong>Lista de verificación:</strong>
+                        <ul class="checklist" id="fe-checklist">
+                            <li id="chk-emisor">○ Datos del emisor</li>
+                            <li id="chk-proveedor">○ Proveedor</li>
+                            <li id="chk-url">○ URL API</li>
+                            <li id="chk-token">○ Token API</li>
+                            <li id="chk-listo">○ Listo para envío automático</li>
+                        </ul>
+                    </div>
+                    <div class="acciones">
+                        <button type="button" class="btn btn-verde" onclick="guardarFe()">💾 Guardar FE</button>
+                        <button type="button" class="btn btn-prim" onclick="probarFe()">🔌 Probar conexión</button>
+                        <a class="btn btn-sec" href="/facturacion.html" style="text-decoration:none;display:inline-block;">Ver facturas emitidas →</a>
+                    </div>
+                    <div class="msg" id="msg-fe"></div>
+                </div>
+            </section>
+
+            <!-- IMPRESIÓN -->
+            <section id="sec-impresion" class="panel-sec">
+                <h3>🖨️ Tickets e impresión</h3>
+                <p class="sub">Diseño de ticket 80mm, impresoras Windows o red, y vista previa.</p>
+                <div class="modulos-grid">
+                    <a class="mod-card" href="/facturacion.html?tab=ticket">
+                        <div class="ico">🎫</div>
+                        <h4>Diseño de ticket</h4>
+                        <p>Cabecera, pie, campos visibles y ancho de impresora (58/80 mm).</p>
+                    </a>
+                    <a class="mod-card" href="/facturacion.html?tab=ticket">
+                        <div class="ico">🖨️</div>
+                        <h4>Impresoras</h4>
+                        <p>Configure impresoras Windows o por IP para facturas y recibos.</p>
+                    </a>
+                    <a class="mod-card" href="/facturacion.html">
+                        <div class="ico">🧾</div>
+                        <h4>Facturación</h4>
+                        <p>Historial de facturas, reimpresión y TicoFactura manual.</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- USUARIOS -->
+            <section id="sec-usuarios" class="panel-sec">
+                <h3>👤 Usuarios y acceso</h3>
+                <p class="sub">Empleados, técnicos y permisos de inicio de sesión.</p>
+                <div class="modulos-grid">
+                    <a class="mod-card" href="/usuarios.html">
+                        <div class="ico">👥</div>
+                        <h4>Gestionar usuarios</h4>
+                        <p>Crear, editar y desactivar cuentas del taller.</p>
+                    </a>
+                    <a class="mod-card" href="/login.html">
+                        <div class="ico">🔐</div>
+                        <h4>Inicio de sesión</h4>
+                        <p>Pantalla de acceso para empleados.</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- RED -->
+            <section id="sec-red" class="panel-sec">
+                <h3>📡 Red y acceso móvil</h3>
+                <p class="sub">Para usar Sanmy desde el celular en la misma red WiFi del taller.</p>
+                <div class="card">
+                    <div class="form-grid">
+                        <div class="campo full">
+                            <label for="cfg-ip">IP del servidor (este PC)</label>
+                            <input id="cfg-ip" type="text" placeholder="Ej. 192.168.1.50">
+                            <p style="font-size:11px;color:#64748b;margin-top:4px;">En Windows: <code>ipconfig</code> → Dirección IPv4. Deje vacío para usar localhost.</p>
+                        </div>
+                    </div>
+                    <div class="acciones">
+                        <button type="button" class="btn btn-verde" onclick="guardarRed()">💾 Guardar IP</button>
+                        <button type="button" class="btn btn-sec" onclick="probarRed()">🔍 Probar conexión</button>
+                    </div>
+                    <div class="msg" id="msg-red"></div>
+                    <p id="url-movil" style="font-size:12px;margin-top:12px;color:#475569;word-break:break-all;"></p>
+                </div>
+            </section>
+
+            <!-- MÁS MÓDULOS -->
+            <section id="sec-modulos" class="panel-sec">
+                <h3>📦 Acceso rápido a módulos</h3>
+                <p class="sub">Atajos a las demás áreas del sistema.</p>
+                <div class="modulos-grid">
+                    <a class="mod-card" href="/inventario.html"><div class="ico">📦</div><h4>Repuestos / inventario</h4><p>CABYS, precios y stock.</p></a>
+                    <a class="mod-card" href="/clientes.html"><div class="ico">👥</div><h4>Clientes</h4><p>Cédulas, teléfonos y vehículos.</p></a>
+                    <a class="mod-card" href="/finanzas.html"><div class="ico">💱</div><h4>Finanzas</h4><p>Cuentas por cobrar y pagar.</p></a>
+                    <a class="mod-card" href="/proformas.html"><div class="ico">📄</div><h4>Proformas</h4><p>Presupuestos antes de la orden.</p></a>
+                </div>
+                <div class="nota" style="margin-top:16px;">
+                    <strong>Próximamente en configuración:</strong> respaldos automáticos, WhatsApp plantillas, horarios del taller, numeración de órdenes y más.
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script>
+        function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v == null ? '' : v; }
+        function getVal(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+        function msg(id, txt, ok) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.style.color = ok ? '#15803d' : '#b91c1c';
+            el.textContent = txt;
+        }
+
+        function verSec(sec, btn) {
+            document.querySelectorAll('.panel-sec').forEach(function (p) {
+                p.classList.toggle('activo', p.id === 'sec-' + sec);
+            });
+            document.querySelectorAll('.menu-cfg button').forEach(function (b) {
+                b.classList.toggle('activo', b === btn);
+            });
+            if (sec === 'fe') cargarFe();
+            if (sec === 'general') cargarGeneral();
+            if (sec === 'red') cargarRed();
+            history.replaceState(null, '', '/configuracion.html?sec=' + sec);
+        }
+
+        var PROV_FE_URLS = {
+            almendro: {
+                prod: 'https://fe.almendro.cr/api/v1/public/vouchers',
+                sandbox: 'https://sandbox.fe.almendro.cr/api/v1/public/vouchers'
+            },
+            factun: { prod: 'https://api.factun.com/v1/comprobantes', sandbox: '' }
+        };
+        var empresaEditId = null;
+        var empresasCache = [];
+
+        function setIvaSelect(val) {
+            var iva = String(val || '0.13');
+            var sel = document.getElementById('cfg-iva');
+            if (!sel) return;
+            var found = false;
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === iva) { sel.selectedIndex = i; found = true; break; }
+            }
+            if (!found) sel.value = '0.13';
+        }
+
+        function pintarListaEmpresas(data) {
+            empresasCache = data.filas || [];
+            var activaId = data.empresa_activa_id;
+            var lista = document.getElementById('lista-empresas');
+            var banner = document.getElementById('empresa-activa-banner');
+            if (!lista) return;
+
+            if (!empresasCache.length) {
+                lista.innerHTML = '<li style="color:#64748b;font-size:13px;">Sin empresas — cree la primera.</li>';
+                if (banner) banner.textContent = 'Ninguna empresa activa.';
+                return;
+            }
+
+            var activa = empresasCache.find(function (e) { return e.id === activaId; }) || empresasCache[0];
+            if (banner && activa) {
+                var modoTxt = activa.datos_aislados
+                    ? 'Datos totalmente aparte.'
+                    : (activa.compartir_clientes && activa.compartir_inventario
+                        ? 'Datos compartidos con otras empresas.'
+                        : 'Datos parcialmente compartidos.');
+                banner.innerHTML = '✓ <strong>Empresa activa:</strong> ' + activa.nombre +
+                    (activa.identificacion ? ' · ' + activa.identificacion : '') +
+                    '<br><span style="font-weight:normal;">' + modoTxt + ' Órdenes nuevas y facturación usan esta razón social.</span>';
+            }
+
+            lista.innerHTML = empresasCache.map(function (e) {
+                var cls = 'empresa-item' + (e.id === activaId ? ' activa' : '');
+                var badgeModo = e.datos_aislados
+                    ? '<span class="badge-aislada">APARTE</span>'
+                    : (e.compartir_clientes && e.compartir_inventario
+                        ? '<span class="badge-compartida">COMPARTIDA</span>'
+                        : '<span class="badge-compartida" style="background:#64748b;">MIXTA</span>');
+                return '<li class="' + cls + '" onclick="seleccionarEmpresa(' + e.id + ')">' +
+                    '<div><div class="nom">' + escHtml(e.nombre) + '</div>' +
+                    '<div class="meta">' + (e.identificacion ? escHtml(e.identificacion) + ' · ' : '') +
+                    (e.num_ordenes || 0) + ' orden(es)</div></div>' +
+                    badgeModo +
+                    (e.es_activa ? '<span class="badge-activa">ACTIVA</span>' : '') + '</li>';
+            }).join('');
+        }
+
+        function aplicarModoDatosUi() {
+            var compartido = document.getElementById('modo-datos-compartido').checked;
+            var aislado = document.getElementById('modo-datos-aislado').checked;
+            var customBox = document.getElementById('check-datos-custom');
+            var chkCli = document.getElementById('cfg-compartir-clientes');
+            var chkInv = document.getElementById('cfg-compartir-inventario');
+            if (compartido) {
+                chkCli.checked = true;
+                chkInv.checked = true;
+                customBox.style.opacity = '0.45';
+                chkCli.disabled = true;
+                chkInv.disabled = true;
+            } else if (aislado) {
+                chkCli.checked = false;
+                chkInv.checked = false;
+                customBox.style.opacity = '0.45';
+                chkCli.disabled = true;
+                chkInv.disabled = true;
+            } else {
+                customBox.style.opacity = '1';
+                chkCli.disabled = false;
+                chkInv.disabled = false;
+            }
+        }
+
+        function syncModoDatosDesdeChecks() {
+            var chkCli = document.getElementById('cfg-compartir-clientes').checked;
+            var chkInv = document.getElementById('cfg-compartir-inventario').checked;
+            if (chkCli && chkInv) {
+                document.getElementById('modo-datos-compartido').checked = true;
+            } else if (!chkCli && !chkInv) {
+                document.getElementById('modo-datos-aislado').checked = true;
+            } else {
+                document.getElementById('modo-datos-personalizado').checked = true;
+            }
+            aplicarModoDatosUi();
+        }
+
+        function setModoDatosEmpresa(e) {
+            var compCli = e ? e.compartir_clientes !== false : true;
+            var compInv = e ? e.compartir_inventario !== false : true;
+            if (compCli && compInv) {
+                document.getElementById('modo-datos-compartido').checked = true;
+            } else if (!compCli && !compInv) {
+                document.getElementById('modo-datos-aislado').checked = true;
+            } else {
+                document.getElementById('modo-datos-personalizado').checked = true;
+            }
+            document.getElementById('cfg-compartir-clientes').checked = compCli;
+            document.getElementById('cfg-compartir-inventario').checked = compInv;
+            aplicarModoDatosUi();
+        }
+
+        function leerCompartirDatosForm() {
+            return {
+                compartir_clientes: document.getElementById('cfg-compartir-clientes').checked,
+                compartir_inventario: document.getElementById('cfg-compartir-inventario').checked
+            };
+        }
+
+        function escHtml(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function llenarFormEmpresa(e) {
+            empresaEditId = e ? e.id : null;
+            setVal('cfg-nombre', e ? e.nombre : '');
+            setVal('cfg-cedula', e ? e.identificacion : '');
+            setVal('cfg-telefono', e ? e.telefono : '');
+            setVal('cfg-email', e ? e.email : '');
+            setVal('cfg-direccion', e ? e.direccion : '');
+            setIvaSelect(e ? e.impuesto_iva : '0.13');
+            var tit = document.getElementById('empresa-form-titulo');
+            if (tit) tit.textContent = e ? 'Editar: ' + e.nombre : 'Nueva empresa';
+            var btnAct = document.getElementById('btn-activar-empresa');
+            if (btnAct) btnAct.style.display = e && e.es_activa ? 'none' : '';
+            setModoDatosEmpresa(e);
+        }
+
+        async function cargarGeneral() {
+            try {
+                var data = await TallerAPI.getEmpresas();
+                pintarListaEmpresas(data);
+                var activa = (data.filas || []).find(function (e) { return e.es_activa; });
+                if (activa) {
+                    llenarFormEmpresa(activa);
+                } else if ((data.filas || []).length) {
+                    llenarFormEmpresa(data.filas[0]);
+                } else {
+                    nuevaEmpresaForm();
+                }
+            } catch (e) {
+                msg('msg-general', 'Error al cargar empresas: ' + e.message, false);
+            }
+        }
+
+        function seleccionarEmpresa(id) {
+            var e = empresasCache.find(function (x) { return x.id === id; });
+            if (e) llenarFormEmpresa(e);
+            var activaId = empresasCache.find(function (x) { return x.es_activa; });
+            activaId = activaId ? activaId.id : null;
+            document.querySelectorAll('.empresa-item').forEach(function (el) {
+                var m = el.getAttribute('onclick') || '';
+                el.classList.toggle('activa', m.indexOf('(' + id + ')') >= 0);
+            });
+        }
+
+        function nuevaEmpresaForm() {
+            empresaEditId = null;
+            llenarFormEmpresa(null);
+            document.getElementById('cfg-nombre').focus();
+            msg('msg-general', 'Complete los datos y pulse Guardar. Puede activarla después.', true);
+            document.getElementById('msg-general').style.color = '#475569';
+        }
+
+        function leerDatosEmpresaForm() {
+            var datos = {
+                nombre: getVal('cfg-nombre'),
+                identificacion: getVal('cfg-cedula'),
+                telefono: getVal('cfg-telefono'),
+                email: getVal('cfg-email'),
+                direccion: getVal('cfg-direccion'),
+                impuesto_iva: getVal('cfg-iva') || '0.13'
+            };
+            var comp = leerCompartirDatosForm();
+            datos.compartir_clientes = comp.compartir_clientes;
+            datos.compartir_inventario = comp.compartir_inventario;
+            return datos;
+        }
+
+        async function guardarEmpresaForm() {
+            var datos = leerDatosEmpresaForm();
+            if (!datos.nombre) { msg('msg-general', 'Indique el nombre de la empresa.', false); return; }
+            try {
+                if (empresaEditId) {
+                    await TallerAPI.actualizarEmpresa(empresaEditId, datos);
+                    msg('msg-general', '✓ Empresa actualizada.', true);
+                } else {
+                    datos.activar = empresasCache.length === 0;
+                    var creada = await TallerAPI.crearEmpresa(datos);
+                    empresaEditId = creada.id;
+                    msg('msg-general', '✓ Empresa creada' + (datos.activar ? ' y activada.' : '.'), true);
+                }
+                await cargarGeneral();
+            } catch (e) {
+                msg('msg-general', e.message, false);
+            }
+        }
+
+        async function activarEmpresaForm() {
+            if (!empresaEditId) {
+                msg('msg-general', 'Guarde la empresa primero o selecciónela de la lista.', false);
+                return;
+            }
+            try {
+                await TallerAPI.activarEmpresa(empresaEditId);
+                msg('msg-general', '✓ Empresa activa. Facturación y órdenes nuevas usarán estos datos.', true);
+                await cargarGeneral();
+                if (document.getElementById('sec-fe').classList.contains('activo')) cargarFe();
+            } catch (e) {
+                msg('msg-general', e.message, false);
+            }
+        }
+
+        async function eliminarEmpresaForm() {
+            if (!empresaEditId) return;
+            if (!confirm('¿Eliminar esta empresa? Solo si no tiene órdenes asociadas.')) return;
+            try {
+                await TallerAPI.eliminarEmpresa(empresaEditId);
+                empresaEditId = null;
+                msg('msg-general', '✓ Empresa eliminada.', true);
+                await cargarGeneral();
+            } catch (e) {
+                msg('msg-general', e.message, false);
+            }
+        }
+
+        async function guardarGeneral() {
+            await guardarEmpresaForm();
+        }
+
+        function aplicarModoFe() {
+            document.body.classList.toggle('modo-api', getVal('fe-modo') === 'api');
+            actualizarChecklistFe();
+        }
+
+        function aplicarProveedorFe() {
+            var prov = getVal('fe-proveedor');
+            var urls = PROV_FE_URLS[prov];
+            if (urls && urls.prod) setVal('fe-url', urls.prod);
+            if (urls && urls.sandbox) setVal('fe-url-sandbox', urls.sandbox);
+            if (prov === 'almendro') {
+                setVal('fe-modo', 'api');
+                aplicarModoFe();
+            }
+            actualizarChecklistFe();
+        }
+
+        function actualizarChecklistFe() {
+            var ced = getVal('fe-cedula');
+            var nom = getVal('fe-nombre');
+            var prov = getVal('fe-proveedor');
+            var url = getVal('fe-url') || (PROV_FE_URLS[prov] && PROV_FE_URLS[prov].prod) || '';
+            var tok = getVal('fe-token');
+            var modo = getVal('fe-modo');
+            function pintar(id, ok, txt) {
+                var el = document.getElementById(id);
+                if (el) { el.textContent = (ok ? '✓ ' : '○ ') + txt; el.style.color = ok ? '#15803d' : '#64748b'; }
+            }
+            pintar('chk-emisor', !!(ced && nom), 'Datos del emisor');
+            pintar('chk-proveedor', prov && prov !== 'pendiente', 'Proveedor seleccionado');
+            pintar('chk-url', !!url, 'URL API');
+            pintar('chk-token', !!tok, 'Token API');
+            pintar('chk-listo', modo === 'api' && prov !== 'pendiente' && !!(ced && nom && tok && url), 'Listo para envío automático al cobrar');
+            var box = document.getElementById('fe-almendro-auto');
+            if (box) box.style.display = (prov === 'almendro' && modo === 'api') ? 'block' : 'none';
+        }
+
+        async function cargarFe() {
+            try {
+                var data = await TallerAPI.getFeConfig();
+                var cfg = data.config || data || {};
+                setVal('fe-modo', cfg.fe_modo || 'simulacion');
+                setVal('fe-proveedor', cfg.fe_proveedor || 'pendiente');
+                setVal('fe-actividad', cfg.fe_actividad_economica);
+                setVal('fe-cedula', cfg.fe_emisor_cedula);
+                setVal('fe-nombre', cfg.fe_emisor_nombre);
+                setVal('fe-email', cfg.fe_emisor_email);
+                setVal('fe-sucursal', cfg.fe_sucursal);
+                setVal('fe-terminal', cfg.fe_terminal);
+                setVal('fe-url', cfg.fe_api_url);
+                setVal('fe-url-sandbox', cfg.fe_api_url_sandbox);
+                setVal('fe-token', cfg.fe_api_token);
+                var sb = document.getElementById('fe-sandbox');
+                if (sb) sb.checked = cfg.fe_sandbox === '1' || cfg.fe_sandbox === true;
+                aplicarModoFe();
+            } catch (e) {
+                msg('msg-fe', 'Error: ' + e.message, false);
+            }
+        }
+
+        async function guardarFe() {
+            var datos = {
+                fe_modo: getVal('fe-modo') || 'simulacion',
+                fe_proveedor: getVal('fe-proveedor') || 'pendiente',
+                fe_sandbox: document.getElementById('fe-sandbox') && document.getElementById('fe-sandbox').checked ? '1' : '0',
+                fe_actividad_economica: getVal('fe-actividad') || '452000',
+                fe_emisor_cedula: getVal('fe-cedula'),
+                fe_emisor_nombre: getVal('fe-nombre'),
+                fe_emisor_email: getVal('fe-email'),
+                fe_sucursal: getVal('fe-sucursal') || '001',
+                fe_terminal: getVal('fe-terminal') || '001',
+                fe_api_url: getVal('fe-url'),
+                fe_api_url_sandbox: getVal('fe-url-sandbox'),
+                fe_api_token: getVal('fe-token')
+            };
+            if (!datos.fe_emisor_cedula || !datos.fe_emisor_nombre) {
+                msg('msg-fe', 'Cédula y nombre del emisor son obligatorios.', false);
+                return;
+            }
+            if (datos.fe_modo === 'api' && !datos.fe_api_url && PROV_FE_URLS[datos.fe_proveedor]) {
+                datos.fe_api_url = PROV_FE_URLS[datos.fe_proveedor].prod || '';
+            }
+            if (datos.fe_modo === 'api' && !datos.fe_api_url) {
+                msg('msg-fe', 'En modo API indique URL o seleccione Almendro.', false);
+                return;
+            }
+            if (datos.fe_modo === 'api' && !datos.fe_api_token) {
+                msg('msg-fe', 'En modo API el token es obligatorio.', false);
+                return;
+            }
+            try {
+                await TallerAPI.saveFeConfig(datos);
+                msg('msg-fe', '✓ Facturación electrónica guardada.', true);
+                actualizarChecklistFe();
+            } catch (e) {
+                msg('msg-fe', e.message, false);
+            }
+        }
+
+        async function probarFe() {
+            msg('msg-fe', 'Probando…', true);
+            document.getElementById('msg-fe').style.color = '#475569';
+            try {
+                var r = await TallerAPI.probarFeConexion();
+                msg('msg-fe', (r.ok ? '✓ ' : '✕ ') + (r.mensaje || ''), !!r.ok);
+            } catch (e) {
+                msg('msg-fe', e.message, false);
+            }
+        }
+
+        function cargarRed() {
+            var ip = TallerAPI.getStoredServerIp ? TallerAPI.getStoredServerIp() : '';
+            setVal('cfg-ip', ip);
+            pintarUrlMovil(ip);
+        }
+
+        function pintarUrlMovil(ip) {
+            var el = document.getElementById('url-movil');
+            if (!el) return;
+            var host = ip || window.location.hostname || 'localhost';
+            el.textContent = 'URL en celular: http://' + host + ':3020/abrir.html';
+        }
+
+        function guardarRed() {
+            var ip = getVal('cfg-ip').replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
+            if (TallerAPI.setStoredServerIp) TallerAPI.setStoredServerIp(ip);
+            pintarUrlMovil(ip);
+            msg('msg-red', ip ? '✓ IP guardada: ' + ip : '✓ Se usará localhost en este equipo.', true);
+        }
+
+        async function probarRed() {
+            msg('msg-red', 'Probando…', true);
+            document.getElementById('msg-red').style.color = '#475569';
+            try {
+                var ok = await TallerAPI.checkHealth();
+                msg('msg-red', ok ? '✓ Servidor respondiendo correctamente.' : '✕ No se pudo conectar al servidor.', ok);
+            } catch (e) {
+                msg('msg-red', e.message, false);
+            }
+        }
+
+        (function init() {
+            var params = new URLSearchParams(window.location.search);
+            var sec = params.get('sec') || 'general';
+            var btn = document.querySelector('.menu-cfg button[data-sec="' + sec + '"]');
+            if (btn) verSec(sec, btn);
+            else {
+                cargarGeneral();
+                cargarRed();
+            }
+        })();
+    </script>
+</body>
+</html>

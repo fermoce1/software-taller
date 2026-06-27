@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0;url=/proformas.html">
+    <title>Redirigiendo a Proformas…</title>
+    <script>
+        (function () {
+            var q = window.location.search;
+            var params = new URLSearchParams(q);
+            var id = params.get('orden') || params.get('id') || params.get('proforma') || '';
+            var dest = '/proformas.html' + (id ? '?proforma=' + encodeURIComponent(id) : '');
+            window.location.replace(dest);
+        })();
+    </script>
+</head>
+<body>
+    <p>Redirigiendo al módulo de <a href="/proformas.html">Proformas</a>…</p>
+</body>
+</html>

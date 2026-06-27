@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Repuestos (Inventario) — Sanmy Taller Mecánico</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html { height: 100%; height: 100dvh; }
+        body { height: 100dvh; overflow: hidden; background: #eef2f7; color: #1e293b; display: flex; flex-direction: column; }
+
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .nav-item { flex: 1 1 0; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
+        .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
+        .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .cuerpo { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: clamp(10px,1.6vw,20px); gap: 12px; }
+        .barra { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+        .barra h2 { font-size: clamp(16px,2vw,22px); color: #1e3a5f; margin-right: auto; }
+        .barra input.buscar { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; min-width: 200px; font-size: 14px; }
+        .resumen { font-size: 13px; color: #64748b; }
+        .btn { border: none; border-radius: 8px; padding: 9px 16px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-primario { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+        .btn-sec { background: #e2e8f0; color: #1e3a5f; }
+        .btn-mini { padding: 5px 9px; font-size: 12px; border-radius: 6px; }
+        .btn-edit { background: #dbeafe; color: #1d4ed8; }
+        .btn-del { background: #fee2e2; color: #b91c1c; }
+
+        .tabla-wrap { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead th { position: sticky; top: 0; background: #1e3a5f; color: #fff; text-align: left; padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+        tbody td { padding: 8px 12px; border-bottom: 1px solid #eef2f7; white-space: nowrap; }
+        tbody tr:hover { background: #f8fafc; }
+        tr.bajo { background: #fff7ed; }
+        tr.bajo:hover { background: #ffedd5; }
+        .alerta-bajo { color: #c2410c; font-weight: bold; font-size: 12px; }
+        .vacio { padding: 24px; text-align: center; color: #94a3b8; white-space: normal; }
+        .num { text-align: right; }
+
+        .modal { position: fixed; inset: 0; background: rgba(15,29,51,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+        .modal.activa { display: flex; }
+        .modal-box { background: #fff; border-radius: 14px; padding: 20px; width: min(520px,100%); max-height: 92dvh; overflow: auto; }
+        .modal-box h3 { color: #1e3a5f; margin-bottom: 12px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+        .campo.full { grid-column: 1 / -1; }
+        .campo label { font-size: 12px; color: #475569; font-weight: bold; }
+        .campo input { padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .modal-acciones { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+        #modal-estado { font-size: 13px; color: #dc2626; margin-top: 8px; min-height: 18px; }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
+        <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a class="nav-item activo" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
+        <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+    </nav>
+
+    <div class="cuerpo">
+        <div class="barra">
+            <h2>📦 Productos / Repuestos (Inventario)</h2>
+            <span class="resumen" id="resumen"></span>
+            <input type="search" class="buscar" id="buscar" placeholder="Buscar producto, código…" oninput="programar()">
+            <button type="button" class="btn btn-primario" onclick="abrirNuevo()">➕ Productos</button>
+        </div>
+        <div class="tabla-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th><th>Producto</th><th>Categoría</th><th>CABYS</th>
+                        <th class="num">Stock</th><th class="num">Mínimo</th><th class="num">Costo</th><th class="num">Precio</th><th class="num">IVA</th><th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                    <tr><td colspan="10" class="vacio">Cargando…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-box">
+            <h3 id="modal-titulo">Nuevo producto</h3>
+            <div class="grid2">
+                <div class="campo"><label>Código interno</label><input id="f-codigo" type="text" placeholder="Ej. FA-1001"></div>
+                <div class="campo"><label>Categoría</label><input id="f-categoria" type="text" placeholder="Filtros, Frenos…"></div>
+                <div class="campo full"><label>Nombre del producto *</label><input id="f-nombre" type="text" placeholder="Ej. Filtro de aceite Toyota"></div>
+                <div class="campo full"><label>Proveedor</label><input id="f-proveedor" type="text" placeholder="Nombre del proveedor"></div>
+                <div class="campo"><label>Cantidad en stock</label><input id="f-cantidad" type="number" step="0.01" value="0"></div>
+                <div class="campo"><label>Stock mínimo (alerta)</label><input id="f-minimo" type="number" step="0.01" value="0"></div>
+                <div class="campo"><label>Costo (₡)</label><input id="f-costo" type="number" step="0.01" value="0"></div>
+                <div class="campo"><label>Precio venta (₡)</label><input id="f-precio" type="number" step="0.01" value="0"></div>
+            </div>
+
+            <div style="margin:14px 0 8px;padding-top:12px;border-top:1px dashed #cbd5e1;">
+                <strong style="color:#1e3a5f;font-size:13px;">🧾 Datos para factura electrónica (Hacienda)</strong>
+                <p style="font-size:11px;color:#64748b;margin-top:2px;">El CABYS es obligatorio para facturar. Búscalo en <a href="https://www.hacienda.go.cr/ATV/ConsultaCabys/" target="_blank" rel="noopener" style="color:#2563eb;">hacienda.go.cr (CABYS)</a>.</p>
+            </div>
+            <div class="grid2">
+                <div class="campo full"><label>Código CABYS (13 dígitos)</label><input id="f-cabys" type="text" inputmode="numeric" maxlength="13" placeholder="Ej. 4011301000000"></div>
+                <div class="campo"><label>Unidad de medida</label>
+                    <input id="f-unidad" list="lista-unidades" type="text" placeholder="Unid">
+                    <datalist id="lista-unidades">
+                        <option value="Unid">Unidad</option>
+                        <option value="Sp">Servicio</option>
+                        <option value="L">Litro</option>
+                        <option value="kg">Kilogramo</option>
+                        <option value="m">Metro</option>
+                    </datalist>
+                </div>
+                <div class="campo"><label>IVA</label>
+                    <select id="f-iva" style="padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+                        <option value="13">13% (general)</option>
+                        <option value="0">0% / Exento</option>
+                        <option value="4">4%</option>
+                        <option value="2">2%</option>
+                        <option value="1">1%</option>
+                        <option value="8">8%</option>
+                    </select>
+                </div>
+            </div>
+            <div id="modal-estado"></div>
+            <div class="modal-acciones">
+                <button type="button" class="btn btn-sec" onclick="cerrarModal()">Cancelar</button>
+                <button type="button" class="btn btn-primario" id="btn-guardar" onclick="guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        var timer = null, editId = null;
+        function programar() { if (timer) clearTimeout(timer); timer = setTimeout(cargar, 300); }
+
+        function fmtColones(v) {
+            var n = Number(v) || 0;
+            return '₡' + n.toLocaleString('es-CR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function num(v) { var n = Number(v) || 0; return n.toLocaleString('es-CR', { maximumFractionDigits: 2 }); }
+
+        async function cargar() {
+            var tbody = document.getElementById('tbody');
+            var q = document.getElementById('buscar').value.trim();
+            try {
+                var data = await TallerAPI.getTallerInventario(q);
+                var filas = data.filas || [];
+                document.getElementById('resumen').textContent =
+                    filas.length + ' repuesto(s) · ' + (data.bajos || 0) + ' bajo mínimo · valor ' + fmtColones(data.valor_inventario);
+                if (!filas.length) {
+                    tbody.innerHTML = '<tr><td colspan="10" class="vacio">Sin productos. Pulse «Productos» para empezar.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = filas.map(function (i) {
+                    var bajo = Number(i.stock_minimo) > 0 && Number(i.cantidad) <= Number(i.stock_minimo);
+                    var cabysCell = i.cabys
+                        ? '<span style="font-family:monospace;font-size:12px;">' + esc(i.cabys) + '</span>'
+                        : '<span class="alerta-bajo">⚠ falta</span>';
+                    var ivaPct = (i.iva == null || i.iva === '') ? 13 : Number(i.iva);
+                    return '<tr class="' + (bajo ? 'bajo' : '') + '">' +
+                        '<td>' + esc(i.codigo || '—') + '</td>' +
+                        '<td><strong>' + esc(i.nombre) + '</strong></td>' +
+                        '<td>' + esc(i.categoria || '—') + '</td>' +
+                        '<td>' + cabysCell + '</td>' +
+                        '<td class="num">' + num(i.cantidad) + (bajo ? ' <span class="alerta-bajo">⚠</span>' : '') + '</td>' +
+                        '<td class="num">' + num(i.stock_minimo) + '</td>' +
+                        '<td class="num">' + fmtColones(i.costo) + '</td>' +
+                        '<td class="num">' + fmtColones(i.precio) + '</td>' +
+                        '<td class="num">' + ivaPct + '%</td>' +
+                        '<td>' +
+                            '<button class="btn btn-mini btn-edit" onclick=\'editar(' + JSON.stringify(i) + ')\'>Editar</button> ' +
+                            '<button class="btn btn-mini btn-del" onclick="eliminar(' + i.id + ',\'' + esc(i.nombre).replace(/'/g, "&#39;") + '\')">Eliminar</button>' +
+                        '</td>' +
+                        '</tr>';
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="10" class="vacio">Error: ' + esc(e.message) + '</td></tr>';
+            }
+        }
+
+        function setForm(i) {
+            i = i || {};
+            document.getElementById('f-codigo').value = i.codigo || '';
+            document.getElementById('f-categoria').value = i.categoria || '';
+            document.getElementById('f-nombre').value = i.nombre || '';
+            document.getElementById('f-proveedor').value = i.proveedor || '';
+            document.getElementById('f-cantidad').value = i.cantidad != null ? i.cantidad : 0;
+            document.getElementById('f-minimo').value = i.stock_minimo != null ? i.stock_minimo : 0;
+            document.getElementById('f-costo').value = i.costo != null ? i.costo : 0;
+            document.getElementById('f-precio').value = i.precio != null ? i.precio : 0;
+            document.getElementById('f-cabys').value = i.cabys || '';
+            document.getElementById('f-unidad').value = i.unidad_medida || 'Unid';
+            document.getElementById('f-iva').value = (i.iva == null || i.iva === '') ? '13' : String(Number(i.iva));
+            document.getElementById('modal-estado').textContent = '';
+        }
+
+        function abrirNuevo() {
+            editId = null;
+            document.getElementById('modal-titulo').textContent = 'Nuevo producto';
+            setForm({});
+            document.getElementById('modal').classList.add('activa');
+        }
+
+        function editar(i) {
+            editId = i.id;
+            document.getElementById('modal-titulo').textContent = 'Editar producto';
+            setForm(i);
+            document.getElementById('modal').classList.add('activa');
+        }
+
+        function cerrarModal() { document.getElementById('modal').classList.remove('activa'); }
+
+        function leerForm() {
+            return {
+                codigo: document.getElementById('f-codigo').value.trim(),
+                categoria: document.getElementById('f-categoria').value.trim(),
+                nombre: document.getElementById('f-nombre').value.trim(),
+                proveedor: document.getElementById('f-proveedor').value.trim(),
+                cantidad: document.getElementById('f-cantidad').value,
+                stock_minimo: document.getElementById('f-minimo').value,
+                costo: document.getElementById('f-costo').value,
+                precio: document.getElementById('f-precio').value,
+                cabys: document.getElementById('f-cabys').value.trim(),
+                unidad_medida: document.getElementById('f-unidad').value.trim() || 'Unid',
+                iva: document.getElementById('f-iva').value
+            };
+        }
+
+        async function guardar() {
+            var estado = document.getElementById('modal-estado');
+            var datos = leerForm();
+            if (!datos.nombre) { estado.textContent = 'El nombre del repuesto es obligatorio.'; return; }
+            var btn = document.getElementById('btn-guardar');
+            btn.disabled = true;
+            try {
+                if (editId) await TallerAPI.actualizarItemInventario(editId, datos);
+                else await TallerAPI.crearItemInventario(datos);
+                cerrarModal();
+                cargar();
+            } catch (e) {
+                estado.textContent = 'No se pudo guardar: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function eliminar(id, nombre) {
+            if (!confirm('¿Eliminar el repuesto "' + nombre + '"?')) return;
+            try {
+                await TallerAPI.eliminarItemInventario(id);
+                cargar();
+            } catch (e) {
+                alert('No se pudo eliminar: ' + e.message);
+            }
+        }
+
+        document.getElementById('modal').addEventListener('click', function (e) {
+            if (e.target === this) cerrarModal();
+        });
+
+        cargar();
+    </script>
+</body>
+</html>

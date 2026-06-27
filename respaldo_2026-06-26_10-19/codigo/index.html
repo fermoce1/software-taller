@@ -1,0 +1,1736 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Sanmy Taller Mecánico</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        html {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            width: 100%;
+            min-height: 100%;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #eef2f7;
+            display: block;
+        }
+        .app { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; }
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .topnav .nav-item { flex: 1 1 0; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
+        .topnav .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
+        .topnav .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .topnav .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            color: white;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+        .header h1 { font-size: 18px; flex: 1; }
+        .header a, .header button {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .header a:hover, .header button:hover { background: rgba(255,255,255,0.28); }
+        .main { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: minmax(0, 1fr); gap: 0; overflow: hidden; }
+        @media (max-width: 900px) { .main { grid-template-columns: 1fr; } .panel-lista.oculto-movil { display: none; } }
+        .panel-lista {
+            background: white;
+            border-right: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .panel-lista-top {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        .panel-lista-top input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .filtros-ordenes { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filtro-btn {
+            padding: 6px 10px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .filtro-btn.activo { background: #2563eb; color: white; border-color: #2563eb; }
+        .lista-ordenes { flex: 1; overflow-y: auto; padding: 8px; }
+        .orden-card {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            background: #fafafa;
+        }
+        .orden-card.activa { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 2px #93c5fd; }
+        .orden-card-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            background: #e2e8f0;
+            object-fit: cover;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .orden-card-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .orden-card-body { flex: 1; min-width: 0; }
+        .orden-card-placa { font-weight: bold; font-size: 15px; color: #1e293b; }
+        .orden-card-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .badge-estado {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+        .est-ingreso { background: #dbeafe; color: #1d4ed8; }
+        .est-diagnostico { background: #fef3c7; color: #b45309; }
+        .est-en_proceso { background: #ede9fe; color: #6d28d9; }
+        .est-listo { background: #dcfce7; color: #15803d; }
+        .est-entregado { background: #f1f5f9; color: #475569; }
+        .est-cancelado { background: #fee2e2; color: #b91c1c; }
+        .panel-detalle {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .detalle-vacio {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 16px;
+            text-align: center;
+            padding: 24px;
+        }
+        .detalle-contenido { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+        .detalle-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .detalle-header-info { flex: 1; min-width: 200px; }
+        .detalle-header-info h2 { font-size: 22px; color: #1e3a5f; }
+        .detalle-header-info p { color: #64748b; font-size: 14px; margin-top: 4px; }
+        .btn-primario {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-secundario {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-verde { background: #16a34a; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .wa-acciones { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+        .seccion-whatsapp {
+            border: 2px solid #25D366;
+            background: #f0fdf4;
+        }
+        .seccion-whatsapp h3 { color: #15803d; }
+        .modal-cobro-wa {
+            margin-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+        }
+        .modal-cobro-wa-titulo {
+            font-size: 13px;
+            font-weight: bold;
+            color: #15803d;
+            margin-bottom: 8px;
+        }
+        .seccion {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        .seccion h3 { font-size: 14px; color: #475569; margin-bottom: 10px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-grid label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; }
+        .form-grid input, .form-grid select, .form-grid textarea {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-grid textarea { min-height: 70px; resize: vertical; }
+        .form-full { grid-column: 1 / -1; }
+        .galeria-fotos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .foto-item {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            position: relative;
+            background: #f1f5f9;
+        }
+        .foto-item img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-add {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #64748b;
+            border-style: dashed;
+        }
+        .foto-add span { font-size: 11px; font-weight: bold; margin-top: 4px; }
+        .tabla-lineas { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tabla-lineas th, .tabla-lineas td { padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        .tabla-lineas th { background: #f8fafc; color: #475569; font-size: 12px; }
+        .tabla-lineas td.num { text-align: right; font-weight: bold; }
+        .totales-box {
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .totales-box strong { font-size: 20px; color: #1e3a5f; }
+        .fila-agregar-linea { display: grid; grid-template-columns: 100px 1fr 80px 100px auto; gap: 8px; margin-top: 10px; align-items: end; }
+        @media (max-width: 700px) { .fila-agregar-linea { grid-template-columns: 1fr 1fr; } }
+        .fila-agregar-linea input, .fila-agregar-linea select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.activa { display: flex; }
+        .modal-foto-grande { max-width: 95vw; max-height: 90dvh; border-radius: 12px; }
+        .estado-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        #input-foto-file { display: none; }
+        .msg-api { padding: 8px 12px; background: #fef3c7; color: #92400e; font-size: 13px; text-align: center; }
+        .placa-wrap { position: relative; }
+        .vehiculo-wrap { position: relative; }
+        .sugerencias-placa {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            z-index: 50;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+        .sugerencias-marca { max-height: 280px; }
+        .sugerencias-modelo { max-height: 220px; }
+        .sugerencia-placa-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+        }
+        .sugerencia-placa-item:hover { background: #eff6ff; }
+        .sugerencia-placa-item strong { color: #1e3a5f; }
+        .aviso-vehiculo-encontrado {
+            grid-column: 1 / -1;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .detalle-header-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+        .modal-cobro-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 92dvh;
+            overflow-y: auto;
+        }
+        .modal-cobro-metodos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+        .modal-cobro-metodo {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .modal-cobro-metodo.seleccionado { border-color: #2563eb; background: #eff6ff; }
+        .historial-item {
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .historial-item:hover { background: #f1f5f9; }
+        .btn-cancelar { background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .header-resumen {
+            font-size: 11px;
+            opacity: 0.95;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-width: 420px;
+        }
+        .header-resumen span { white-space: nowrap; }
+        .badge-saldo {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #ffedd5;
+            color: #c2410c;
+            margin-top: 4px;
+        }
+        .modal-cobro-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .modal-cobro-tab {
+            flex: 1;
+            padding: 8px 6px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .modal-cobro-tab.activo { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+        .modal-cobro-tab.apartado.activo { border-color: #ea580c; background: #ffedd5; color: #c2410c; }
+        .modal-cobro-tab.credito.activo { border-color: #7c3aed; background: #ede9fe; color: #6d28d9; }
+        .modal-pendientes-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 640px;
+            width: 100%;
+            max-height: 85dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-pendientes-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .modal-pendientes-tabs button {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .modal-pendientes-tabs button.activo { background: #2563eb; color: white; border-color: #2563eb; }
+        .lista-pendientes { flex: 1; overflow-y: auto; }
+        .pendiente-item {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .pendiente-item:hover { background: #f1f5f9; }
+        .tabla-abonos { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+        .tabla-abonos th, .tabla-abonos td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        .tabla-abonos td.num { text-align: right; }
+        @media (max-width: 900px) { .header-resumen { display: none; } }
+        .fe-cobro-seccion {
+            margin-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+        }
+        .fe-cobro-campos { margin-top: 10px; display: none; }
+        .fe-cobro-campos.activa { display: block; }
+        .fe-cobro-campos label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #64748b;
+            margin: 8px 0 4px;
+        }
+        .fe-cobro-campos input, .fe-cobro-campos select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .modal-fe-config-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90dvh;
+            overflow-y: auto;
+        }
+        .modal-fe-config-box input, .modal-fe-config-box select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .modal-fe-config-box label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .fe-clave-badge {
+            font-size: 11px;
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .campo-marca-modelo { display: flex; gap: 6px; align-items: stretch; }
+        .campo-marca-modelo input { flex: 1; min-width: 0; cursor: pointer; }
+        .btn-picker-vehiculo {
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .btn-picker-vehiculo:hover { background: #eff6ff; border-color: #2563eb; }
+        .modal-picker-vehiculo-box {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            max-width: 420px;
+            width: 100%;
+            max-height: 85dvh;
+            display: flex;
+            flex-direction: column;
+        }
+        .picker-buscar {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+        .picker-lista {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            min-height: 200px;
+            max-height: 55dvh;
+        }
+        .picker-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .picker-item:hover, .picker-item.activo { background: #eff6ff; color: #1d4ed8; }
+        .picker-item:last-child { border-bottom: none; }
+        .picker-vacio {
+            padding: 24px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+    <link rel="stylesheet" href="responsive.css?v=3">
+</head>
+<body>
+    <div class="app">
+        <nav class="topnav">
+            <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+            <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+            <a class="nav-item activo" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+            <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
+            <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+            <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
+            <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
+            <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+            <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+        </nav>
+        <div id="msg-api" class="msg-api" style="display:none;"></div>
+        <div class="main">
+            <aside class="panel-lista" id="panel-lista">
+                <div class="panel-lista-top">
+                    <input type="search" id="buscar-ordenes" placeholder="Buscar placa, cliente, #orden..." oninput="programarBusqueda()">
+                    <div class="filtros-ordenes">
+                        <button type="button" class="filtro-btn activo" data-filtro="activas" onclick="cambiarFiltro('activas', this)">Activas</button>
+                        <button type="button" class="filtro-btn" data-filtro="diagnostico" onclick="cambiarFiltro('diagnostico', this)">Diagnóstico</button>
+                        <button type="button" class="filtro-btn" data-filtro="listo" onclick="cambiarFiltro('listo', this)">Listas</button>
+                        <button type="button" class="filtro-btn" data-filtro="entregado" onclick="cambiarFiltro('entregado', this)">Entregadas</button>
+                        <button type="button" class="filtro-btn" data-filtro="pendientes" onclick="cambiarFiltro('pendientes', this)">Pend. cobro</button>
+                        <button type="button" class="filtro-btn" data-filtro="todas" onclick="cambiarFiltro('todas', this)">Todas</button>
+                    </div>
+                </div>
+                <div id="lista-ordenes" class="lista-ordenes"></div>
+            </aside>
+            <section class="panel-detalle" id="panel-detalle">
+                <div id="vista-vacia" class="detalle-vacio">
+                    <div>
+                        <p style="font-size:48px;margin-bottom:12px;">🚗</p>
+                        <p>Seleccione una orden de la lista</p>
+                        <button type="button" onclick="mostrarNuevaOrden()" style="margin-top:16px;border:none;border-radius:10px;padding:12px 22px;font-weight:bold;font-size:15px;cursor:pointer;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;">➕ Nueva orden</button>
+                    </div>
+                </div>
+                <div id="vista-nueva" class="detalle-contenido" style="display:none;"></div>
+                <div id="vista-detalle" class="detalle-contenido" style="display:none;"></div>
+            </section>
+        </div>
+    </div>
+
+    <div id="modal-foto" class="modal-overlay" onclick="cerrarModalFoto()">
+        <img id="modal-foto-img" class="modal-foto-grande" alt="Foto vehículo" onclick="event.stopPropagation()">
+    </div>
+
+    <div id="modal-cobro" class="modal-overlay" onclick="cerrarModalCobro()">
+        <div class="modal-cobro-box" onclick="event.stopPropagation()">
+            <h3 id="modal-cobro-titulo" style="margin-bottom:8px;">Cobrar y entregar</h3>
+            <p id="modal-cobro-total" style="font-size:22px;font-weight:bold;color:#1e3a5f;"></p>
+            <p id="modal-cobro-saldo-info" style="font-size:13px;color:#64748b;margin-bottom:8px;display:none;"></p>
+            <div id="modal-cobro-tabs" class="modal-cobro-tabs">
+                <button type="button" class="modal-cobro-tab activo" data-tipo="contado" onclick="seleccionarTipoCobro(this)">💵 Contado</button>
+                <button type="button" class="modal-cobro-tab apartado" data-tipo="apartado" onclick="seleccionarTipoCobro(this)">📦 Apartado</button>
+                <button type="button" class="modal-cobro-tab credito" data-tipo="credito" onclick="seleccionarTipoCobro(this)">📝 Crédito</button>
+            </div>
+            <p style="font-size:13px;color:#64748b;margin-bottom:8px;">Método de pago</p>
+            <div class="modal-cobro-metodos">
+                <button type="button" class="modal-cobro-metodo seleccionado" data-metodo="efectivo" onclick="seleccionarMetodoCobro(this)">💵 Efectivo</button>
+                <button type="button" class="modal-cobro-metodo" data-metodo="tarjeta" onclick="seleccionarMetodoCobro(this)">💳 Tarjeta</button>
+                <button type="button" class="modal-cobro-metodo" data-metodo="sinpe" onclick="seleccionarMetodoCobro(this)">📱 SINPE</button>
+                <button type="button" class="modal-cobro-metodo" data-metodo="otro" onclick="seleccionarMetodoCobro(this)">Otro</button>
+            </div>
+            <label id="modal-cobro-monto-label" style="font-size:12px;font-weight:bold;color:#64748b;">Monto cobrado</label>
+            <input id="modal-cobro-monto" type="number" step="0.01" style="width:100%;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;">
+            <p id="modal-cobro-preview" style="font-size:12px;color:#64748b;margin-top:8px;"></p>
+            <div class="fe-cobro-seccion">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold;cursor:pointer;">
+                    <input type="checkbox" id="modal-cobro-fe" onchange="toggleCamposFeCobro()">
+                    Emitir factura electrónica (Hacienda CR)
+                </label>
+                <p style="font-size:11px;color:#64748b;margin-top:4px;">Sin marcar: factura de tiquete imprimible. Con marcar: requiere nombre y cédula del cliente.</p>
+                <div id="modal-cobro-fe-campos" class="fe-cobro-campos">
+                    <label for="modal-fe-tipo-id">Tipo identificación</label>
+                    <select id="modal-fe-tipo-id">
+                        <option value="01">Cédula física</option>
+                        <option value="02">Cédula jurídica</option>
+                        <option value="03">DIMEX</option>
+                        <option value="04">NITE</option>
+                    </select>
+                    <label for="modal-fe-cedula">Identificación *</label>
+                    <input id="modal-fe-cedula" type="text" placeholder="Ej. 1-2345-6789">
+                    <label for="modal-fe-nombre">Nombre o razón social *</label>
+                    <input id="modal-fe-nombre" type="text" placeholder="Nombre del cliente">
+                    <label for="modal-fe-email">Correo (opcional)</label>
+                    <input id="modal-fe-email" type="email" placeholder="cliente@correo.com">
+                </div>
+            </div>
+            <div class="modal-cobro-wa">
+                <p class="modal-cobro-wa-titulo">📱 Enviar al cliente por WhatsApp</p>
+                <div class="wa-acciones">
+                    <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(cobroOrdenId, 'factura')">📱 Factura</button>
+                    <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(cobroOrdenId, 'orden')">📱 Orden</button>
+                    <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(cobroOrdenId, 'presupuesto')">📱 Presupuesto</button>
+                    <button type="button" class="btn-secundario" onclick="descargarPdfOrden(cobroOrdenId, 'factura')">📄 Ver PDF</button>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+                <button type="button" class="btn-verde" style="flex:1;" id="modal-cobro-confirmar" onclick="confirmarCobro()">Confirmar cobro</button>
+                <button type="button" class="btn-secundario" onclick="cerrarModalCobro()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-fe-config" class="modal-overlay" onclick="cerrarModalFeConfig()">
+        <div class="modal-fe-config-box" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:12px;">📄 Factura electrónica — configuración</h3>
+            <p style="font-size:13px;color:#64748b;margin-bottom:14px;">Costa Rica (Hacienda). Modo simulación para pruebas sin API. Conecte su proveedor FE en modo API.</p>
+            <label>Modo</label>
+            <select id="fe-cfg-modo">
+                <option value="simulacion">Simulación (pruebas)</option>
+                <option value="api">API proveedor FE</option>
+            </select>
+            <label>URL API (POST factura)</label>
+            <input id="fe-cfg-url" type="url" placeholder="https://api.proveedor-fe.com/v1/facturas">
+            <label>Token API (Bearer)</label>
+            <input id="fe-cfg-token" type="password" placeholder="Token opcional">
+            <label>Cédula jurídica emisor *</label>
+            <input id="fe-cfg-cedula" type="text" placeholder="3-101-123456">
+            <label>Nombre emisor *</label>
+            <input id="fe-cfg-nombre" type="text" placeholder="Razón social del taller">
+            <label>Email emisor</label>
+            <input id="fe-cfg-email" type="email" placeholder="taller@correo.com">
+            <label>Actividad económica (CIIU)</label>
+            <input id="fe-cfg-actividad" type="text" value="452000" placeholder="452000 — taller mecánico">
+            <label>Sucursal</label>
+            <input id="fe-cfg-sucursal" type="text" value="001">
+            <label>Terminal</label>
+            <input id="fe-cfg-terminal" type="text" value="001">
+            <p id="fe-cfg-estado" style="font-size:13px;margin:10px 0;"></p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <button type="button" class="btn-primario" onclick="guardarFeConfig()">Guardar</button>
+                <button type="button" class="btn-secundario" onclick="probarFeConfig()">Probar conexión</button>
+                <button type="button" class="btn-secundario" onclick="cerrarModalFeConfig()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pendientes" class="modal-overlay" onclick="cerrarPendientesCobro()">
+        <div class="modal-pendientes-box" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:8px;">📋 Créditos y apartados pendientes</h3>
+            <p id="pendientes-resumen" style="font-size:13px;color:#64748b;margin-bottom:12px;"></p>
+            <div class="modal-pendientes-tabs">
+                <button type="button" class="activo" data-tipo="" onclick="filtrarPendientesCobro('', this)">Todos</button>
+                <button type="button" data-tipo="apartado" onclick="filtrarPendientesCobro('apartado', this)">📦 Apartados</button>
+                <button type="button" data-tipo="credito" onclick="filtrarPendientesCobro('credito', this)">📝 Créditos</button>
+            </div>
+            <div id="lista-pendientes" class="lista-pendientes"></div>
+            <div style="margin-top:12px;">
+                <button type="button" class="btn-secundario" onclick="cerrarPendientesCobro()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    <div id="modal-picker-vehiculo" class="modal-overlay" onclick="if(event.target===this) cerrarPickerVehiculo()">
+        <div class="modal-picker-vehiculo-box" onclick="event.stopPropagation()">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <button type="button" id="picker-btn-volver-marca" class="btn-secundario" style="display:none;padding:6px 10px;font-size:12px;" onclick="volverPickerMarca()">← Marcas</button>
+                <h3 id="picker-vehiculo-titulo" style="color:#1e3a5f;flex:1;margin:0;">Seleccionar marca</h3>
+            </div>
+            <p id="picker-vehiculo-sub" style="font-size:13px;color:#64748b;margin-bottom:8px;display:none;"></p>
+            <input type="search" id="picker-vehiculo-buscar" class="picker-buscar" placeholder="Buscar marca..." oninput="filtrarPickerVehiculo()">
+            <div id="picker-vehiculo-lista" class="picker-lista"></div>
+            <div style="margin-top:12px;display:flex;gap:8px;">
+                <button type="button" class="btn-secundario" onclick="cerrarPickerVehiculo()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="input-foto-file" accept="image/*" capture="environment">
+
+    <script src="vehiculos-marcas.js?v=3"></script>
+    <script src="vehiculo-picker.js?v=2"></script>
+    <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        var filtroActual = 'activas';
+        var ordenActivaId = null;
+        var busquedaTimer = null;
+        var fotoTargetOrdenId = null;
+        var placaBusquedaTimer = null;
+        var cobroOrdenId = null;
+        var metodoCobroSeleccionado = 'efectivo';
+        var tipoCobroSeleccionado = 'contado';
+        var cobroOrdenTotal = 0;
+        var cobroOrdenSaldo = 0;
+        var modoCobroModal = 'cobro';
+        var pendientesFiltroTipo = '';
+
+        var ESTADOS_LABEL = {
+            ingreso: 'Ingreso',
+            diagnostico: 'Diagnóstico',
+            en_proceso: 'En proceso',
+            listo: 'Listo',
+            entregado: 'Entregado',
+            cancelado: 'Cancelado'
+        };
+
+        function fmtColones(n) {
+            return '₡' + (parseFloat(n) || 0).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function escHtml(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function badgeEstado(estado) {
+            return '<span class="badge-estado est-' + escHtml(estado) + '">' + escHtml(ESTADOS_LABEL[estado] || estado) + '</span>';
+        }
+
+        async function initTaller() {
+            const ok = await TallerAPI.checkHealth();
+            const badge = document.getElementById('api-badge');
+            if (badge) {
+                badge.textContent = ok ? '● API OK' : '● Sin API';
+                badge.style.color = ok ? '#86efac' : '#fca5a5';
+            }
+            const msg = document.getElementById('msg-api');
+            if (msg) {
+                if (!ok) {
+                    msg.style.display = 'block';
+                    msg.textContent = 'Servidor no disponible. Ejecute ABRIR-SISTEMA.bat';
+                } else {
+                    msg.style.display = 'none';
+                }
+            }
+            if (ok) {
+                try {
+                    const cfg = await TallerAPI.getTallerConfig();
+                    const titulo = document.getElementById('titulo-negocio');
+                    if (cfg.nombre_negocio && titulo) {
+                        titulo.textContent = cfg.nombre_negocio;
+                    }
+                } catch (e) { /* ignore */ }
+                await cargarInventarioCache();
+            }
+            await cargarListaOrdenes();
+            actualizarLayoutMovil('vacia');
+            ejecutarAccionUrl();
+        }
+
+        var inventarioCache = [];
+        async function cargarInventarioCache() {
+            try {
+                const data = await TallerAPI.getTallerInventario();
+                inventarioCache = (data && data.filas) ? data.filas : [];
+            } catch (e) {
+                inventarioCache = [];
+            }
+        }
+
+        function opcionesInventarioHtml() {
+            if (!inventarioCache.length) return '';
+            var opts = '<option value="">— Repuesto del inventario —</option>';
+            inventarioCache.forEach(function (it) {
+                var stock = Number(it.cantidad) || 0;
+                opts += '<option value="' + it.id + '">' +
+                    escHtml(it.nombre) + (it.codigo ? ' (' + escHtml(it.codigo) + ')' : '') +
+                    ' · stock: ' + stock + '</option>';
+            });
+            return opts;
+        }
+
+        function seleccionarRepuestoInv() {
+            var sel = document.getElementById('l-inventario');
+            if (!sel || !sel.value) return;
+            var item = inventarioCache.find(function (it) { return String(it.id) === String(sel.value); });
+            if (!item) return;
+            var desc = document.getElementById('l-desc');
+            var precio = document.getElementById('l-precio');
+            var tipo = document.getElementById('l-tipo');
+            if (desc) desc.value = item.nombre + (item.codigo ? ' (' + item.codigo + ')' : '');
+            if (precio) precio.value = Number(item.precio) || 0;
+            if (tipo) tipo.value = 'repuesto';
+        }
+
+        function ejecutarAccionUrl() {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var filtro = params.get('filtro');
+                if (filtro) {
+                    filtroActual = filtro;
+                    document.querySelectorAll('.filtro-btn').forEach(function (b) {
+                        b.classList.toggle('activo', b.getAttribute('data-filtro') === filtro);
+                    });
+                    cargarListaOrdenes();
+                }
+                var accion = params.get('accion');
+                if (!accion) return;
+                if (accion === 'nueva' && typeof mostrarNuevaOrden === 'function') {
+                    mostrarNuevaOrden();
+                } else if (accion === 'pendientes' && typeof mostrarPendientesCobro === 'function') {
+                    mostrarPendientesCobro();
+                } else if (accion === 'fe' && typeof abrirModalFeConfig === 'function') {
+                    abrirModalFeConfig();
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        async function cargarResumenHoy() {
+            const el = document.getElementById('header-resumen');
+            if (!el) return;
+            try {
+                const r = await TallerAPI.getTallerResumenHoy();
+                el.innerHTML =
+                    '<span>🚗 Activas: <strong>' + r.ordenes_activas + '</strong></span>' +
+                    '<span>✅ Listas: <strong>' + r.ordenes_listas + '</strong></span>' +
+                    '<span>📤 Hoy: <strong>' + r.entregadas_hoy + '</strong></span>' +
+                    '<span>💵 Cobrado hoy: <strong>' + fmtColones(r.cobrado_hoy) + '</strong></span>' +
+                    (r.pendientes_cobro > 0
+                        ? '<span>⏳ Pend.: <strong>' + r.pendientes_cobro + ' (' + fmtColones(r.saldo_pendiente_total) + ')</strong></span>'
+                        : '');
+            } catch (e) {
+                el.innerHTML = '';
+            }
+        }
+
+        function programarBusqueda() {
+            if (busquedaTimer) clearTimeout(busquedaTimer);
+            busquedaTimer = setTimeout(cargarListaOrdenes, 300);
+        }
+
+        function cambiarFiltro(filtro, btn) {
+            filtroActual = filtro;
+            document.querySelectorAll('.filtro-btn').forEach(function (b) { b.classList.remove('activo'); });
+            if (btn) btn.classList.add('activo');
+            cargarListaOrdenes();
+        }
+
+        function paramsLista() {
+            const q = document.getElementById('buscar-ordenes').value.trim();
+            const p = { q: q };
+            if (filtroActual === 'activas') { /* default API */ }
+            else if (filtroActual === 'todas') p.todos = true;
+            else if (filtroActual === 'pendientes') p.pendientes = true;
+            else p.estado = filtroActual;
+            return p;
+        }
+
+        async function cargarListaOrdenes() {
+            const cont = document.getElementById('lista-ordenes');
+            try {
+                const data = await TallerAPI.getTallerOrdenes(paramsLista());
+                const filas = data.filas || [];
+                if (!filas.length) {
+                    cont.innerHTML = '<p style="padding:16px;color:#94a3b8;text-align:center;">Sin órdenes</p>';
+                    return;
+                }
+                cont.innerHTML = filas.map(function (o) {
+                    const thumb = o.foto_url
+                        ? '<img src="' + escHtml(o.foto_url) + '" alt="">'
+                        : '🚗';
+                    const activa = ordenActivaId === o.id ? ' activa' : '';
+                    return '<div class="orden-card' + activa + '" onclick="abrirOrden(' + o.id + ')">' +
+                        '<div class="orden-card-thumb">' + (o.foto_url ? thumb : '🚗') + '</div>' +
+                        '<div class="orden-card-body">' +
+                        '<div class="orden-card-placa">#' + o.numero + ' · ' + escHtml(o.placa) + '</div>' +
+                        '<div class="orden-card-meta">' + escHtml(o.marca || '') + ' ' + escHtml(o.modelo || '') + '</div>' +
+                        '<div class="orden-card-meta">' + escHtml(o.cliente_nombre || 'Sin cliente') + '</div>' +
+                        badgeEstado(o.estado) +
+                        (o.saldo_pendiente > 0
+                            ? '<span class="badge-saldo">Saldo ' + fmtColones(o.saldo_pendiente) + '</span>'
+                            : '') +
+                        '<div class="orden-card-meta" style="margin-top:4px;font-weight:bold;">' + fmtColones(o.total) + '</div>' +
+                        '</div></div>';
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '<p style="padding:16px;color:#b91c1c;">' + escHtml(e.message) + '</p>';
+            }
+        }
+
+        function esPantallaEstrecha() {
+            return window.matchMedia('(max-width: 900px)').matches;
+        }
+
+        function actualizarLayoutMovil(vista) {
+            var lista = document.getElementById('panel-lista');
+            var detalle = document.getElementById('panel-detalle');
+            if (!lista || !detalle) return;
+            if (!esPantallaEstrecha()) {
+                lista.classList.remove('oculto-movil');
+                detalle.classList.remove('oculto-movil');
+                return;
+            }
+            if (vista === 'vacia') {
+                lista.classList.remove('oculto-movil');
+                detalle.classList.add('oculto-movil');
+            } else {
+                lista.classList.add('oculto-movil');
+                detalle.classList.remove('oculto-movil');
+            }
+        }
+
+        function volverALista() {
+            ordenActivaId = null;
+            document.querySelectorAll('.orden-card').forEach(function (c) { c.classList.remove('activa'); });
+            mostrarVista('vacia');
+        }
+
+        function mostrarVista(nombre) {
+            document.getElementById('vista-vacia').style.display = nombre === 'vacia' ? 'flex' : 'none';
+            document.getElementById('vista-nueva').style.display = nombre === 'nueva' ? 'block' : 'none';
+            document.getElementById('vista-detalle').style.display = nombre === 'detalle' ? 'block' : 'none';
+            actualizarLayoutMovil(nombre);
+        }
+
+        window.addEventListener('resize', function () {
+            var vista = 'vacia';
+            if (document.getElementById('vista-detalle').style.display !== 'none') vista = 'detalle';
+            else if (document.getElementById('vista-nueva').style.display !== 'none') vista = 'nueva';
+            actualizarLayoutMovil(vista);
+        });
+
+        function mostrarNuevaOrden() {
+            ordenActivaId = null;
+            document.querySelectorAll('.orden-card').forEach(function (c) { c.classList.remove('activa'); });
+            mostrarVista('nueva');
+            document.getElementById('vista-nueva').innerHTML =
+                '<button type="button" class="btn-volver-lista" onclick="volverALista()">← Volver a órdenes</button>' +
+                '<div class="seccion"><h3>🚗 Ingreso de vehículo</h3>' +
+                '<div class="form-grid">' +
+                '<div class="placa-wrap form-full"><label>Placa *</label>' +
+                '<input id="n-placa" placeholder="ABC-123" style="text-transform:uppercase" autocomplete="off" oninput="buscarPlacaEnFormulario()">' +
+                '<div id="sugerencias-placa" class="sugerencias-placa" style="display:none;"></div></div>' +
+                '<div id="aviso-vehiculo" class="aviso-vehiculo-encontrado" style="display:none;"></div>' +
+                '<div><label>Cliente *</label><input id="n-cliente" placeholder="Nombre"></div>' +
+                '<div><label>Teléfono</label><input id="n-telefono" type="tel"></div>' +
+                '<div><label>Cédula</label><input id="n-cedula"></div>' +
+                '<div class="vehiculo-wrap"><label>Marca</label>' +
+                '<div class="campo-marca-modelo">' +
+                '<input id="n-marca" placeholder="Clic o ▼ para ver marcas" autocomplete="off" onclick="abrirPickerMarca()">' +
+                '<button type="button" class="btn-picker-vehiculo" title="Ver marcas" onclick="abrirPickerMarca()">▼</button></div></div>' +
+                '<div class="vehiculo-wrap"><label>Modelo</label>' +
+                '<div class="campo-marca-modelo">' +
+                '<input id="n-modelo" placeholder="Clic o ▼ para ver modelos" autocomplete="off" onclick="abrirPickerModelo()">' +
+                '<button type="button" class="btn-picker-vehiculo" title="Ver modelos" onclick="abrirPickerModelo()">▼</button></div></div>' +
+                '<div><label>Año</label><input id="n-anio" type="number" min="1980" max="2030"></div>' +
+                '<div><label>Color</label><input id="n-color"></div>' +
+                '<div><label>Kilometraje</label><input id="n-km" type="number"></div>' +
+                '<div class="form-full"><label>Diagnóstico / motivo ingreso</label><textarea id="n-diagnostico" placeholder="Ruido en frenos, cambio de aceite..."></textarea></div>' +
+                '<div class="form-full"><label>Observaciones</label><textarea id="n-obs"></textarea></div>' +
+                '</div>' +
+                '<div class="seccion" style="margin-top:14px;margin-bottom:0;">' +
+                '<h3>📷 Foto del vehículo</h3>' +
+                '<div class="galeria-fotos"><div class="foto-item foto-add" onclick="seleccionarFotoNueva()">' +
+                '<span>📷</span><span>Tomar / elegir</span></div>' +
+                '<div id="preview-foto-nueva" style="display:none;" class="foto-item"><img id="img-preview-nueva" alt=""></div></div>' +
+                '</div>' +
+                '<div style="margin-top:16px;display:flex;gap:10px;">' +
+                '<button type="button" class="btn-primario" onclick="guardarNuevaOrden()">✅ Crear orden</button>' +
+                '<button type="button" class="btn-secundario" onclick="mostrarVista(\'vacia\')">Cancelar</button></div></div>';
+            window._fotoNuevaBase64 = null;
+            window._vehiculoCargadoId = null;
+        }
+
+        function llenarFormularioVehiculo(v) {
+            if (!v) return;
+            window._vehiculoCargadoId = v.id;
+            const set = function (id, val) {
+                const el = document.getElementById(id);
+                if (el && val != null && val !== '') el.value = val;
+            };
+            set('n-placa', v.placa);
+            set('n-cliente', v.cliente_nombre);
+            set('n-telefono', v.cliente_telefono);
+            set('n-cedula', v.cliente_identificacion);
+            set('n-marca', v.marca);
+            set('n-modelo', v.modelo);
+            set('n-anio', v.anio);
+            set('n-color', v.color);
+            set('n-km', v.kilometraje);
+            const aviso = document.getElementById('aviso-vehiculo');
+            if (aviso) {
+                aviso.style.display = 'block';
+                aviso.textContent = '✓ Vehículo registrado: ' + (v.marca || '') + ' ' + (v.modelo || '') +
+                    (v.cliente_nombre ? ' — ' + v.cliente_nombre : '');
+            }
+            const sug = document.getElementById('sugerencias-placa');
+            if (sug) sug.style.display = 'none';
+            ocultarSugerenciasVehiculo();
+        }
+
+        async function buscarPlacaEnFormulario() {
+            const input = document.getElementById('n-placa');
+            const sug = document.getElementById('sugerencias-placa');
+            const aviso = document.getElementById('aviso-vehiculo');
+            if (!input || !sug) return;
+            const placa = input.value.trim().toUpperCase();
+            if (aviso) aviso.style.display = 'none';
+            window._vehiculoCargadoId = null;
+            if (placa.length < 2) {
+                sug.style.display = 'none';
+                return;
+            }
+            if (placaBusquedaTimer) clearTimeout(placaBusquedaTimer);
+            placaBusquedaTimer = setTimeout(async function () {
+                try {
+                    const exacto = await TallerAPI.buscarTallerVehiculoPlaca(placa);
+                    if (exacto) {
+                        llenarFormularioVehiculo(exacto);
+                        return;
+                    }
+                    const data = await TallerAPI.buscarTallerVehiculos(placa);
+                    const filas = data.filas || [];
+                    if (!filas.length) {
+                        sug.style.display = 'none';
+                        return;
+                    }
+                    sug.innerHTML = filas.map(function (v) {
+                        return '<div class="sugerencia-placa-item" onclick="aplicarSugerenciaPlaca(' + v.id + ')">' +
+                            '<strong>' + escHtml(v.placa) + '</strong> — ' +
+                            escHtml(v.marca || '') + ' ' + escHtml(v.modelo || '') +
+                            (v.cliente_nombre ? '<br><span style="color:#64748b;">' + escHtml(v.cliente_nombre) + '</span>' : '') +
+                            '</div>';
+                    }).join('');
+                    sug.style.display = 'block';
+                    window._sugerenciasPlacaCache = filas;
+                } catch (e) {
+                    sug.style.display = 'none';
+                }
+            }, 350);
+        }
+
+        function aplicarSugerenciaPlaca(id) {
+            const filas = window._sugerenciasPlacaCache || [];
+            const v = filas.find(function (x) { return x.id === id; });
+            if (v) llenarFormularioVehiculo(v);
+        }
+
+        document.addEventListener('click', function (ev) {
+            const sug = document.getElementById('sugerencias-placa');
+            const placa = document.getElementById('n-placa');
+            if (sug && placa && !sug.contains(ev.target) && ev.target !== placa) {
+                sug.style.display = 'none';
+            }
+        });
+
+        var _fotoNuevaBase64 = null;
+        function seleccionarFotoNueva() {
+            fotoTargetOrdenId = 'nueva';
+            document.getElementById('input-foto-file').click();
+        }
+
+        function seleccionarFotoOrden(ordenId) {
+            fotoTargetOrdenId = ordenId;
+            document.getElementById('input-foto-file').click();
+        }
+
+        document.getElementById('input-foto-file').addEventListener('change', function (ev) {
+            const file = ev.target.files && ev.target.files[0];
+            ev.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function () {
+                const b64 = reader.result;
+                if (fotoTargetOrdenId === 'nueva') {
+                    window._fotoNuevaBase64 = b64;
+                    const prev = document.getElementById('preview-foto-nueva');
+                    const img = document.getElementById('img-preview-nueva');
+                    if (prev && img) {
+                        img.src = b64;
+                        prev.style.display = 'block';
+                    }
+                    return;
+                }
+                try {
+                    await TallerAPI.agregarTallerFoto(fotoTargetOrdenId, {
+                        imagen_base64: b64,
+                        titulo: 'Foto',
+                        tipo: 'general'
+                    });
+                    await abrirOrden(fotoTargetOrdenId);
+                    await cargarListaOrdenes();
+                } catch (e) {
+                    alert('No se pudo subir la foto: ' + e.message);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function guardarNuevaOrden() {
+            const placa = document.getElementById('n-placa').value.trim();
+            const cliente = document.getElementById('n-cliente').value.trim();
+            if (!placa || !cliente) {
+                alert('Placa y nombre del cliente son obligatorios.');
+                return;
+            }
+            try {
+                const payload = {
+                    placa: placa,
+                    cliente_nombre: cliente,
+                    cliente_telefono: document.getElementById('n-telefono').value.trim(),
+                    cliente_identificacion: document.getElementById('n-cedula').value.trim(),
+                    marca: document.getElementById('n-marca').value.trim(),
+                    modelo: document.getElementById('n-modelo').value.trim(),
+                    anio: document.getElementById('n-anio').value,
+                    color: document.getElementById('n-color').value.trim(),
+                    kilometraje: document.getElementById('n-km').value,
+                    diagnostico: document.getElementById('n-diagnostico').value.trim(),
+                    observaciones: document.getElementById('n-obs').value.trim(),
+                    imagen_base64: window._fotoNuevaBase64 || null
+                };
+                const sesion = typeof UsuarioSesion !== 'undefined' ? UsuarioSesion.get() : null;
+                if (sesion && sesion.id) payload.usuario_id = sesion.id;
+                const data = await TallerAPI.crearTallerOrden(payload);
+                await cargarListaOrdenes();
+                abrirOrden(data.orden.id);
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function abrirOrden(id) {
+            ordenActivaId = id;
+            document.querySelectorAll('.orden-card').forEach(function (c) { c.classList.remove('activa'); });
+            try {
+                const data = await TallerAPI.getTallerOrden(id);
+                let facturasFe = [];
+                try {
+                    const fe = await TallerAPI.getTallerFacturasOrden(id);
+                    facturasFe = fe.facturas || [];
+                } catch (feErr) { /* sin facturas */ }
+                window._cobroCliente = {
+                    nombre: data.orden.cliente_nombre || '',
+                    identificacion: data.orden.cliente_identificacion || '',
+                    email: data.orden.cliente_email || ''
+                };
+                renderDetalleOrden(data, facturasFe);
+                mostrarVista('detalle');
+                cargarHistorialPlaca(data.orden.placa, data.orden.id);
+                await cargarListaOrdenes();
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        function renderDetalleOrden(data, facturasFe) {
+            const o = data.orden;
+            const lineas = data.lineas || [];
+            const fotos = data.fotos || [];
+            const abonos = data.abonos || [];
+            const cerrada = o.estado === 'entregado' || o.estado === 'cancelado';
+            const tieneSaldo = (Number(o.saldo_pendiente) || 0) > 0;
+
+            let fotosHtml = fotos.map(function (f) {
+                return '<div class="foto-item" onclick="verFotoGrande(\'' + escHtml(f.url) + '\')">' +
+                    '<img src="' + escHtml(f.url) + '" alt="' + escHtml(f.titulo) + '"></div>';
+            }).join('');
+            if (!cerrada) {
+                fotosHtml += '<div class="foto-item foto-add" onclick="seleccionarFotoOrden(' + o.id + ')">' +
+                    '<span>➕</span><span>Agregar</span></div>';
+            }
+
+            let lineasHtml = lineas.map(function (l) {
+                return '<tr><td>' + escHtml(l.tipo) + '</td><td>' + escHtml(l.descripcion) + '</td>' +
+                    '<td class="num">' + l.cantidad + '</td><td class="num">' + fmtColones(l.precio_unitario) + '</td>' +
+                    '<td class="num">' + fmtColones(l.subtotal) + '</td>' +
+                    (cerrada ? '' : '<td><button type="button" onclick="eliminarLinea(' + o.id + ',' + l.id + ')" style="border:none;background:none;cursor:pointer;">🗑️</button></td>') +
+                    '</tr>';
+            }).join('');
+
+            const estadosBtns = ['ingreso', 'diagnostico', 'en_proceso', 'listo'].map(function (est) {
+                if (cerrada) return '';
+                const act = o.estado === est ? ' btn-primario' : ' btn-secundario';
+                return '<button type="button" class="' + act.trim() + '" onclick="cambiarEstado(' + o.id + ',\'' + est + '\')">' +
+                    escHtml(ESTADOS_LABEL[est]) + '</button>';
+            }).join('');
+
+            let accionesHeader = '';
+            const waHtml =
+                '<div class="seccion seccion-whatsapp">' +
+                '<h3>📱 WhatsApp y PDF</h3>' +
+                '<p style="font-size:13px;color:#64748b;margin-bottom:10px;">Cliente: ' + escHtml(o.cliente_telefono || 'sin teléfono — agregue 8 dígitos en la orden') + '</p>' +
+                '<div class="wa-acciones">' +
+                '<button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(' + o.id + ',\'presupuesto\')">📱 Presupuesto</button>' +
+                '<button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(' + o.id + ',\'orden\')">📱 Orden</button>' +
+                '<button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(' + o.id + ',\'factura\')">📱 Factura</button>' +
+                '<button type="button" class="btn-secundario" onclick="descargarPdfOrden(' + o.id + ',\'presupuesto\')">📄 Ver PDF</button>' +
+                '</div></div>';
+            if (!cerrada) {
+                accionesHeader =
+                    '<div class="detalle-header-acciones">' +
+                    '<button type="button" class="btn-secundario" onclick="imprimirOrden(' + o.id + ')">🖨️ Imprimir</button>' +
+                    '<button type="button" class="btn-verde" onclick="abrirModalCobro(' + o.id + ',' + o.total + ',0)">💵 Cobrar ' + fmtColones(o.total) + '</button>' +
+                    '<button type="button" class="btn-cancelar" onclick="cancelarOrden(' + o.id + ')">✕ Cancelar</button></div>';
+            } else {
+                accionesHeader =
+                    '<div class="detalle-header-acciones">' +
+                    '<button type="button" class="btn-secundario" onclick="imprimirOrden(' + o.id + ')">🖨️ Reimprimir</button>' +
+                    (tieneSaldo
+                        ? '<button type="button" class="btn-verde" onclick="abrirModalAbono(' + o.id + ',' + o.saldo_pendiente + ')">💵 Abonar ' + fmtColones(o.saldo_pendiente) + '</button>'
+                        : '') +
+                    '</div>';
+            }
+
+            let abonosHtml = '';
+            if (abonos.length) {
+                abonosHtml =
+                    '<div class="seccion"><h3>💰 Pagos y abonos</h3>' +
+                    '<div class="tabla-scroll"><table class="tabla-abonos"><thead><tr><th>Fecha</th><th>Tipo</th><th>Método</th><th class="num">Monto</th></tr></thead><tbody>' +
+                    abonos.map(function (a) {
+                        return '<tr><td>' + escHtml((a.fecha || '').replace('T', ' ').slice(0, 16)) + '</td>' +
+                            '<td>' + escHtml(a.tipo || '') + '</td>' +
+                            '<td>' + escHtml(a.metodo_pago || '') + '</td>' +
+                            '<td class="num">' + fmtColones(a.monto) + '</td></tr>';
+                    }).join('') +
+                    '</tbody></table></div>' +
+                    (tieneSaldo ? '<p style="margin-top:8px;font-weight:bold;color:#c2410c;">Saldo pendiente: ' + fmtColones(o.saldo_pendiente) + '</p>' : '') +
+                    '</div>';
+            }
+
+            let cobroInfo = '';
+            if (cerrada && (o.monto_cobrado || o.metodo_pago || o.tipo_cobro)) {
+                cobroInfo = '<p style="margin-top:10px;">Cobrado: ' + fmtColones(o.monto_cobrado) +
+                    (o.tipo_cobro && o.tipo_cobro !== 'contado' ? ' · ' + escHtml(o.tipo_cobro) : '') +
+                    (o.metodo_pago ? ' (' + escHtml(o.metodo_pago) + ')' : '') + '</p>';
+            }
+
+            document.getElementById('vista-detalle').innerHTML =
+                '<button type="button" class="btn-volver-lista" onclick="volverALista()">← Volver a órdenes</button>' +
+                '<div class="detalle-header">' +
+                '<div class="detalle-header-info">' +
+                '<h2>Orden #' + o.numero + ' — ' + escHtml(o.placa) + '</h2>' +
+                '<p>' + escHtml(o.marca || '') + ' ' + escHtml(o.modelo || '') + ' ' + (o.anio || '') + ' · ' + escHtml(o.color || '') + '</p>' +
+                '<p>👤 ' + escHtml(o.cliente_nombre || '—') + ' · 📞 ' + escHtml(o.cliente_telefono || '—') + '</p>' +
+                badgeEstado(o.estado) +
+                (tieneSaldo ? '<span class="badge-saldo">Saldo ' + fmtColones(o.saldo_pendiente) + '</span>' : '') +
+                (o.kilometraje ? '<p style="margin-top:6px;">🛣️ ' + o.kilometraje + ' km</p>' : '') +
+                '</div>' +
+                accionesHeader +
+                '</div>' +
+                waHtml +
+                abonosHtml +
+                '<div class="seccion"><h3>📷 Fotos del vehículo</h3><div class="galeria-fotos">' + fotosHtml + '</div></div>' +
+                '<div class="seccion"><h3>📋 Historial de la placa</h3><div id="historial-placa"><p style="color:#94a3b8;font-size:13px;">Cargando…</p></div></div>' +
+                '<div class="seccion"><h3>🔍 Diagnóstico</h3>' +
+                (cerrada
+                    ? '<p>' + escHtml(o.diagnostico || '—') + '</p>'
+                    : '<textarea id="d-diagnostico" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;min-height:70px;">' + escHtml(o.diagnostico || '') + '</textarea>' +
+                      '<button type="button" class="btn-secundario" style="margin-top:8px;" onclick="guardarDiagnostico(' + o.id + ')">Guardar</button>') +
+                '<div class="estado-acciones">' + estadosBtns + '</div></div>' +
+                '<div class="seccion"><h3>🧾 Repuestos y mano de obra</h3>' +
+                '<div class="tabla-scroll"><table class="tabla-lineas"><thead><tr><th>Tipo</th><th>Descripción</th><th>Cant.</th><th>P.unit.</th><th>Total</th>' +
+                (cerrada ? '' : '<th></th>') + '</tr></thead><tbody>' + (lineasHtml || '<tr><td colspan="6" style="color:#94a3b8;">Sin líneas</td></tr>') + '</tbody></table></div>' +
+                '<div class="totales-box"><span>Subtotal: ' + fmtColones(o.subtotal) + '</span><span>IVA: ' + fmtColones(o.iva) + '</span><strong>Total: ' + fmtColones(o.total) + '</strong></div>' +
+                (!cerrada
+                    ? '<div class="fila-agregar-linea">' +
+                      (inventarioCache.length ? '<select id="l-inventario" onchange="seleccionarRepuestoInv()" style="grid-column:1/-1;">' + opcionesInventarioHtml() + '</select>' : '') +
+                      '<select id="l-tipo"><option value="repuesto">Repuesto</option><option value="mano_obra">Mano obra</option><option value="otro">Otro</option></select>' +
+                      '<input id="l-desc" placeholder="Descripción">' +
+                      '<input id="l-cant" type="number" value="1" min="0.01" step="0.01">' +
+                      '<input id="l-precio" type="number" placeholder="Precio" min="0" step="1">' +
+                      '<button type="button" class="btn-primario" onclick="agregarLinea(' + o.id + ')">+ Agregar</button></div>'
+                    : cobroInfo) +
+                '</div>';
+        }
+
+        async function guardarDiagnostico(id) {
+            const val = document.getElementById('d-diagnostico').value;
+            await TallerAPI.actualizarTallerOrden(id, { diagnostico: val });
+            abrirOrden(id);
+        }
+
+        async function cambiarEstado(id, estado) {
+            await TallerAPI.actualizarTallerOrden(id, { estado: estado });
+            await abrirOrden(id);
+            await cargarListaOrdenes();
+        }
+
+        async function agregarLinea(ordenId) {
+            const desc = document.getElementById('l-desc').value.trim();
+            const precio = parseFloat(document.getElementById('l-precio').value);
+            const cant = parseFloat(document.getElementById('l-cant').value) || 1;
+            if (!desc || !precio) {
+                alert('Descripción y precio son obligatorios.');
+                return;
+            }
+            const selInv = document.getElementById('l-inventario');
+            const inventarioId = selInv && selInv.value ? Number(selInv.value) : null;
+            if (inventarioId) {
+                const item = inventarioCache.find(function (it) { return String(it.id) === String(inventarioId); });
+                if (item) {
+                    const stock = Number(item.cantidad) || 0;
+                    if (cant > stock) {
+                        if (!confirm('Solo hay ' + stock + ' en stock de "' + item.nombre + '". ¿Continuar de todas formas? (el stock quedará en negativo)')) {
+                            return;
+                        }
+                    }
+                }
+            }
+            await TallerAPI.agregarTallerLinea(ordenId, {
+                tipo: document.getElementById('l-tipo').value,
+                descripcion: desc,
+                cantidad: cant,
+                precio_unitario: precio,
+                inventario_id: inventarioId
+            });
+            await cargarInventarioCache();
+            await abrirOrden(ordenId);
+        }
+
+        async function eliminarLinea(ordenId, lineaId) {
+            if (!confirm('¿Eliminar esta línea? Si era un repuesto del inventario, se devolverá al stock.')) return;
+            await TallerAPI.eliminarTallerLinea(ordenId, lineaId);
+            await cargarInventarioCache();
+            await abrirOrden(ordenId);
+        }
+
+        async function cargarHistorialPlaca(placa, ordenActualId) {
+            const cont = document.getElementById('historial-placa');
+            if (!cont || !placa) return;
+            try {
+                const data = await TallerAPI.getTallerOrdenes({ placa: placa, todos: true });
+                const filas = (data.filas || []).filter(function (x) {
+                    return x.id !== ordenActualId;
+                }).slice(0, 8);
+                if (!filas.length) {
+                    cont.innerHTML = '<p style="color:#94a3b8;font-size:13px;">Sin órdenes anteriores para esta placa.</p>';
+                    return;
+                }
+                cont.innerHTML = filas.map(function (h) {
+                    return '<div class="historial-item" onclick="abrirOrden(' + h.id + ')">#' + h.numero +
+                        ' · ' + escHtml(ESTADOS_LABEL[h.estado] || h.estado) + ' · ' + fmtColones(h.total) +
+                        '<br><span style="color:#64748b;font-size:11px;">' + escHtml(h.fecha_ingreso || '') + '</span></div>';
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '';
+            }
+        }
+
+        async function cancelarOrden(id) {
+            if (!confirm('¿Cancelar esta orden de taller?')) return;
+            try {
+                await TallerAPI.actualizarTallerOrden(id, { estado: 'cancelado' });
+                await cargarListaOrdenes();
+                await abrirOrden(id);
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        function resetFeCobroModal() {
+            var chk = document.getElementById('modal-cobro-fe');
+            var campos = document.getElementById('modal-cobro-fe-campos');
+            if (chk) chk.checked = false;
+            if (campos) campos.classList.remove('activa');
+            var c = window._cobroCliente || {};
+            var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ''; };
+            set('modal-fe-nombre', c.nombre);
+            set('modal-fe-cedula', c.identificacion);
+            set('modal-fe-email', c.email);
+            set('modal-fe-tipo-id', '01');
+        }
+
+        function toggleCamposFeCobro() {
+            var chk = document.getElementById('modal-cobro-fe');
+            var campos = document.getElementById('modal-cobro-fe-campos');
+            if (campos) campos.classList.toggle('activa', chk && chk.checked);
+        }
+
+        function leerPayloadFeCobro() {
+            var chk = document.getElementById('modal-cobro-fe');
+            if (!chk || !chk.checked) {
+                return { factura_electronica: { emitir: false } };
+            }
+            var nombre = document.getElementById('modal-fe-nombre').value.trim();
+            var cedula = document.getElementById('modal-fe-cedula').value.trim();
+            var email = document.getElementById('modal-fe-email').value.trim();
+            if (!nombre || !cedula) {
+                throw new Error('Para factura electrónica indique nombre e identificación del cliente.');
+            }
+            return {
+                factura_electronica: {
+                    emitir: true,
+                    tipo_identificacion: document.getElementById('modal-fe-tipo-id').value,
+                    identificacion: cedula,
+                    nombre: nombre,
+                    email: email
+                },
+                cliente_nombre: nombre,
+                cliente_identificacion: cedula
+            };
+        }
+
+        function abrirModalCobro(id, total, saldo) {
+            modoCobroModal = 'cobro';
+            cobroOrdenId = id;
+            cobroOrdenTotal = parseFloat(total) || 0;
+            cobroOrdenSaldo = parseFloat(saldo) || 0;
+            tipoCobroSeleccionado = 'contado';
+            metodoCobroSeleccionado = 'efectivo';
+            document.getElementById('modal-cobro-titulo').textContent = 'Cobrar y entregar';
+            document.getElementById('modal-cobro-confirmar').textContent = 'Confirmar cobro';
+            document.getElementById('modal-cobro-tabs').style.display = 'flex';
+            document.getElementById('modal-cobro-saldo-info').style.display = 'none';
+            document.querySelectorAll('.modal-cobro-tab').forEach(function (btn) {
+                btn.classList.toggle('activo', btn.getAttribute('data-tipo') === 'contado');
+            });
+            document.querySelectorAll('.modal-cobro-metodo').forEach(function (btn) {
+                btn.classList.toggle('seleccionado', btn.getAttribute('data-metodo') === 'efectivo');
+            });
+            document.getElementById('modal-cobro-total').textContent = 'Total: ' + fmtColones(cobroOrdenTotal);
+            document.getElementById('modal-cobro-monto-label').textContent = 'Monto cobrado';
+            document.getElementById('modal-cobro-monto').value = cobroOrdenTotal;
+            document.getElementById('modal-cobro-monto').readOnly = true;
+            actualizarPreviewCobro();
+            resetFeCobroModal();
+            document.getElementById('modal-cobro').classList.add('activa');
+        }
+
+        function abrirModalAbono(id, saldo) {
+            modoCobroModal = 'abono';
+            cobroOrdenId = id;
+            cobroOrdenTotal = 0;
+            cobroOrdenSaldo = parseFloat(saldo) || 0;
+            metodoCobroSeleccionado = 'efectivo';
+            document.getElementById('modal-cobro-titulo').textContent = 'Registrar abono';
+            document.getElementById('modal-cobro-confirmar').textContent = 'Confirmar abono';
+            document.getElementById('modal-cobro-tabs').style.display = 'none';
+            document.getElementById('modal-cobro-saldo-info').style.display = 'block';
+            document.getElementById('modal-cobro-saldo-info').textContent = 'Saldo pendiente: ' + fmtColones(cobroOrdenSaldo);
+            document.getElementById('modal-cobro-total').textContent = fmtColones(cobroOrdenSaldo);
+            document.getElementById('modal-cobro-monto-label').textContent = 'Monto del abono';
+            document.getElementById('modal-cobro-monto').value = cobroOrdenSaldo;
+            document.getElementById('modal-cobro-monto').readOnly = false;
+            document.querySelectorAll('.modal-cobro-metodo').forEach(function (btn) {
+                btn.classList.toggle('seleccionado', btn.getAttribute('data-metodo') === 'efectivo');
+            });
+            actualizarPreviewCobro();
+            resetFeCobroModal();
+            document.getElementById('modal-cobro').classList.add('activa');
+        }
+
+        function seleccionarTipoCobro(btn) {
+            tipoCobroSeleccionado = btn.getAttribute('data-tipo');
+            document.querySelectorAll('.modal-cobro-tab').forEach(function (b) {
+                b.classList.toggle('activo', b === btn);
+            });
+            const montoInput = document.getElementById('modal-cobro-monto');
+            if (tipoCobroSeleccionado === 'contado') {
+                document.getElementById('modal-cobro-monto-label').textContent = 'Monto cobrado';
+                montoInput.value = cobroOrdenTotal;
+                montoInput.readOnly = true;
+            } else if (tipoCobroSeleccionado === 'apartado') {
+                document.getElementById('modal-cobro-monto-label').textContent = 'Anticipo (apartado)';
+                montoInput.readOnly = false;
+                if (!montoInput.value || parseFloat(montoInput.value) >= cobroOrdenTotal) {
+                    montoInput.value = Math.max(1, Math.round(cobroOrdenTotal * 0.5));
+                }
+            } else {
+                document.getElementById('modal-cobro-monto-label').textContent = 'Abono inicial (opcional)';
+                montoInput.readOnly = false;
+                if (!montoInput.value) montoInput.value = 0;
+            }
+            actualizarPreviewCobro();
+        }
+
+        function actualizarPreviewCobro() {
+            const preview = document.getElementById('modal-cobro-preview');
+            if (!preview) return;
+            if (modoCobroModal === 'abono') {
+                const monto = parseFloat(document.getElementById('modal-cobro-monto').value) || 0;
+                const resta = Math.max(0, cobroOrdenSaldo - monto);
+                preview.textContent = resta > 0 ? 'Saldo después del abono: ' + fmtColones(resta) : 'Con este abono se liquida la orden.';
+                return;
+            }
+            const monto = tipoCobroSeleccionado === 'contado'
+                ? cobroOrdenTotal
+                : parseFloat(document.getElementById('modal-cobro-monto').value) || 0;
+            const saldo = Math.max(0, Math.round((cobroOrdenTotal - monto) * 100) / 100);
+            if (tipoCobroSeleccionado === 'contado') {
+                preview.textContent = 'Cobro completo al entregar.';
+            } else if (saldo > 0) {
+                preview.textContent = 'Saldo pendiente: ' + fmtColones(saldo);
+            } else {
+                preview.textContent = 'Cobro completo.';
+            }
+        }
+
+        document.getElementById('modal-cobro-monto').addEventListener('input', actualizarPreviewCobro);
+
+        function cerrarModalCobro() {
+            document.getElementById('modal-cobro').classList.remove('activa');
+            cobroOrdenId = null;
+            modoCobroModal = 'cobro';
+        }
+
+        function seleccionarMetodoCobro(btn) {
+            metodoCobroSeleccionado = btn.getAttribute('data-metodo');
+            document.querySelectorAll('.modal-cobro-metodo').forEach(function (b) {
+                b.classList.toggle('seleccionado', b === btn);
+            });
+        }
+
+        async function confirmarCobro() {
+            if (!cobroOrdenId) return;
+            const monto = parseFloat(document.getElementById('modal-cobro-monto').value);
+            let fePayload = {};
+            try {
+                fePayload = leerPayloadFeCobro();
+            } catch (feErr) {
+                alert(feErr.message);
+                return;
+            }
+            try {
+                let res;
+                if (modoCobroModal === 'abono') {
+                    if (!monto || monto <= 0) {
+                        alert('Indique un monto válido.');
+                        return;
+                    }
+                    res = await TallerAPI.abonarTallerOrden(cobroOrdenId, Object.assign({
+                        metodo_pago: metodoCobroSeleccionado,
+                        monto: monto
+                    }, fePayload));
+                } else {
+                    if (tipoCobroSeleccionado === 'apartado') {
+                        if (!monto || monto <= 0 || monto >= cobroOrdenTotal) {
+                            alert('Apartado: indique un anticipo menor al total.');
+                            return;
+                        }
+                    }
+                    res = await TallerAPI.cobrarTallerOrden(cobroOrdenId, Object.assign({
+                        metodo_pago: metodoCobroSeleccionado,
+                        monto: tipoCobroSeleccionado === 'contado' ? cobroOrdenTotal : monto,
+                        tipo_cobro: tipoCobroSeleccionado
+                    }, fePayload));
+                }
+                cerrarModalCobro();
+                var doc = res && res.factura_electronica;
+                if (doc && doc.ok === false) {
+                    alert('Cobro registrado, pero la factura falló:\n' + (doc.error || 'error'));
+                } else if (doc && (doc.clave || doc.consecutivo || doc.tipo === 'tiquete')) {
+                    window.open('/factura-imprimir.html?orden=' + cobroOrdenId + '&tipo=factura', '_blank');
+                }
+                await cargarResumenHoy();
+                await cargarListaOrdenes();
+                await abrirOrden(cobroOrdenId);
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        async function mostrarPendientesCobro() {
+            pendientesFiltroTipo = '';
+            document.querySelectorAll('.modal-pendientes-tabs button').forEach(function (b) {
+                b.classList.toggle('activo', b.getAttribute('data-tipo') === '');
+            });
+            await cargarListaPendientes();
+            document.getElementById('modal-pendientes').classList.add('activa');
+        }
+
+        function cerrarPendientesCobro() {
+            document.getElementById('modal-pendientes').classList.remove('activa');
+        }
+
+        async function filtrarPendientesCobro(tipo, btn) {
+            pendientesFiltroTipo = tipo || '';
+            document.querySelectorAll('.modal-pendientes-tabs button').forEach(function (b) {
+                b.classList.remove('activo');
+            });
+            if (btn) btn.classList.add('activo');
+            await cargarListaPendientes();
+        }
+
+        async function cargarListaPendientes() {
+            const cont = document.getElementById('lista-pendientes');
+            const resumen = document.getElementById('pendientes-resumen');
+            try {
+                const data = await TallerAPI.getTallerPendientesCobro(pendientesFiltroTipo || null);
+                resumen.textContent = data.cantidad + ' orden(es) · Saldo total: ' + fmtColones(data.saldo_total);
+                const filas = data.filas || [];
+                if (!filas.length) {
+                    cont.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:16px;">Sin pendientes</p>';
+                    return;
+                }
+                cont.innerHTML = filas.map(function (o) {
+                    const tipoLabel = o.tipo_cobro === 'apartado' ? '📦 Apartado' : o.tipo_cobro === 'credito' ? '📝 Crédito' : 'Pendiente';
+                    return '<div class="pendiente-item" onclick="cerrarPendientesCobro();abrirOrden(' + o.id + ')">' +
+                        '<strong>#' + o.numero + ' · ' + escHtml(o.placa) + '</strong> — ' + escHtml(o.cliente_nombre || '') +
+                        '<br>' + tipoLabel + ' · Total ' + fmtColones(o.total) + ' · Saldo <strong>' + fmtColones(o.saldo_pendiente) + '</strong></div>';
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '<p style="color:#b91c1c;">' + escHtml(e.message) + '</p>';
+            }
+        }
+
+        async function cobrarOrden(id, total) {
+            abrirModalCobro(id, total, 0);
+        }
+
+        async function imprimirOrden(id) {
+            try {
+                const r = await TallerAPI.imprimirTallerOrden(id, {});
+                alert('Ticket enviado a: ' + (r.impresora || 'impresora'));
+            } catch (e) {
+                alert('No se pudo imprimir: ' + e.message + '\n\nConfigure la impresora en Windows (impresora predeterminada del sistema).');
+            }
+        }
+
+        async function enviarWhatsAppOrden(id, tipo) {
+            try {
+                const r = await TallerAPI.getWhatsAppOrden(id, tipo);
+                if (!r.tiene_telefono) {
+                    alert('El cliente no tiene teléfono válido. Use 8 dígitos (ej. 88881234) en la orden.');
+                    return;
+                }
+                if (!r.wa_url) {
+                    alert('No se pudo preparar el enlace de WhatsApp.');
+                    return;
+                }
+                window.open(r.wa_url, '_blank');
+            } catch (e) {
+                alert('WhatsApp: ' + e.message);
+            }
+        }
+
+        function descargarPdfOrden(id, tipo) {
+            window.open(TallerAPI.pdfOrdenUrl(id, tipo || 'presupuesto'), '_blank');
+        }
+
+        function verFotoGrande(url) {
+            document.getElementById('modal-foto-img').src = url;
+            document.getElementById('modal-foto').classList.add('activa');
+        }
+
+        function cerrarModalFoto() {
+            document.getElementById('modal-foto').classList.remove('activa');
+        }
+
+        async function abrirModalFeConfig() {
+            var estado = document.getElementById('fe-cfg-estado');
+            if (estado) estado.textContent = '';
+            try {
+                var cfg = await TallerAPI.getFeConfig();
+                function set(id, val) { var el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; }
+                if (document.getElementById('fe-cfg-modo')) document.getElementById('fe-cfg-modo').value = cfg.fe_modo || 'simulacion';
+                set('fe-cfg-url', cfg.fe_api_url);
+                set('fe-cfg-token', cfg.fe_api_token);
+                set('fe-cfg-cedula', cfg.fe_emisor_cedula);
+                set('fe-cfg-nombre', cfg.fe_emisor_nombre);
+                set('fe-cfg-email', cfg.fe_emisor_email);
+                set('fe-cfg-actividad', cfg.fe_actividad_economica);
+                set('fe-cfg-sucursal', cfg.fe_sucursal);
+                set('fe-cfg-terminal', cfg.fe_terminal);
+            } catch (e) { /* usar valores por defecto del formulario */ }
+            document.getElementById('modal-fe-config').classList.add('activa');
+        }
+
+        function cerrarModalFeConfig() {
+            document.getElementById('modal-fe-config').classList.remove('activa');
+        }
+
+        function leerFeConfigForm() {
+            var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            return {
+                fe_modo: v('fe-cfg-modo') || 'simulacion',
+                fe_api_url: v('fe-cfg-url'),
+                fe_api_token: v('fe-cfg-token'),
+                fe_emisor_cedula: v('fe-cfg-cedula'),
+                fe_emisor_nombre: v('fe-cfg-nombre'),
+                fe_emisor_email: v('fe-cfg-email'),
+                fe_actividad_economica: v('fe-cfg-actividad') || '452000',
+                fe_sucursal: v('fe-cfg-sucursal') || '001',
+                fe_terminal: v('fe-cfg-terminal') || '001'
+            };
+        }
+
+        async function guardarFeConfig() {
+            var estado = document.getElementById('fe-cfg-estado');
+            var datos = leerFeConfigForm();
+            if (!datos.fe_emisor_cedula || !datos.fe_emisor_nombre) {
+                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'Cédula y nombre del emisor son obligatorios.'; }
+                return;
+            }
+            try {
+                await TallerAPI.saveFeConfig(datos);
+                if (estado) { estado.style.color = '#16a34a'; estado.textContent = '✓ Configuración guardada.'; }
+            } catch (e) {
+                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'No se pudo guardar: ' + e.message; }
+            }
+        }
+
+        async function probarFeConfig() {
+            var estado = document.getElementById('fe-cfg-estado');
+            if (estado) { estado.style.color = '#64748b'; estado.textContent = 'Probando…'; }
+            try {
+                var r = await TallerAPI.probarFeConexion();
+                if (estado) {
+                    estado.style.color = r && r.ok === false ? '#dc2626' : '#16a34a';
+                    estado.textContent = (r && r.mensaje) ? r.mensaje : '✓ Conexión correcta.';
+                }
+            } catch (e) {
+                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'Error al probar: ' + e.message; }
+            }
+        }
+
+        initTaller();
+    </script>
+</body>
+</html>
+

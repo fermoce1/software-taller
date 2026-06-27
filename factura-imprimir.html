@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imprimir factura — Sanmy Taller</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #e2e8f0; color: #111; font-family: Arial, Helvetica, sans-serif; }
+
+        /* Barra de control (no se imprime) */
+        .toolbar { position: sticky; top: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+            background: #1e3a5f; color: #fff; padding: 10px 16px; }
+        .toolbar .tit { font-weight: bold; margin-right: auto; font-size: 15px; }
+        .toolbar button, .toolbar a { border: none; border-radius: 8px; padding: 8px 14px; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; }
+        .btn-formato { background: #fff; color: #1e3a5f; }
+        .btn-formato.activo { background: #22c55e; color: #fff; }
+        .btn-imprimir { background: #facc15; color: #1e293b; }
+        .btn-cerrar { background: #ef4444; color: #fff; }
+
+        /* Hoja en pantalla */
+        .hoja { background: #fff; margin: 18px auto; box-shadow: 0 8px 30px rgba(0,0,0,.15); }
+        body.carta .hoja { width: 216mm; min-height: 279mm; padding: 16mm; font-size: 13px; }
+        body.t80 .hoja { width: 80mm; padding: 4mm; font-size: 11px; }
+
+        .doc-titulo { text-align: center; }
+        .doc-titulo .negocio { font-size: 1.5em; font-weight: bold; }
+        body.t80 .doc-titulo .negocio { font-size: 1.25em; }
+        .doc-titulo .tipo { font-weight: bold; margin-top: 2px; }
+        .doc-titulo .sub { color: #555; font-size: .85em; }
+
+        .sep { border: none; border-top: 1px dashed #888; margin: 8px 0; }
+        .bloque { margin: 6px 0; }
+        .bloque .fila { display: flex; justify-content: space-between; gap: 8px; }
+        .bloque b { font-weight: bold; }
+        .label { color: #444; }
+
+        table.items { width: 100%; border-collapse: collapse; margin-top: 4px; }
+        table.items th { text-align: left; border-bottom: 1px solid #000; padding: 3px 2px; font-size: .9em; }
+        table.items td { padding: 3px 2px; vertical-align: top; border-bottom: 1px solid #eee; }
+        table.items td.num, table.items th.num { text-align: right; white-space: nowrap; }
+        body.t80 table.items .col-cab { display: none; }
+
+        .totales { margin-top: 8px; }
+        .totales .fila { display: flex; justify-content: space-between; }
+        .totales .grande { font-size: 1.2em; font-weight: bold; border-top: 2px solid #000; padding-top: 4px; margin-top: 4px; }
+
+        .fe-box { margin-top: 8px; border: 1px solid #000; padding: 6px; font-size: .85em; word-break: break-all; }
+        body.t80 .fe-box { border: none; border-top: 1px dashed #888; padding: 6px 0 0; }
+        .pie { text-align: center; color: #555; font-size: .8em; margin-top: 12px; }
+        .cargando { text-align: center; padding: 40px; color: #555; }
+
+        @media print {
+            body { background: #fff; }
+            .toolbar { display: none; }
+            .hoja { margin: 0; box-shadow: none; width: auto; }
+            body.t80 .hoja { width: auto; padding: 0; }
+            body.carta .hoja { width: auto; padding: 0; }
+        }
+    </style>
+</head>
+<body class="carta">
+    <div class="toolbar">
+        <span class="tit">🖨️ Imprimir factura</span>
+        <button type="button" id="b-carta" class="btn-formato" onclick="setFormato('carta')">📄 Hoja completa</button>
+        <button type="button" id="b-80" class="btn-formato" onclick="setFormato('80')">🧾 Tiquete 80mm</button>
+        <button type="button" class="btn-imprimir" onclick="window.print()">🖨️ Imprimir</button>
+        <button type="button" class="btn-cerrar" onclick="window.close()">✕ Cerrar</button>
+    </div>
+
+    <div class="hoja" id="hoja">
+        <div class="cargando" id="cargando">Cargando documento…</div>
+        <div id="doc" style="display:none;"></div>
+    </div>
+
+    <style id="page-style"></style>
+
+    <script src="taller-api.js"></script>
+    <script>
+        var params = new URLSearchParams(location.search);
+        var ordenId = params.get('orden');
+        var tipoDoc = params.get('tipo') || 'factura';
+        var formato = params.get('formato') === '80' ? '80' : 'carta';
+
+        function col(v) { return '₡' + (Number(v) || 0).toLocaleString('es-CR', { maximumFractionDigits: 0 }); }
+        function n2(v) { var n = Number(v) || 0; return n.toLocaleString('es-CR', { maximumFractionDigits: 2 }); }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function tipoLinea(t) { return t === 'mano_obra' ? 'Mano de obra' : (t === 'repuesto' ? 'Repuesto' : 'Otro'); }
+
+        function setFormato(f, noPrint) {
+            formato = (f === '80') ? '80' : 'carta';
+            document.body.className = (formato === '80') ? 't80' : 'carta';
+            document.getElementById('b-carta').classList.toggle('activo', formato === 'carta');
+            document.getElementById('b-80').classList.toggle('activo', formato === '80');
+            var size = (formato === '80') ? '@page { size: 80mm auto; margin: 3mm; }' : '@page { size: Letter; margin: 12mm; }';
+            document.getElementById('page-style').textContent = size;
+        }
+
+        function titulo(t) {
+            if (t === 'presupuesto') return 'PRESUPUESTO';
+            if (t === 'orden') return 'ORDEN DE TALLER';
+            return 'FACTURA';
+        }
+
+        function render(data, cfgTaller, cfgFe, fe, tk) {
+            tk = tk || {};
+            var o = data.orden || {};
+            var lineas = data.lineas || [];
+            var negocio = tk.nombre_negocio || (cfgTaller && cfgTaller.nombre_negocio) || (cfgFe && cfgFe.fe_emisor_nombre) || 'Sanmy Taller Mecánico';
+            var vehiculo = [o.marca, o.modelo, o.anio].filter(Boolean).join(' ');
+
+            var html = '';
+            html += '<div class="doc-titulo">' +
+                '<div class="negocio">' + esc(negocio) + '</div>';
+            if (tk.cabecera) {
+                String(tk.cabecera).split(/\r?\n/).forEach(function (ln) {
+                    if (ln.trim()) html += '<div class="sub">' + esc(ln) + '</div>';
+                });
+            } else if (cfgFe && cfgFe.fe_emisor_cedula) {
+                html += '<div class="sub">Céd. ' + esc(cfgFe.fe_emisor_cedula) + '</div>';
+            }
+            html += '<div class="tipo">' + titulo(tipoDoc) + '</div></div>';
+            html += '<hr class="sep">';
+
+            html += '<div class="bloque">';
+            if (o.numero) html += '<div class="fila"><span class="label">Orden #</span><b>' + esc(o.numero) + '</b></div>';
+            if (fe && fe.consecutivo) html += '<div class="fila"><span class="label">Consecutivo</span><b>' + esc(fe.consecutivo) + '</b></div>';
+            html += '<div class="fila"><span class="label">Fecha</span><span>' + esc(new Date().toLocaleString('es-CR')) + '</span></div>';
+            html += '</div><hr class="sep">';
+
+            html += '<div class="bloque">';
+            if (tk.mostrar_cliente !== false) html += '<div><b>Cliente:</b> ' + esc(o.cliente_nombre || 'Contado') + '</div>';
+            if (tk.mostrar_identificacion && o.cliente_identificacion) html += '<div><span class="label">Identificación:</span> ' + esc(o.cliente_identificacion) + '</div>';
+            if (tk.mostrar_telefono && o.cliente_telefono) html += '<div><span class="label">Tel:</span> ' + esc(o.cliente_telefono) + '</div>';
+            if (tk.mostrar_placa && o.placa) html += '<div><b>Placa:</b> ' + esc(o.placa) + '</div>';
+            if (tk.mostrar_vehiculo && vehiculo) html += '<div><span class="label">Vehículo:</span> ' + esc(vehiculo) + '</div>';
+            if (tk.mostrar_color && o.color) html += '<div><span class="label">Color:</span> ' + esc(o.color) + '</div>';
+            if (tk.mostrar_km && o.kilometraje) html += '<div><span class="label">Km:</span> ' + esc(o.kilometraje) + '</div>';
+            if (tk.mostrar_empleado && o.usuario_nombre) html += '<div><span class="label">Atendió:</span> ' + esc(o.usuario_nombre) + '</div>';
+            html += '</div><hr class="sep">';
+
+            html += '<table class="items"><thead><tr>' +
+                '<th>Detalle</th>' +
+                '<th class="num">Cant</th>' +
+                '<th class="num">Precio</th>' +
+                '<th class="num">Total</th>' +
+                '</tr></thead><tbody>';
+            if (!lineas.length) {
+                html += '<tr><td colspan="4" style="text-align:center;color:#888;">Sin líneas</td></tr>';
+            }
+            lineas.forEach(function (l) {
+                html += '<tr>' +
+                    '<td>' + esc(l.descripcion) + '<br><span class="label" style="font-size:.8em;">' + tipoLinea(l.tipo) + '</span></td>' +
+                    '<td class="num">' + n2(l.cantidad) + '</td>' +
+                    '<td class="num">' + col(l.precio_unitario) + '</td>' +
+                    '<td class="num">' + col(l.subtotal) + '</td>' +
+                    '</tr>';
+            });
+            html += '</tbody></table>';
+
+            html += '<div class="totales">';
+            if (tk.mostrar_subtotal_iva !== false) {
+                html += '<div class="fila"><span>Subtotal</span><span>' + col(o.subtotal) + '</span></div>' +
+                    '<div class="fila"><span>IVA</span><span>' + col(o.iva) + '</span></div>';
+            }
+            html += '<div class="fila grande"><span>TOTAL</span><span>' + col(o.total) + '</span></div></div>';
+
+            if (tk.mostrar_metodo_pago && o.metodo_pago) {
+                html += '<div class="bloque" style="margin-top:8px;"><div class="fila"><span class="label">Método de pago</span><span>' + esc(o.metodo_pago) + '</span></div>';
+                if (Number(o.saldo_pendiente) > 0) html += '<div class="fila"><span class="label">Saldo pendiente</span><b>' + col(o.saldo_pendiente) + '</b></div>';
+                html += '</div>';
+            }
+
+            if (tipoDoc === 'factura' && fe && tk.mostrar_fe !== false) {
+                if (fe.estado === 'tiquete') {
+                    html += '<div class="fe-box"><b>Factura de tiquete</b> (no electrónica)<br>' +
+                        (fe.consecutivo ? 'Nº ' + esc(fe.consecutivo) : '') +
+                        '</div>';
+                } else {
+                    html += '<div class="fe-box"><b>Factura electrónica (Hacienda CR)</b><br>' +
+                        (fe.consecutivo ? 'Consecutivo: ' + esc(fe.consecutivo) + '<br>' : '') +
+                        (fe.clave ? 'Clave: ' + esc(fe.clave) + '<br>' : '') +
+                        (fe.estado ? 'Estado: ' + esc(fe.estado) : '') +
+                        '</div>';
+                }
+            } else if (tipoDoc === 'presupuesto') {
+                html += '<div class="pie">Estimación de trabajo — no constituye factura fiscal.</div>';
+            }
+
+            html += '<div class="pie">' + esc(tk.pie || '¡Gracias por su preferencia!') + '</div>';
+
+            document.getElementById('doc').innerHTML = html;
+            document.getElementById('cargando').style.display = 'none';
+            document.getElementById('doc').style.display = 'block';
+        }
+
+        async function cargar() {
+            setFormato(formato, true);
+            if (!ordenId) {
+                document.getElementById('cargando').textContent = 'Falta el parámetro de orden.';
+                return;
+            }
+            try {
+                var data = await TallerAPI.getTallerOrden(ordenId);
+                var cfgTaller = {};
+                var cfgFe = {};
+                var fe = null;
+                try { cfgTaller = await TallerAPI.getTallerConfig(); } catch (e) {}
+                try { var fc = await TallerAPI.getFeConfig(); cfgFe = (fc && fc.config) ? fc.config : fc; } catch (e) {}
+                try {
+                    var ff = await TallerAPI.getTallerFacturasOrden(ordenId);
+                    var arr = (ff && ff.facturas) ? ff.facturas : [];
+                    if (arr.length) fe = arr[0];
+                } catch (e) {}
+                var tk = {};
+                try { var tc = await TallerAPI.getTicketConfig(); tk = (tc && tc.config) ? tc.config : tc; } catch (e) {}
+                if (!params.get('formato') && tk.formato_defecto) {
+                    formato = tk.formato_defecto === 'carta' ? 'carta' : '80';
+                    setFormato(formato, true);
+                }
+                render(data, cfgTaller, cfgFe, fe, tk);
+                if (params.get('auto') !== '0') {
+                    setTimeout(function () { window.print(); }, 400);
+                }
+            } catch (e) {
+                document.getElementById('cargando').textContent = 'No se pudo cargar la factura: ' + e.message;
+            }
+        }
+
+        cargar();
+    </script>
+</body>
+</html>

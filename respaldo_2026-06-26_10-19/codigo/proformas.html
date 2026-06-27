@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Proformas — Sanmy Taller Mecánico</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html { height: 100%; height: 100dvh; }
+        body { height: 100dvh; overflow: hidden; background: #eef2f7; color: #1e293b; display: flex; flex-direction: column; }
+
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .nav-item { flex: 1 1 0; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
+        .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
+        .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .cuerpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 12px; padding: clamp(10px,1.4vw,18px); }
+        @media (max-width: 860px) { .cuerpo { grid-template-columns: 1fr; overflow: auto; } }
+        .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; min-height: 0; }
+        .panel-head { padding: 12px 14px; border-bottom: 1px solid #eef2f7; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .panel-head h2 { font-size: clamp(15px,1.7vw,19px); color: #1e3a5f; margin-right: auto; }
+        .panel-body { padding: 12px 14px; overflow: auto; flex: 1; min-height: 0; }
+
+        label { font-size: 12px; color: #475569; font-weight: bold; display: block; margin-bottom: 3px; }
+        input, select { width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+        .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 10px; }
+        .campo { margin-bottom: 8px; }
+        .sub { font-size: 12px; color: #94a3b8; margin: 10px 0 6px; font-weight: bold; text-transform: uppercase; letter-spacing: .03em; }
+
+        .lineas { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .lineas th { text-align: left; color: #64748b; font-size: 11px; padding: 4px 4px; }
+        .lineas td { padding: 3px 4px; vertical-align: middle; }
+        .lineas input, .lineas select { padding: 6px 8px; font-size: 13px; }
+        .lineas .num { text-align: right; }
+        .btn { border: none; border-radius: 8px; padding: 9px 16px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-primario { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+        .btn-sec { background: #e2e8f0; color: #1e3a5f; }
+        .btn-mini { padding: 5px 9px; font-size: 12px; border-radius: 6px; }
+        .btn-del { background: #fee2e2; color: #b91c1c; }
+        .btn-azul { background: #dbeafe; color: #1d4ed8; text-decoration: none; display: inline-block; }
+        .btn-wa { background: #25d366; color: #fff; }
+        .btn-fact { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; }
+
+        .totales { margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 14px; }
+        .totales div { display: flex; justify-content: space-between; padding: 2px 0; }
+        .totales .grande { font-size: 18px; font-weight: bold; color: #1e3a5f; }
+        #estado { font-size: 13px; min-height: 18px; margin-top: 6px; }
+
+        .pf-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; margin-bottom: 8px; cursor: pointer; transition: box-shadow .15s; }
+        .pf-item:hover { box-shadow: 0 4px 14px rgba(30,58,95,.12); }
+        .pf-item.facturada { opacity: .65; cursor: default; }
+        .pf-item .fila { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .pf-item .placa { font-weight: bold; color: #1e293b; }
+        .pf-item .meta { font-size: 12px; color: #64748b; }
+        .pf-item .acc { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+        .badge-fact { font-size: 11px; background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 999px; }
+        .hint { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+        .vacio { padding: 20px; text-align: center; color: #94a3b8; }
+
+        .modal-fact { position: fixed; inset: 0; background: rgba(15,29,51,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+        .modal-fact.activa { display: flex; }
+        .modal-fact-box { background: #fff; border-radius: 14px; width: min(720px,100%); max-height: 92dvh; overflow: auto; padding: 20px; }
+        .modal-fact-box h3 { color: #1e3a5f; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a class="nav-item activo" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
+        <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
+        <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+    </nav>
+
+    <div class="cuerpo">
+        <section class="panel">
+            <div class="panel-head"><h2>📄 Nueva proforma</h2></div>
+            <div class="panel-body">
+                <div class="sub">Cliente</div>
+                <div class="grid2">
+                    <div class="campo"><label>Nombre</label><input id="c-nombre" type="text" placeholder="Nombre del cliente"></div>
+                    <div class="campo"><label>Teléfono</label><input id="c-tel" type="text" placeholder="8888-8888"></div>
+                </div>
+                <div class="sub">Vehículo</div>
+                <div class="grid3">
+                    <div class="campo"><label>Placa *</label><input id="v-placa" type="text" placeholder="ABC-123"></div>
+                    <div class="campo"><label>Marca</label><input id="v-marca" type="text" placeholder="Toyota"></div>
+                    <div class="campo"><label>Modelo</label><input id="v-modelo" type="text" placeholder="Corolla"></div>
+                </div>
+
+                <div class="sub">Detalle (repuestos y mano de obra)</div>
+                <table class="lineas">
+                    <thead>
+                        <tr><th style="width:90px;">Tipo</th><th>Descripción</th><th style="width:54px;">Cant.</th><th style="width:90px;">Precio</th><th style="width:28px;"></th></tr>
+                    </thead>
+                    <tbody id="lineas-body"></tbody>
+                </table>
+                <button type="button" class="btn btn-sec btn-mini" style="margin-top:6px;" onclick="agregarFila()">➕ Agregar línea</button>
+
+                <div class="totales">
+                    <div><span>Subtotal</span><span id="t-sub">₡0</span></div>
+                    <div><span>IVA (<span id="t-iva-pct">13</span>%)</span><span id="t-iva">₡0</span></div>
+                    <div class="grande"><span>Total</span><span id="t-total">₡0</span></div>
+                </div>
+                <div id="estado"></div>
+                <button type="button" class="btn btn-primario" id="btn-guardar" style="margin-top:8px;width:100%;" onclick="guardar()">💾 Guardar proforma</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2>🗂️ Proformas recientes</h2><button type="button" class="btn btn-sec btn-mini" onclick="cargarRecientes()">↻ Actualizar</button></div>
+            <div class="panel-body" id="recientes"><p class="vacio">Cargando…</p></div>
+        </section>
+    </div>
+
+    <div class="modal-fact" id="modal-fact" onclick="cerrarModalFact(event)">
+        <div class="modal-fact-box" onclick="event.stopPropagation()">
+            <h3 id="mf-titulo">🧾 Convertir proforma a factura</h3>
+            <p id="mf-info" style="font-size:13px;color:#64748b;margin-bottom:10px;"></p>
+            <div class="grid2" style="margin-bottom:10px;">
+                <div class="campo"><label>Cliente</label><input id="mf-nombre" type="text"></div>
+                <div class="campo"><label>Identificación (solo FE)</label><input id="mf-cedula" type="text" placeholder="1-2345-6789"></div>
+            </div>
+            <div class="sub">Detalle — puede modificar descripción y montos</div>
+            <table class="lineas">
+                <thead><tr><th>Tipo</th><th>Descripción</th><th>Cant.</th><th>Precio</th><th></th></tr></thead>
+                <tbody id="mf-lineas"></tbody>
+            </table>
+            <button type="button" class="btn btn-sec btn-mini" style="margin:6px 0;" onclick="agregarFilaModal()">➕ Línea</button>
+            <div class="totales">
+                <div><span>Subtotal</span><span id="mf-sub">₡0</span></div>
+                <div><span>IVA</span><span id="mf-iva">₡0</span></div>
+                <div class="grande"><span>Total</span><span id="mf-total">₡0</span></div>
+            </div>
+            <div class="grid2" style="margin-top:10px;">
+                <div class="campo"><label>Método de pago</label>
+                    <select id="mf-metodo"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="sinpe">SINPE</option><option value="otro">Otro</option></select>
+                </div>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="mf-fe"> Emitir factura electrónica (Hacienda)
+            </label>
+            <p style="font-size:11px;color:#64748b;margin-top:4px;">Sin marcar: factura de tiquete imprimible (no se envía a Hacienda).</p>
+            <div id="mf-estado" style="font-size:13px;min-height:18px;margin-top:8px;"></div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-fact" id="btn-facturar" onclick="confirmarFactura()">🧾 Convertir a factura</button>
+                <button type="button" class="btn btn-sec" onclick="cerrarModalFact()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        var ivaRate = 0.13;
+        var facturaOrdenId = null;
+
+        function fmt(v) { var n = Number(v) || 0; return '₡' + n.toLocaleString('es-CR', { maximumFractionDigits: 0 }); }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function filaHtml() {
+            return '<tr>' +
+                '<td><select class="l-tipo"><option value="repuesto">Repuesto</option><option value="mano_obra">Mano obra</option><option value="otro">Otro</option></select></td>' +
+                '<td><input class="l-desc" type="text" placeholder="Descripción"></td>' +
+                '<td><input class="l-cant num" type="number" step="0.01" value="1" oninput="recalc()"></td>' +
+                '<td><input class="l-precio num" type="number" step="0.01" value="0" oninput="recalc()"></td>' +
+                '<td><button type="button" class="btn btn-del btn-mini" onclick="this.closest(\'tr\').remove(); recalc();">✕</button></td></tr>';
+        }
+        function agregarFila() {
+            document.getElementById('lineas-body').insertAdjacentHTML('beforeend', filaHtml());
+        }
+
+        function filaModalHtml(l) {
+            l = l || {};
+            var tipo = l.tipo || 'repuesto';
+            return '<tr><td><select class="l-tipo">' +
+                '<option value="repuesto"' + (tipo === 'repuesto' ? ' selected' : '') + '>Repuesto</option>' +
+                '<option value="mano_obra"' + (tipo === 'mano_obra' ? ' selected' : '') + '>Mano obra</option>' +
+                '<option value="otro"' + (tipo === 'otro' ? ' selected' : '') + '>Otro</option></select></td>' +
+                '<td><input class="l-desc" type="text" value="' + esc(l.descripcion || '') + '"></td>' +
+                '<td><input class="l-cant num" type="number" step="0.01" value="' + (l.cantidad || 1) + '" oninput="recalcModal()"></td>' +
+                '<td><input class="l-precio num" type="number" step="0.01" value="' + (l.precio_unitario || 0) + '" oninput="recalcModal()"></td>' +
+                '<td><button type="button" class="btn btn-del btn-mini" onclick="this.closest(\'tr\').remove(); recalcModal();">✕</button></td></tr>';
+        }
+        function agregarFilaModal() {
+            document.getElementById('mf-lineas').insertAdjacentHTML('beforeend', filaModalHtml({}));
+            recalcModal();
+        }
+
+        function leerLineas(sel) {
+            var filas = [];
+            document.querySelectorAll(sel + ' tr').forEach(function (tr) {
+                var desc = tr.querySelector('.l-desc').value.trim();
+                var cant = Number(tr.querySelector('.l-cant').value) || 0;
+                var precio = Number(tr.querySelector('.l-precio').value) || 0;
+                var tipo = tr.querySelector('.l-tipo').value;
+                if (desc && cant > 0) filas.push({ tipo: tipo, descripcion: desc, cantidad: cant, precio_unitario: precio });
+            });
+            return filas;
+        }
+
+        function recalcSel(subId, ivaId, totalId, sel) {
+            var sub = 0;
+            document.querySelectorAll(sel + ' tr').forEach(function (tr) {
+                sub += (Number(tr.querySelector('.l-cant').value) || 0) * (Number(tr.querySelector('.l-precio').value) || 0);
+            });
+            var iva = Math.round(sub * ivaRate);
+            document.getElementById(subId).textContent = fmt(sub);
+            document.getElementById(ivaId).textContent = fmt(iva);
+            document.getElementById(totalId).textContent = fmt(sub + iva);
+        }
+        function recalc() { recalcSel('t-sub', 't-iva', 't-total', '#lineas-body'); }
+        function recalcModal() { recalcSel('mf-sub', 'mf-iva', 'mf-total', '#mf-lineas'); }
+
+        async function guardar() {
+            var estado = document.getElementById('estado');
+            estado.style.color = '#dc2626';
+            var placa = document.getElementById('v-placa').value.trim();
+            if (!placa) { estado.textContent = 'La placa del vehículo es obligatoria.'; return; }
+            var lineas = leerLineas('#lineas-body');
+            if (!lineas.length) { estado.textContent = 'Agregue al menos una línea con descripción y cantidad.'; return; }
+            var btn = document.getElementById('btn-guardar');
+            btn.disabled = true;
+            estado.style.color = '#64748b';
+            estado.textContent = 'Guardando…';
+            try {
+                var res = await TallerAPI.crearTallerOrden({
+                    placa: placa,
+                    marca: document.getElementById('v-marca').value.trim(),
+                    modelo: document.getElementById('v-modelo').value.trim(),
+                    cliente_nombre: document.getElementById('c-nombre').value.trim(),
+                    cliente_telefono: document.getElementById('c-tel').value.trim(),
+                    observaciones: 'Proforma'
+                });
+                var ordenId = res.orden.id;
+                for (var i = 0; i < lineas.length; i++) {
+                    await TallerAPI.agregarTallerLinea(ordenId, lineas[i]);
+                }
+                estado.style.color = '#16a34a';
+                estado.innerHTML = '✓ Proforma #' + res.orden.numero + ' creada. ' +
+                    '<a href="' + TallerAPI.pdfOrdenUrl(ordenId, 'presupuesto') + '" target="_blank">Ver PDF</a>';
+                limpiar();
+                cargarRecientes();
+                window.open(TallerAPI.pdfOrdenUrl(ordenId, 'presupuesto'), '_blank');
+            } catch (e) {
+                estado.style.color = '#dc2626';
+                estado.textContent = 'No se pudo guardar: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function limpiar() {
+            ['c-nombre','c-tel','v-placa','v-marca','v-modelo'].forEach(function (id) { document.getElementById(id).value = ''; });
+            document.getElementById('lineas-body').innerHTML = '';
+            agregarFila();
+            recalc();
+        }
+
+        async function abrirFacturar(id, ev) {
+            if (ev && ev.target && ev.target.closest && ev.target.closest('a,button')) return;
+            facturaOrdenId = id;
+            document.getElementById('mf-estado').textContent = '';
+            try {
+                var data = await TallerAPI.getTallerOrden(id);
+                var o = data.orden || {};
+                if (o.estado === 'entregado' && (Number(o.saldo_pendiente) || 0) <= 0) {
+                    alert('Esta proforma ya fue facturada.');
+                    return;
+                }
+                document.getElementById('mf-titulo').textContent = '🧾 Facturar proforma #' + o.numero;
+                document.getElementById('mf-info').textContent = (o.placa || '') + ' · ' + (o.marca || '') + ' ' + (o.modelo || '');
+                document.getElementById('mf-nombre').value = o.cliente_nombre || '';
+                document.getElementById('mf-cedula').value = o.cliente_identificacion || '';
+                var tbody = document.getElementById('mf-lineas');
+                tbody.innerHTML = '';
+                (data.lineas || []).forEach(function (l) { tbody.insertAdjacentHTML('beforeend', filaModalHtml(l)); });
+                if (!data.lineas || !data.lineas.length) agregarFilaModal();
+                recalcModal();
+                document.getElementById('modal-fact').classList.add('activa');
+            } catch (e) { alert('No se pudo cargar: ' + e.message); }
+        }
+
+        function cerrarModalFact(ev) {
+            if (ev && ev.target && ev.target.id !== 'modal-fact') return;
+            document.getElementById('modal-fact').classList.remove('activa');
+            facturaOrdenId = null;
+        }
+
+        async function confirmarFactura() {
+            if (!facturaOrdenId) return;
+            var estado = document.getElementById('mf-estado');
+            var lineas = leerLineas('#mf-lineas');
+            if (!lineas.length) { estado.style.color = '#b91c1c'; estado.textContent = 'Agregue al menos una línea.'; return; }
+            var nombre = document.getElementById('mf-nombre').value.trim();
+            var cedula = document.getElementById('mf-cedula').value.trim();
+            var emitirFe = document.getElementById('mf-fe').checked;
+            if (emitirFe && (!nombre || !cedula)) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'Para factura electrónica indique nombre e identificación del cliente.';
+                return;
+            }
+            var btn = document.getElementById('btn-facturar');
+            btn.disabled = true;
+            estado.style.color = '#64748b';
+            estado.textContent = 'Facturando…';
+            try {
+                var payload = {
+                    lineas: lineas,
+                    metodo_pago: document.getElementById('mf-metodo').value,
+                    tipo_cobro: 'contado',
+                    cliente_nombre: nombre,
+                    cliente_identificacion: cedula,
+                    factura_electronica: emitirFe
+                        ? { emitir: true, nombre: nombre, identificacion: cedula, tipo_identificacion: '01' }
+                        : { emitir: false }
+                };
+                var res = await TallerAPI.facturarProforma(facturaOrdenId, payload);
+                var doc = res.factura_electronica;
+                if (doc && doc.ok === false) {
+                    estado.style.color = '#b45309';
+                    estado.textContent = 'Cobro registrado, pero el documento falló: ' + (doc.error || 'error desconocido');
+                    cargarRecientes();
+                    return;
+                }
+                var msg = '✓ Factura creada correctamente.';
+                if (doc && doc.tipo === 'tiquete') {
+                    msg += ' Tiquete ' + (doc.consecutivo || '') + ' (no electrónica).';
+                } else if (doc && doc.clave) {
+                    msg += ' Clave FE: ' + doc.clave;
+                } else if (doc && doc.consecutivo) {
+                    msg += ' Consecutivo: ' + doc.consecutivo;
+                }
+                estado.style.color = '#16a34a';
+                estado.innerHTML = msg +
+                    ' <a href="/factura-imprimir.html?orden=' + facturaOrdenId + '&tipo=factura" target="_blank">Imprimir</a>' +
+                    ' · <a href="/facturacion.html">Facturación</a>';
+                cargarRecientes();
+                window.open('/factura-imprimir.html?orden=' + facturaOrdenId + '&tipo=factura', '_blank');
+            } catch (e) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'Error: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function enviarWa(id) {
+            try {
+                var r = await TallerAPI.getWhatsAppOrden(id, 'presupuesto');
+                if (r && r.wa_url) window.open(r.wa_url, '_blank');
+                else alert('No se pudo preparar el WhatsApp.');
+            } catch (e) { alert('WhatsApp: ' + e.message); }
+        }
+
+        function esFacturada(o) {
+            return o.estado === 'entregado' && (Number(o.saldo_pendiente) || 0) <= 0;
+        }
+
+        async function cargarRecientes() {
+            var cont = document.getElementById('recientes');
+            try {
+                var data = await TallerAPI.getTallerOrdenes({ todos: true, proforma: true });
+                var filas = (data.filas || []).filter(function (o) {
+                    return String(o.observaciones || '').toLowerCase().indexOf('proforma') >= 0;
+                });
+                if (!filas.length) {
+                    cont.innerHTML = '<p class="vacio">No hay proformas. Cree una a la izquierda.</p>';
+                    return;
+                }
+                cont.innerHTML = '<p class="hint">Haga clic en una proforma para convertirla en factura. Puede editar descripción y montos antes de confirmar.</p>' +
+                filas.map(function (o) {
+                    var facturada = esFacturada(o);
+                    var cls = 'pf-item' + (facturada ? ' facturada' : '');
+                    var click = facturada ? '' : ' onclick="abrirFacturar(' + o.id + ', event)"';
+                    return '<div class="' + cls + '"' + click + '>' +
+                        '<div class="fila"><span class="placa">#' + o.numero + ' · ' + esc(o.placa) + '</span>' +
+                        (facturada ? '<span class="badge-fact">Facturada</span>' : '<span class="placa">' + fmt(o.total) + '</span>') + '</div>' +
+                        '<div class="meta">' + esc(o.marca || '') + ' ' + esc(o.modelo || '') + ' · ' + esc(o.cliente_nombre || 'Sin cliente') + '</div>' +
+                        '<div class="acc">' +
+                            '<a class="btn btn-azul btn-mini" href="' + TallerAPI.pdfOrdenUrl(o.id, 'presupuesto') + '" target="_blank" onclick="event.stopPropagation()">📄 PDF</a>' +
+                            (facturada
+                                ? '<a class="btn btn-sec btn-mini" href="/factura-imprimir.html?orden=' + o.id + '&tipo=factura" target="_blank" onclick="event.stopPropagation()">🧾 Ver factura</a>'
+                                : '<button class="btn btn-fact btn-mini" onclick="event.stopPropagation(); abrirFacturar(' + o.id + ')">🧾 Facturar</button>') +
+                        '</div></div>';
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '<p class="vacio">Error: ' + esc(e.message) + '</p>';
+            }
+        }
+
+        async function init() {
+            try {
+                var cfg = await TallerAPI.getTallerConfig();
+                var r = parseFloat(cfg.impuesto_iva);
+                if (!isNaN(r)) { ivaRate = r; document.getElementById('t-iva-pct').textContent = Math.round(r * 100); }
+            } catch (e) { /* 13% */ }
+            agregarFila();
+            recalc();
+            cargarRecientes();
+        }
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Iniciar sesión — Sanmy Taller</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        body {
+            min-height: 100dvh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #16243b 0%, #1e3a5f 45%, #2563eb 100%);
+            padding: 20px; color: #1e293b;
+        }
+        .card {
+            width: min(420px, 100%); background: #fff; border-radius: 16px;
+            padding: 28px 24px; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+        }
+        .card h1 { font-size: 22px; color: #1e3a5f; margin-bottom: 4px; }
+        .card .sub { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+        .campo { margin-bottom: 14px; }
+        .campo label { display: block; font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 4px; }
+        .campo input {
+            width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1;
+            border-radius: 8px; font-size: 15px;
+        }
+        .btn {
+            width: 100%; border: none; border-radius: 10px; padding: 12px;
+            font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 6px;
+            background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff;
+        }
+        .btn:disabled { opacity: .6; cursor: wait; }
+        .btn-sec {
+            background: #e2e8f0; color: #1e3a5f; margin-top: 10px; font-size: 14px; padding: 10px;
+        }
+        #estado { min-height: 20px; font-size: 13px; color: #dc2626; margin-top: 10px; }
+        .hint { font-size: 11px; color: #94a3b8; margin-top: 14px; text-align: center; }
+        .activo-badge {
+            display: none; background: #ecfdf5; border: 1px solid #86efac; border-radius: 10px;
+            padding: 10px 12px; margin-bottom: 16px; font-size: 13px; color: #166534;
+        }
+        .activo-badge.visible { display: block; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 Iniciar sesión</h1>
+        <p class="sub">Sanmy Taller Mecánico</p>
+        <div id="sesion-activa" class="activo-badge"></div>
+        <div class="campo">
+            <label>Usuario</label>
+            <input id="f-usuario" type="text" autocomplete="username" placeholder="Ej. admin">
+        </div>
+        <div class="campo">
+            <label>Contraseña</label>
+            <input id="f-password" type="password" autocomplete="current-password" placeholder="••••">
+        </div>
+        <button type="button" class="btn" id="btn-login" onclick="entrar()">Entrar</button>
+        <button type="button" class="btn btn-sec" onclick="irInicio()">🏠 Volver al inicio</button>
+        <div id="estado"></div>
+        <p class="hint">Primera vez: usuario <strong>admin</strong> / contraseña <strong>admin</strong></p>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        function returnUrl() {
+            var p = new URLSearchParams(window.location.search);
+            var r = p.get('return');
+            return r && r.startsWith('/') ? r : '/abrir.html';
+        }
+
+        function irInicio() { window.location.href = '/abrir.html'; }
+
+        function mostrarSesionActiva() {
+            var u = UsuarioSesion.get();
+            var box = document.getElementById('sesion-activa');
+            if (!u) { box.classList.remove('visible'); return; }
+            box.classList.add('visible');
+            box.innerHTML = 'Sesión activa: <strong>' + esc(u.nombre_completo || u.nombre) + '</strong> (' + esc(u.rol) + '). ' +
+                '<a href="' + returnUrl() + '" style="color:#15803d;font-weight:bold;">Continuar →</a>';
+        }
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        async function entrar() {
+            var estado = document.getElementById('estado');
+            var usuario = document.getElementById('f-usuario').value.trim();
+            var password = document.getElementById('f-password').value;
+            if (!usuario || !password) {
+                estado.textContent = 'Ingrese usuario y contraseña.';
+                return;
+            }
+            var btn = document.getElementById('btn-login');
+            btn.disabled = true;
+            estado.textContent = '';
+            try {
+                var data = await TallerAPI.loginUsuario(usuario, password);
+                UsuarioSesion.set(data.usuario);
+                window.location.href = returnUrl();
+            } catch (e) {
+                estado.textContent = e.message || 'No se pudo iniciar sesión.';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('f-password').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') entrar();
+        });
+
+        mostrarSesionActiva();
+    </script>
+</body>
+</html>

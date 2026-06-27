@@ -1,0 +1,2122 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Sanmy Taller Mecánico</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        html {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            width: 100%;
+            min-height: 100%;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #eef2f7;
+            display: block;
+        }
+        body.modo-erp { overflow: hidden; font-family: Tahoma, Arial, sans-serif; }
+        .app { display: flex; flex-direction: column; height: 100dvh; min-height: 0; width: 100%; overflow: hidden; }
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .topnav .nav-item { flex: 1 1 0; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
+        .topnav .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
+        .topnav .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .topnav .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            color: white;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+        .header h1 { font-size: 18px; flex: 1; }
+        .header a, .header button {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .header a:hover, .header button:hover { background: rgba(255,255,255,0.28); }
+        .main { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px 1fr; grid-template-rows: minmax(0, 1fr); gap: 0; overflow: hidden; }
+        @media (max-width: 900px) { .main { grid-template-columns: 1fr; } .panel-lista.oculto-movil { display: none; } }
+        .panel-lista {
+            background: white;
+            border-right: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .panel-lista-top {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        .panel-lista-top input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .filtros-ordenes { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filtro-btn {
+            padding: 6px 10px;
+            border-radius: 16px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .filtro-btn.activo { background: #2563eb; color: white; border-color: #2563eb; }
+        .lista-ordenes { flex: 1; overflow-y: auto; padding: 8px; }
+        .orden-card {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            background: #fafafa;
+        }
+        .orden-card.activa { border-color: #2563eb; background: #eff6ff; box-shadow: 0 0 0 2px #93c5fd; }
+        .orden-card-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            background: #e2e8f0;
+            object-fit: cover;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .orden-card-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .orden-card-body { flex: 1; min-width: 0; }
+        .orden-card-placa { font-weight: bold; font-size: 15px; color: #1e293b; }
+        .orden-card-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .badge-estado {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+        .est-ingreso { background: #dbeafe; color: #1d4ed8; }
+        .est-diagnostico { background: #fef3c7; color: #b45309; }
+        .est-en_proceso { background: #ede9fe; color: #6d28d9; }
+        .est-listo { background: #dcfce7; color: #15803d; }
+        .est-entregado { background: #f1f5f9; color: #475569; }
+        .est-cancelado { background: #fee2e2; color: #b91c1c; }
+        .panel-detalle {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .detalle-vacio {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 16px;
+            text-align: center;
+            padding: 24px;
+        }
+        .detalle-contenido { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+        .detalle-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .detalle-header-info { flex: 1; min-width: 200px; }
+        .detalle-header-info h2 { font-size: 22px; color: #1e3a5f; }
+        .detalle-header-info p { color: #64748b; font-size: 14px; margin-top: 4px; }
+        .btn-primario {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-secundario {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-verde { background: #16a34a; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .btn-presupuesto {
+            background: linear-gradient(180deg, #ffff66, #e8c800);
+            color: #1a3a5c;
+            border: 2px solid #8a8a00;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-presupuesto:hover { filter: brightness(1.03); }
+        .wa-acciones { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+        .seccion-whatsapp {
+            border: 2px solid #25D366;
+            background: #f0fdf4;
+        }
+        .seccion-whatsapp h3 { color: #15803d; }
+        .modal-cobro-wa {
+            margin-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+        }
+        .modal-cobro-wa-titulo {
+            font-size: 13px;
+            font-weight: bold;
+            color: #15803d;
+            margin-bottom: 8px;
+        }
+        .seccion {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+        .seccion h3 { font-size: 14px; color: #475569; margin-bottom: 10px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-grid label { display: block; font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 4px; }
+        .form-grid input, .form-grid select, .form-grid textarea {
+            width: 100%;
+            padding: 9px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-grid textarea { min-height: 70px; resize: vertical; }
+        .form-full { grid-column: 1 / -1; }
+        .galeria-fotos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .foto-item {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            position: relative;
+            background: #f1f5f9;
+        }
+        .foto-item img { width: 100%; height: 100%; object-fit: cover; }
+        .foto-add {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #64748b;
+            border-style: dashed;
+        }
+        .foto-add span { font-size: 11px; font-weight: bold; margin-top: 4px; }
+        .tabla-lineas { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tabla-lineas th, .tabla-lineas td { padding: 8px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        .tabla-lineas th { background: #f8fafc; color: #475569; font-size: 12px; }
+        .tabla-lineas td.num { text-align: right; font-weight: bold; }
+        .totales-box {
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .totales-box strong { font-size: 20px; color: #1e3a5f; }
+        .fila-agregar-linea { display: grid; grid-template-columns: 100px 1fr 80px 100px auto; gap: 8px; margin-top: 10px; align-items: end; }
+        @media (max-width: 700px) { .fila-agregar-linea { grid-template-columns: 1fr 1fr; } }
+        .fila-agregar-linea input, .fila-agregar-linea select { padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.activa { display: flex; }
+        .modal-foto-grande { max-width: 95vw; max-height: 90dvh; border-radius: 12px; }
+        .estado-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        #input-foto-file { display: none; }
+        .msg-api { padding: 8px 12px; background: #fef3c7; color: #92400e; font-size: 13px; text-align: center; }
+        .placa-wrap { position: relative; }
+        .vehiculo-wrap { position: relative; }
+        .sugerencias-placa {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            z-index: 50;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+        .sugerencias-marca { max-height: 280px; }
+        .sugerencias-modelo { max-height: 220px; }
+        .sugerencia-placa-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13px;
+        }
+        .sugerencia-placa-item:hover { background: #eff6ff; }
+        .sugerencia-placa-item strong { color: #1e3a5f; }
+        .aviso-vehiculo-encontrado {
+            grid-column: 1 / -1;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .detalle-header-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+        .modal-cobro-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 92dvh;
+            overflow-y: auto;
+        }
+        .modal-cobro-metodos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+        .modal-cobro-metodo {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .modal-cobro-metodo.seleccionado { border-color: #2563eb; background: #eff6ff; }
+        .historial-item {
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .historial-item:hover { background: #f1f5f9; }
+        .btn-cancelar { background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; padding: 10px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .header-resumen {
+            font-size: 11px;
+            opacity: 0.95;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-width: 420px;
+        }
+        .header-resumen span { white-space: nowrap; }
+        .barra-taller {
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            color: #fff;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .barra-taller .header-resumen { max-width: none; flex: 1; min-width: 200px; }
+        .barra-acciones { display: flex; gap: 6px; flex-wrap: wrap; }
+        .barra-acciones button {
+            border: none;
+            border-radius: 8px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+        }
+        .barra-acciones button:hover { background: rgba(255,255,255,0.3); }
+        .barra-acciones button.prim { background: #16a34a; }
+        .toast-taller {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: #1e293b; color: #fff; padding: 10px 18px; border-radius: 999px;
+            font-size: 13px; font-weight: bold; z-index: 9999; opacity: 0; pointer-events: none;
+            transition: opacity .25s, transform .25s; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+        }
+        .toast-taller.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .tel-edit { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+        .tel-edit input { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 140px; }
+        .badge-saldo {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #ffedd5;
+            color: #c2410c;
+            margin-top: 4px;
+        }
+        .modal-cobro-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .modal-cobro-tab {
+            flex: 1;
+            padding: 8px 6px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .modal-cobro-tab.activo { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+        .modal-cobro-tab.apartado.activo { border-color: #ea580c; background: #ffedd5; color: #c2410c; }
+        .modal-cobro-tab.credito.activo { border-color: #7c3aed; background: #ede9fe; color: #6d28d9; }
+        .modal-pendientes-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 640px;
+            width: 100%;
+            max-height: 85dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-pendientes-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .modal-pendientes-tabs button {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .modal-pendientes-tabs button.activo { background: #2563eb; color: white; border-color: #2563eb; }
+        .lista-pendientes { flex: 1; overflow-y: auto; }
+        .pendiente-item {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .pendiente-item:hover { background: #f1f5f9; }
+        .tabla-abonos { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+        .tabla-abonos th, .tabla-abonos td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        .tabla-abonos td.num { text-align: right; }
+        @media (max-width: 900px) { .header-resumen { display: none; } }
+
+        /* —— Pantalla ERP Orden de trabajo (estilo SolverMedia) —— */
+        body.modo-erp { background: linear-gradient(180deg, #a8cce0 0%, #8fbfd6 40%, #7eb0cc 100%); }
+        body.modo-erp .barra-taller { display: none; }
+        .ot-selector-bar {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            padding: 6px 12px; background: rgba(255,255,255,.55);
+            border-bottom: 1px solid #5a8aaa; flex-shrink: 0;
+        }
+        .ot-selector-bar label { font-size: 11px; font-weight: bold; color: #1a3a5c; }
+        .ot-selector-bar select, .ot-selector-bar input[type=search] {
+            padding: 4px 8px; border: 1px solid #888; border-radius: 3px; font-size: 12px;
+        }
+        .ot-selector-bar select { flex: 1; min-width: 160px; max-width: 360px; }
+        .ot-selector-bar input[type=search] { width: 140px; }
+        .ot-btn-sel {
+            border: 1px solid #666; background: linear-gradient(180deg, #f0f0f0, #d0d0d0);
+            padding: 5px 10px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 3px;
+        }
+        .ot-btn-sel.prim { background: linear-gradient(180deg, #90ee90, #4caf50); border-color: #2e7d32; color: #fff; }
+        .main-erp { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .erp-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .erp-top {
+            display: flex; align-items: center; justify-content: center;
+            padding: 6px 16px 2px; position: relative; flex-shrink: 0;
+        }
+        .erp-top h1 { font-size: 20px; font-weight: bold; color: #1a3a5c; text-shadow: 1px 1px 0 rgba(255,255,255,.4); }
+        .erp-fecha {
+            position: absolute; right: 16px; top: 6px;
+            display: flex; align-items: center; gap: 8px; font-size: 12px;
+        }
+        .erp-fecha input { padding: 4px 8px; border: 1px solid #6a8fa8; border-radius: 4px; }
+        .erp-grid-top {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            padding: 0 12px 8px; flex-shrink: 0;
+        }
+        .erp-panel {
+            background: rgba(255,255,255,.75); border: 2px solid #5a8aaa;
+            border-radius: 4px; overflow: hidden;
+        }
+        .erp-panel-head {
+            background: linear-gradient(180deg, #ffff66, #e8e800);
+            border-bottom: 1px solid #999; padding: 4px 10px;
+            font-weight: bold; font-size: 12px; color: #333;
+        }
+        .erp-panel-body { padding: 8px 10px; }
+        .erp-campo {
+            display: grid; grid-template-columns: 100px 1fr; gap: 6px;
+            align-items: center; margin-bottom: 4px;
+        }
+        .erp-campo label { font-size: 11px; color: #333; text-align: right; }
+        .erp-campo input, .erp-campo textarea {
+            padding: 3px 6px; border: 1px solid #888; border-radius: 2px;
+            font-size: 12px; width: 100%; background: #fff;
+        }
+        .erp-campo input:read-only, .erp-campo textarea:read-only { background: #f5f5f5; }
+        .erp-veh-mini { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .erp-veh-mini th, .erp-veh-mini td { border: 1px solid #888; padding: 3px 8px; background: #fff; }
+        .erp-veh-mini th { background: #d4e8f4; font-weight: normal; }
+        .erp-veh-mini td input { width: 100%; border: none; padding: 2px 4px; font-size: 12px; background: transparent; }
+        .erp-veh-mini td input:focus { outline: 1px solid #2563eb; background: #fff; }
+        .erp-btn-row {
+            display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+            padding: 4px 12px 8px; flex-shrink: 0;
+        }
+        .erp-btn-row button {
+            border: 1px solid #666; background: linear-gradient(180deg, #f0f0f0, #d0d0d0);
+            padding: 6px 12px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 3px;
+        }
+        .erp-tabs { display: flex; gap: 0; padding: 0 12px; flex-shrink: 0; }
+        .erp-tab {
+            flex: 1; max-width: 300px; border: 2px solid #5a8aaa; border-bottom: none;
+            background: linear-gradient(180deg, #d8ecf6, #b8d8ea);
+            padding: 8px 10px; font-size: 12px; font-weight: bold; cursor: pointer;
+            text-align: center; color: #1a3a5c; border-radius: 6px 6px 0 0; margin-right: 4px;
+        }
+        .erp-tab.activo { background: linear-gradient(180deg, #ffff66, #e8e800); border-color: #666; color: #000; }
+        .erp-tab:disabled { opacity: .45; cursor: not-allowed; }
+        .erp-tab kbd { font-size: 10px; opacity: .7; }
+        .erp-entrada {
+            margin: 0 12px; padding: 8px 10px; background: rgba(255,255,255,.85);
+            border: 2px solid #5a8aaa; border-top: none;
+            display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; flex-shrink: 0;
+        }
+        .erp-entrada .campo { display: flex; flex-direction: column; gap: 2px; }
+        .erp-entrada label { font-size: 10px; color: #444; }
+        .erp-entrada input, .erp-entrada select, .erp-entrada textarea {
+            padding: 4px 6px; border: 1px solid #888; font-size: 12px; min-width: 90px;
+        }
+        .erp-entrada textarea { min-width: 280px; min-height: 50px; }
+        .btn-erp-add {
+            background: linear-gradient(180deg, #90ee90, #4caf50); border: 1px solid #2e7d32;
+            color: #fff; font-weight: bold; padding: 6px 14px; cursor: pointer; border-radius: 3px;
+        }
+        .erp-tabla-wrap {
+            flex: 1; min-height: 120px; margin: 0 12px;
+            background: #fff; border: 2px solid #5a8aaa; overflow: auto;
+        }
+        .erp-tabla { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .erp-tabla thead th {
+            background: linear-gradient(180deg, #d4e8f4, #a8cce0);
+            border: 1px solid #888; padding: 5px 6px; font-weight: normal;
+            white-space: nowrap; position: sticky; top: 0; z-index: 1;
+        }
+        .erp-tabla tbody td { border: 1px solid #ccc; padding: 4px 6px; }
+        .erp-tabla tbody tr:nth-child(even) td { background: #f8fcff; }
+        .erp-tabla .num { text-align: right; }
+        .erp-footer {
+            flex-shrink: 0; padding: 8px 12px;
+            display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: end;
+        }
+        .erp-estado-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 11px; }
+        .erp-estado-row button {
+            border: 1px solid #666; background: #fff; padding: 4px 8px; font-size: 11px;
+            cursor: pointer; border-radius: 3px;
+        }
+        .erp-estado-row button.activo { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+        .erp-km-box {
+            background: linear-gradient(180deg, #4a7a9a, #2a5080);
+            border: 2px solid #1a3050; color: #fff; padding: 8px 14px; min-width: 180px;
+        }
+        .erp-km-box .placa-lbl { font-weight: bold; font-size: 13px; margin-bottom: 6px; text-align: center; }
+        .erp-km-box .erp-campo label { color: #cce4f4; }
+        .erp-km-box .erp-campo input { background: #fff; }
+        .erp-barra-inf {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 12px; background: rgba(0,0,0,.08); flex-shrink: 0; flex-wrap: wrap; gap: 8px;
+        }
+        .erp-barra-inf .info { font-size: 11px; }
+        .erp-acciones { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .erp-acciones button, .btn-erp-salir {
+            border: 1px solid #666; background: #fff; padding: 6px 12px;
+            font-size: 12px; cursor: pointer; border-radius: 3px;
+        }
+        .btn-erp-salir {
+            background: linear-gradient(180deg, #6eb5e0, #4a90b8);
+            border: 2px solid #2a6080; color: #fff; font-weight: bold; font-size: 14px; padding: 8px 20px;
+        }
+        .btn-erp-cobrar { background: linear-gradient(180deg, #86efac, #16a34a); border-color: #15803d; color: #fff; font-weight: bold; }
+        .erp-totales { font-size: 12px; text-align: right; padding-right: 4px; }
+        .erp-totales strong { font-size: 16px; color: #1a3a5c; }
+        .sugerencias-placa-erp {
+            position: absolute; z-index: 50; background: #fff; border: 1px solid #888;
+            max-height: 160px; overflow: auto; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,.15);
+        }
+        .sugerencias-placa-erp div { padding: 6px 8px; cursor: pointer; font-size: 12px; }
+        .sugerencias-placa-erp div:hover { background: #eff6ff; }
+        @media (max-width: 900px) {
+            .erp-grid-top { grid-template-columns: 1fr; }
+            .erp-footer { grid-template-columns: 1fr; }
+        }
+        .fe-cobro-seccion {
+            margin-top: 14px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+        }
+        .fe-cobro-campos { margin-top: 10px; display: none; }
+        .fe-cobro-campos.activa { display: block; }
+        .fe-cobro-campos label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #64748b;
+            margin: 8px 0 4px;
+        }
+        .fe-cobro-campos input, .fe-cobro-campos select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .modal-fe-config-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90dvh;
+            overflow-y: auto;
+        }
+        .modal-fe-config-box input, .modal-fe-config-box select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .modal-fe-config-box label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .fe-clave-badge {
+            font-size: 11px;
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .campo-marca-modelo { display: flex; gap: 6px; align-items: stretch; }
+        .campo-marca-modelo input { flex: 1; min-width: 0; cursor: pointer; }
+        .btn-picker-vehiculo {
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .btn-picker-vehiculo:hover { background: #eff6ff; border-color: #2563eb; }
+        .modal-picker-vehiculo-box {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            max-width: 420px;
+            width: 100%;
+            max-height: 85dvh;
+            display: flex;
+            flex-direction: column;
+        }
+        .picker-buscar {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 10px;
+        }
+        .picker-lista {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            min-height: 200px;
+            max-height: 55dvh;
+        }
+        .picker-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .picker-item:hover, .picker-item.activo { background: #eff6ff; color: #1d4ed8; }
+        .picker-item:last-child { border-bottom: none; }
+        .picker-vacio {
+            padding: 24px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+    <link rel="stylesheet" href="responsive.css?v=3">
+</head>
+<body>
+    <div class="app">
+        <nav class="topnav">
+            <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+            <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+            <a class="nav-item activo" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+            <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>EN REVISIÓN</a>
+            <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+            <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
+            <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
+            <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+            <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
+            <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+        </nav>
+        <div id="msg-api" class="msg-api" style="display:none;"></div>
+        <div class="barra-taller">
+            <div id="header-resumen" class="header-resumen">Cargando resumen…</div>
+            <div class="barra-acciones">
+                <button type="button" class="prim" onclick="mostrarNuevaOrden()">➕ Nueva orden</button>
+                <button type="button" onclick="mostrarPendientesCobro()">📋 Pendientes cobro</button>
+                <button type="button" onclick="window.location.href='/facturacion.html'">🧾 Facturación</button>
+                <button type="button" onclick="window.location.href='/configuracion.html'">⚙️ Configuración</button>
+            </div>
+        </div>
+        <div class="ot-selector-bar">
+            <label for="sel-orden-erp">Orden:</label>
+            <select id="sel-orden-erp" onchange="seleccionarOrdenErp(this.value)">
+                <option value="">— Nueva orden de trabajo —</option>
+            </select>
+            <input type="search" id="buscar-ordenes" placeholder="Buscar…" oninput="programarBusqueda()">
+            <button type="button" class="ot-btn-sel" data-filtro="activas" onclick="cambiarFiltro('activas', this)">Activas</button>
+            <button type="button" class="ot-btn-sel" data-filtro="diagnostico" onclick="cambiarFiltro('diagnostico', this)">Revisión</button>
+            <button type="button" class="ot-btn-sel" data-filtro="listo" onclick="cambiarFiltro('listo', this)">Listas</button>
+            <button type="button" class="ot-btn-sel prim" onclick="mostrarNuevaOrden()">➕ Nueva orden</button>
+        </div>
+        <div class="main-erp erp-scroll" id="erp-shell">
+            <div class="erp-top">
+                <h1 id="erp-titulo">Ordenes de trabajo — Sanmy Taller 🇨🇷</h1>
+                <div class="erp-fecha">
+                    <label for="erp-fecha">Fecha de orden trabajo</label>
+                    <input id="erp-fecha" type="date">
+                </div>
+            </div>
+            <div class="erp-grid-top">
+                <div class="erp-panel">
+                    <div class="erp-panel-head">Datos del Cliente</div>
+                    <div class="erp-panel-body">
+                        <div class="erp-panel-head" style="margin:-8px -10px 8px;border-radius:0;">Datos Facturación</div>
+                        <div class="erp-campo"><label>Nombre</label><input id="erp-c-nombre" type="text"></div>
+                        <div class="erp-campo"><label>Dirección</label><input id="erp-c-direccion" type="text"></div>
+                        <div class="erp-campo"><label>Población</label><input id="erp-c-poblacion" type="text"></div>
+                        <div class="erp-campo"><label>Provincia</label><input id="erp-c-provincia" type="text"></div>
+                        <div class="erp-campo"><label>NITE</label><input id="erp-c-nite" type="text"></div>
+                        <div class="erp-campo"><label>Email</label><input id="erp-c-email" type="email"></div>
+                        <div class="erp-campo"><label>TLF</label><input id="erp-c-tlf" type="tel"></div>
+                    </div>
+                </div>
+                <div class="erp-panel">
+                    <div class="erp-panel-head">Lista Vehículos</div>
+                    <div class="erp-panel-body">
+                        <table class="erp-veh-mini">
+                            <thead><tr><th>Matrícula</th><th>Marca</th><th>Modelo</th></tr></thead>
+                            <tbody><tr>
+                                <td style="position:relative;">
+                                    <input id="erp-v-placa" type="text" placeholder="ABC-123" autocomplete="off" oninput="buscarPlacaErp()" style="text-transform:uppercase">
+                                    <div id="sugerencias-placa-erp" class="sugerencias-placa-erp" style="display:none;"></div>
+                                </td>
+                                <td><input id="erp-v-marca" type="text" placeholder="Toyota"></td>
+                                <td><input id="erp-v-modelo" type="text" placeholder="Corolla"></td>
+                            </tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="erp-btn-row">
+                <button type="button" onclick="window.location.href='/clientes.html'">🔍 Buscar Nuevo Cliente</button>
+                <button type="button" onclick="window.location.href='/clientes.html'">👤 Crear Nuevo Cliente</button>
+                <button type="button" onclick="abrirHistoricoErp()">📁 Histórico de ordenes de trabajo</button>
+                <button type="button" onclick="mostrarNuevaOrden()">📋 Nueva Orden trabajo</button>
+                <button type="button" onclick="window.location.href='/clientes.html'">🚗 Nuevo Vehículo</button>
+            </div>
+            <div class="erp-tabs">
+                <button type="button" class="erp-tab activo" data-tab="productos" onclick="selTabErp('productos', this)">⚙️ Productos <kbd>F5</kbd></button>
+                <button type="button" class="erp-tab" data-tab="servicios" onclick="selTabErp('servicios', this)">🎨 Trabajo a realizar <kbd>F6</kbd></button>
+                <button type="button" class="erp-tab" data-tab="libre" onclick="selTabErp('libre', this)">💡 Texto Libre / Observación <kbd>F7</kbd></button>
+            </div>
+            <div class="erp-entrada" id="erp-entrada-productos">
+                <div class="campo" style="flex:1;min-width:200px;">
+                    <label>Repuesto (inventario)</label>
+                    <select id="erp-e-inv"></select>
+                </div>
+                <div class="campo"><label>Cant.</label><input id="erp-e-cant-p" type="number" value="1" min="0.01" step="0.01" style="width:70px;"></div>
+                <button type="button" class="btn-erp-add" id="erp-btn-add" onclick="agregarLineaErp()">➕ Agregar</button>
+            </div>
+            <div class="erp-entrada" id="erp-entrada-servicios" style="display:none;">
+                <div class="campo" style="flex:2;"><label>Descripción trabajo</label><input id="erp-e-desc-s" type="text" placeholder="Mano de obra, diagnóstico…"></div>
+                <div class="campo"><label>Cant.</label><input id="erp-e-cant-s" type="number" value="1" min="0.01" step="0.01" style="width:70px;"></div>
+                <div class="campo"><label>Precio ₡</label><input id="erp-e-precio-s" type="number" value="0" min="0" step="1" style="width:90px;"></div>
+                <button type="button" class="btn-erp-add" onclick="agregarLineaErp()">➕ Agregar</button>
+            </div>
+            <div class="erp-entrada" id="erp-entrada-libre" style="display:none;">
+                <div class="campo" style="flex:2;"><label>Motivo / observación</label><textarea id="erp-e-obs" placeholder="Texto libre u observación del trabajo"></textarea></div>
+                <button type="button" class="btn-erp-add" onclick="guardarObservacionErp()">💾 Guardar texto</button>
+            </div>
+            <div class="erp-tabla-wrap">
+                <table class="erp-tabla">
+                    <thead>
+                        <tr><th>Código</th><th>Tipo</th><th>Descripción</th><th class="num">Cant.</th><th>Empleado</th><th></th></tr>
+                    </thead>
+                    <tbody id="erp-lineas"><tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">Complete datos y pulse «Nueva Orden trabajo» o guarde la orden para agregar líneas</td></tr></tbody>
+                </table>
+            </div>
+            <div class="erp-footer">
+                <div>
+                    <div class="erp-estado-row" id="erp-estados"></div>
+                    <div class="erp-totales" id="erp-totales"></div>
+                </div>
+                <div class="erp-km-box">
+                    <div class="placa-lbl" id="erp-km-placa">—</div>
+                    <div class="erp-campo"><label>Kms. Anterior</label><input id="erp-km-ant" type="text" readonly></div>
+                    <div class="erp-campo"><label>Kms. Actual</label><input id="erp-km-act" type="text"></div>
+                </div>
+                <div class="erp-acciones">
+                    <button type="button" class="btn-erp-cobrar" id="erp-btn-cobrar" onclick="cobrarOrdenErp()" disabled>💵 Cobrar</button>
+                    <button type="button" onclick="enviarWaErp()">📱 WhatsApp</button>
+                    <button type="button" onclick="verPdfErp()">📄 PDF</button>
+                    <button type="button" class="btn-erp-salir" onclick="salirErp()">🏠 Salir</button>
+                </div>
+            </div>
+            <div class="erp-barra-inf">
+                <div class="info">ℹ️ Orden <strong id="erp-num">—</strong> · Líneas: <strong id="erp-n-lineas">0</strong> · <span id="erp-badge-estado"></span></div>
+                <div class="erp-acciones">
+                    <button type="button" id="erp-btn-guardar" onclick="guardarOrdenErp()">💾 Guardar orden</button>
+                    <button type="button" onclick="abrirPresupuestoErp()">📋 Proforma</button>
+                    <button type="button" onclick="imprimirOrdenErp()">🖨️ Imprimir</button>
+                    <button type="button" onclick="seleccionarFotoErp()">📷 Foto</button>
+                </div>
+            </div>
+        </div>
+        <div id="lista-ordenes" style="display:none;"></div>
+    </div>
+
+    <div id="toast-taller" class="toast-taller" role="status"></div>
+
+    <div id="modal-foto" class="modal-overlay" onclick="cerrarModalFoto()">
+        <img id="modal-foto-img" class="modal-foto-grande" alt="Foto vehículo" onclick="event.stopPropagation()">
+    </div>
+
+    <div id="modal-cobro" class="modal-overlay" onclick="cerrarModalCobro()">
+        <div class="modal-cobro-box" onclick="event.stopPropagation()">
+            <h3 id="modal-cobro-titulo" style="margin-bottom:8px;">Cobrar y entregar vehículo</h3>
+            <p style="font-size:12px;color:#b45309;margin-bottom:8px;background:#fffbeb;padding:8px;border-radius:8px;">⚠️ Al confirmar, la orden se marca como <strong>entregada</strong>. En crédito o apartado puede quedar saldo pendiente.</p>
+            <p id="modal-cobro-total" style="font-size:22px;font-weight:bold;color:#1e3a5f;"></p>
+            <p id="modal-cobro-saldo-info" style="font-size:13px;color:#64748b;margin-bottom:8px;display:none;"></p>
+            <div id="modal-cobro-tabs" class="modal-cobro-tabs">
+                <button type="button" class="modal-cobro-tab activo" data-tipo="contado" onclick="seleccionarTipoCobro(this)">💵 Contado</button>
+                <button type="button" class="modal-cobro-tab apartado" data-tipo="apartado" onclick="seleccionarTipoCobro(this)">📦 Apartado</button>
+                <button type="button" class="modal-cobro-tab credito" data-tipo="credito" onclick="seleccionarTipoCobro(this)">📝 Crédito</button>
+            </div>
+            <p style="font-size:13px;color:#64748b;margin-bottom:8px;">Método de pago</p>
+            <div class="modal-cobro-metodos">
+                <button type="button" class="modal-cobro-metodo seleccionado" data-metodo="efectivo" onclick="seleccionarMetodoCobro(this)">💵 Efectivo</button>
+                <button type="button" class="modal-cobro-metodo" data-metodo="tarjeta" onclick="seleccionarMetodoCobro(this)">💳 Tarjeta</button>
+                <button type="button" class="modal-cobro-metodo" data-metodo="sinpe" onclick="seleccionarMetodoCobro(this)">📱 SINPE</button>
+                <button type="button" class="modal-cobro-metodo" data-metodo="otro" onclick="seleccionarMetodoCobro(this)">Otro</button>
+            </div>
+            <label id="modal-cobro-monto-label" style="font-size:12px;font-weight:bold;color:#64748b;">Monto cobrado</label>
+            <input id="modal-cobro-monto" type="number" step="0.01" style="width:100%;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;">
+            <p id="modal-cobro-preview" style="font-size:12px;color:#64748b;margin-top:8px;"></p>
+            <div class="fe-cobro-seccion">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold;cursor:pointer;">
+                    <input type="checkbox" id="modal-cobro-fe" onchange="toggleCamposFeCobro()">
+                    <span id="modal-cobro-fe-label">Emitir factura electrónica (Hacienda CR)</span>
+                </label>
+                <p id="modal-cobro-fe-hint" style="font-size:11px;color:#64748b;margin-top:4px;">Sin marcar: factura de tiquete imprimible. Con marcar: requiere nombre y cédula del cliente.</p>
+                <div id="modal-cobro-fe-campos" class="fe-cobro-campos">
+                    <label for="modal-fe-tipo-id">Tipo identificación</label>
+                    <select id="modal-fe-tipo-id">
+                        <option value="01">Cédula física</option>
+                        <option value="02">Cédula jurídica</option>
+                        <option value="03">DIMEX</option>
+                        <option value="04">NITE</option>
+                    </select>
+                    <label for="modal-fe-cedula">Identificación *</label>
+                    <input id="modal-fe-cedula" type="text" placeholder="Ej. 1-2345-6789">
+                    <label for="modal-fe-nombre">Nombre o razón social *</label>
+                    <input id="modal-fe-nombre" type="text" placeholder="Nombre del cliente">
+                    <label for="modal-fe-email">Correo (opcional)</label>
+                    <input id="modal-fe-email" type="email" placeholder="cliente@correo.com">
+                </div>
+            </div>
+            <div class="modal-cobro-wa">
+                <p class="modal-cobro-wa-titulo">📱 Enviar al cliente por WhatsApp</p>
+                <div class="wa-acciones">
+                    <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(cobroOrdenId, 'factura')">📱 Factura</button>
+                    <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(cobroOrdenId, 'orden')">📱 Orden</button>
+                    <button type="button" class="btn-whatsapp" onclick="enviarWhatsAppOrden(cobroOrdenId, 'presupuesto')">📱 Presupuesto</button>
+                    <button type="button" class="btn-secundario" onclick="descargarPdfOrden(cobroOrdenId, 'factura')">📄 Ver PDF</button>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+                <button type="button" class="btn-verde" style="flex:1;" id="modal-cobro-confirmar" onclick="confirmarCobro()">Confirmar cobro</button>
+                <button type="button" class="btn-secundario" onclick="cerrarModalCobro()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-fe-config" class="modal-overlay" onclick="cerrarModalFeConfig()">
+        <div class="modal-fe-config-box" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:12px;">📄 Factura electrónica — configuración</h3>
+            <p style="font-size:13px;color:#64748b;margin-bottom:14px;">Costa Rica (Hacienda). Modo simulación para pruebas sin API. Conecte su proveedor FE en modo API.</p>
+            <label>Modo</label>
+            <select id="fe-cfg-modo">
+                <option value="simulacion">Simulación (pruebas)</option>
+                <option value="api">API proveedor FE</option>
+            </select>
+            <label>URL API (POST factura)</label>
+            <input id="fe-cfg-url" type="url" placeholder="https://api.proveedor-fe.com/v1/facturas">
+            <label>Token API (Bearer)</label>
+            <input id="fe-cfg-token" type="password" placeholder="Token opcional">
+            <label>Cédula jurídica emisor *</label>
+            <input id="fe-cfg-cedula" type="text" placeholder="3-101-123456">
+            <label>Nombre emisor *</label>
+            <input id="fe-cfg-nombre" type="text" placeholder="Razón social del taller">
+            <label>Email emisor</label>
+            <input id="fe-cfg-email" type="email" placeholder="taller@correo.com">
+            <label>Actividad económica (CIIU)</label>
+            <input id="fe-cfg-actividad" type="text" value="452000" placeholder="452000 — taller mecánico">
+            <label>Sucursal</label>
+            <input id="fe-cfg-sucursal" type="text" value="001">
+            <label>Terminal</label>
+            <input id="fe-cfg-terminal" type="text" value="001">
+            <p id="fe-cfg-estado" style="font-size:13px;margin:10px 0;"></p>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <button type="button" class="btn-primario" onclick="guardarFeConfig()">Guardar</button>
+                <button type="button" class="btn-secundario" onclick="probarFeConfig()">Probar conexión</button>
+                <button type="button" class="btn-secundario" onclick="cerrarModalFeConfig()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pendientes" class="modal-overlay" onclick="cerrarPendientesCobro()">
+        <div class="modal-pendientes-box" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:8px;">📋 Créditos y apartados pendientes</h3>
+            <p id="pendientes-resumen" style="font-size:13px;color:#64748b;margin-bottom:12px;"></p>
+            <div class="modal-pendientes-tabs">
+                <button type="button" class="activo" data-tipo="" onclick="filtrarPendientesCobro('', this)">Todos</button>
+                <button type="button" data-tipo="apartado" onclick="filtrarPendientesCobro('apartado', this)">📦 Apartados</button>
+                <button type="button" data-tipo="credito" onclick="filtrarPendientesCobro('credito', this)">📝 Créditos</button>
+            </div>
+            <div id="lista-pendientes" class="lista-pendientes"></div>
+            <div style="margin-top:12px;">
+                <button type="button" class="btn-secundario" onclick="cerrarPendientesCobro()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    <div id="modal-picker-vehiculo" class="modal-overlay" onclick="if(event.target===this) cerrarPickerVehiculo()">
+        <div class="modal-picker-vehiculo-box" onclick="event.stopPropagation()">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                <button type="button" id="picker-btn-volver-marca" class="btn-secundario" style="display:none;padding:6px 10px;font-size:12px;" onclick="volverPickerMarca()">← Marcas</button>
+                <h3 id="picker-vehiculo-titulo" style="color:#1e3a5f;flex:1;margin:0;">Seleccionar marca</h3>
+            </div>
+            <p id="picker-vehiculo-sub" style="font-size:13px;color:#64748b;margin-bottom:8px;display:none;"></p>
+            <input type="search" id="picker-vehiculo-buscar" class="picker-buscar" placeholder="Buscar marca..." oninput="filtrarPickerVehiculo()">
+            <div id="picker-vehiculo-lista" class="picker-lista"></div>
+            <div style="margin-top:12px;display:flex;gap:8px;">
+                <button type="button" class="btn-secundario" onclick="cerrarPickerVehiculo()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="input-foto-file" accept="image/*" capture="environment">
+
+    <script src="vehiculos-marcas.js?v=3"></script>
+    <script src="vehiculo-picker.js?v=2"></script>
+    <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        var filtroActual = 'activas';
+        var ordenActivaId = null;
+        var busquedaTimer = null;
+        var fotoTargetOrdenId = null;
+        var placaBusquedaTimer = null;
+        var cobroOrdenId = null;
+        var metodoCobroSeleccionado = 'efectivo';
+        var tipoCobroSeleccionado = 'contado';
+        var cobroOrdenTotal = 0;
+        var cobroOrdenSaldo = 0;
+        var modoCobroModal = 'cobro';
+        var pendientesFiltroTipo = '';
+        window._feConfig = null;
+
+        function feApiAutomatica() {
+            var c = window._feConfig || {};
+            if (c.fe_modo !== 'api') return false;
+            if (!c.fe_proveedor || c.fe_proveedor === 'pendiente') return false;
+            if (!c.fe_api_token) return false;
+            if (!c.fe_emisor_cedula || !c.fe_emisor_nombre) return false;
+            return true;
+        }
+
+        function nombreProveedorFe(id) {
+            var n = { almendro: 'Almendro', factun: 'Factun', generico: 'API' };
+            return n[id] || 'proveedor FE';
+        }
+
+        async function cargarFeConfigCache() {
+            try {
+                var data = await TallerAPI.getFeConfig();
+                window._feConfig = data.config || data || {};
+            } catch (e) {
+                window._feConfig = null;
+            }
+        }
+
+        var ESTADOS_LABEL = {
+            ingreso: 'Ingreso',
+            diagnostico: 'En revisión',
+            en_proceso: 'En proceso',
+            listo: 'Listo',
+            entregado: 'Entregado',
+            cancelado: 'Cancelado'
+        };
+
+        function mostrarToast(msg) {
+            var t = document.getElementById('toast-taller');
+            if (!t) return;
+            t.textContent = msg;
+            t.classList.add('visible');
+            clearTimeout(mostrarToast._tm);
+            mostrarToast._tm = setTimeout(function () { t.classList.remove('visible'); }, 2800);
+        }
+
+        function fmtColones(n) {
+            return '₡' + (parseFloat(n) || 0).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function escHtml(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function badgeEstado(estado) {
+            return '<span class="badge-estado est-' + escHtml(estado) + '">' + escHtml(ESTADOS_LABEL[estado] || estado) + '</span>';
+        }
+
+        async function initTaller() {
+            document.body.classList.add('modo-erp');
+            const ok = await TallerAPI.checkHealth();
+            const badge = document.getElementById('api-badge');
+            if (badge) {
+                badge.textContent = ok ? '● API OK' : '● Sin API';
+                badge.style.color = ok ? '#86efac' : '#fca5a5';
+            }
+            const msg = document.getElementById('msg-api');
+            if (msg) {
+                if (!ok) {
+                    msg.style.display = 'block';
+                    msg.textContent = 'Servidor no disponible. Ejecute ABRIR-SISTEMA.bat';
+                } else {
+                    msg.style.display = 'none';
+                }
+            }
+            if (ok) {
+                try {
+                    const cfg = await TallerAPI.getTallerConfig();
+                    const titulo = document.getElementById('titulo-negocio');
+                    if (cfg.nombre_negocio && titulo) {
+                        titulo.textContent = cfg.nombre_negocio;
+                    }
+                } catch (e) { /* ignore */ }
+                await cargarInventarioCache();
+                await cargarResumenHoy();
+                await cargarFeConfigCache();
+            }
+            await cargarListaOrdenes();
+            poblarInventarioErp();
+            document.getElementById('erp-fecha').value = new Date().toISOString().slice(0, 10);
+            var btnActivas = document.querySelector('.ot-btn-sel[data-filtro="activas"]');
+            if (btnActivas) btnActivas.style.outline = '2px solid #2563eb';
+            mostrarNuevaOrden();
+            ejecutarAccionUrl();
+        }
+
+        function poblarInventarioErp() {
+            var sel = document.getElementById('erp-e-inv');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">— Seleccione repuesto —</option>' +
+                inventarioCache.map(function (it) {
+                    return '<option value="' + it.id + '">' + escHtml(it.nombre) +
+                        (it.codigo ? ' (' + escHtml(it.codigo) + ')' : '') +
+                        ' · ' + fmtColones(it.precio) + '</option>';
+                }).join('');
+        }
+
+        function selTabErp(tab, btn) {
+            if (erpCerrada && tab !== 'libre') return;
+            erpTabActivo = tab;
+            document.querySelectorAll('.erp-tab').forEach(function (b) { b.classList.toggle('activo', b === btn); });
+            document.getElementById('erp-entrada-productos').style.display = tab === 'productos' ? 'flex' : 'none';
+            document.getElementById('erp-entrada-servicios').style.display = tab === 'servicios' ? 'flex' : 'none';
+            document.getElementById('erp-entrada-libre').style.display = tab === 'libre' ? 'flex' : 'none';
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'F5' && !erpCerrada) { e.preventDefault(); selTabErp('productos', document.querySelector('.erp-tab[data-tab=productos]')); }
+            if (e.key === 'F6' && !erpCerrada) { e.preventDefault(); selTabErp('servicios', document.querySelector('.erp-tab[data-tab=servicios]')); }
+            if (e.key === 'F7') { e.preventDefault(); selTabErp('libre', document.querySelector('.erp-tab[data-tab=libre]')); }
+        });
+
+        function limpiarErpForm() {
+            ordenActivaId = null;
+            erpOrdenData = null;
+            erpLineasCache = [];
+            erpCerrada = false;
+            erpEmpleado = '';
+            ['erp-c-nombre','erp-c-direccion','erp-c-poblacion','erp-c-provincia','erp-c-nite','erp-c-email','erp-c-tlf',
+             'erp-v-placa','erp-v-marca','erp-v-modelo','erp-km-ant','erp-km-act','erp-e-desc-s','erp-e-obs'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) { el.value = ''; el.readOnly = false; }
+            });
+            document.getElementById('erp-titulo').textContent = 'Ordenes de trabajo — Sanmy Taller 🇨🇷';
+            document.getElementById('erp-num').textContent = '—';
+            document.getElementById('erp-km-placa').textContent = '—';
+            document.getElementById('erp-badge-estado').innerHTML = '';
+            document.getElementById('erp-estados').innerHTML = '';
+            document.getElementById('erp-totales').innerHTML = '';
+            document.getElementById('sel-orden-erp').value = '';
+            document.getElementById('erp-btn-cobrar').disabled = true;
+            document.getElementById('erp-btn-guardar').disabled = false;
+            document.querySelectorAll('.erp-tab').forEach(function (b) { b.disabled = false; });
+            renderLineasErp();
+            selTabErp('productos', document.querySelector('.erp-tab[data-tab=productos]'));
+            window._fotoNuevaBase64 = null;
+        }
+
+        function mostrarNuevaOrden() {
+            limpiarErpForm();
+            document.getElementById('erp-fecha').value = new Date().toISOString().slice(0, 10);
+            history.replaceState(null, '', '/index.html');
+        }
+
+        function poblarErpDesdeOrden(o, lineas) {
+            erpLineasCache = lineas || [];
+            erpCerrada = o.estado === 'entregado' || o.estado === 'cancelado';
+            erpEmpleado = o.usuario_nombre || '';
+            document.getElementById('erp-titulo').textContent =
+                'Ordenes de trabajo — ' + (o.cliente_nombre || 'Cliente') + ' / ' + (o.placa || '—') + ' 🇨🇷';
+            document.getElementById('erp-fecha').value = (o.fecha_ingreso || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+            document.getElementById('erp-c-nombre').value = o.cliente_nombre || '';
+            document.getElementById('erp-c-nite').value = o.cliente_identificacion || '';
+            document.getElementById('erp-c-email').value = o.cliente_email || '';
+            document.getElementById('erp-c-tlf').value = o.cliente_telefono || '';
+            document.getElementById('erp-v-placa').value = o.placa || '';
+            document.getElementById('erp-v-marca').value = o.marca || '';
+            document.getElementById('erp-v-modelo').value = o.modelo || '';
+            document.getElementById('erp-km-placa').textContent = o.placa || '—';
+            document.getElementById('erp-km-act').value = o.kilometraje || '';
+            document.getElementById('erp-e-obs').value = o.diagnostico || o.observaciones || '';
+            document.getElementById('erp-num').textContent = '#' + o.numero;
+            document.getElementById('erp-badge-estado').innerHTML = badgeEstado(o.estado);
+            document.getElementById('erp-totales').innerHTML =
+                'Subtotal ' + fmtColones(o.subtotal) + ' · IVA ' + fmtColones(o.iva) + ' · <strong>Total ' + fmtColones(o.total) + '</strong>';
+            var estCont = document.getElementById('erp-estados');
+            if (erpCerrada) {
+                estCont.innerHTML = '<span>Estado: ' + escHtml(ESTADOS_LABEL[o.estado] || o.estado) + '</span>';
+            } else {
+                estCont.innerHTML = ['ingreso', 'diagnostico', 'en_proceso', 'listo'].map(function (est) {
+                    var cls = o.estado === est ? ' activo' : '';
+                    return '<button type="button" class="' + cls.trim() + '" onclick="cambiarEstado(' + o.id + ',\'' + est + '\')">' +
+                        escHtml(ESTADOS_LABEL[est]) + '</button>';
+                }).join('');
+            }
+            var ro = erpCerrada;
+            ['erp-c-nombre','erp-c-nite','erp-c-email','erp-c-tlf','erp-v-placa','erp-v-marca','erp-v-modelo','erp-km-act'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.readOnly = ro;
+            });
+            document.getElementById('erp-btn-cobrar').disabled = erpCerrada || !(Number(o.total) > 0);
+            document.getElementById('erp-btn-cobrar').textContent = erpCerrada && (Number(o.saldo_pendiente) || 0) > 0
+                ? '💵 Abonar ' + fmtColones(o.saldo_pendiente)
+                : '💵 Cobrar ' + fmtColones(o.total);
+            document.getElementById('erp-btn-guardar').disabled = erpCerrada;
+            document.querySelectorAll('.erp-tab').forEach(function (b) {
+                if (b.getAttribute('data-tab') !== 'libre') b.disabled = erpCerrada;
+            });
+            renderLineasErp();
+            cargarKmAnterior(o.placa, o.id);
+        }
+
+        async function cargarKmAnterior(placa, ordenId) {
+            var inp = document.getElementById('erp-km-ant');
+            if (!inp || !placa) { inp.value = ''; return; }
+            try {
+                var data = await TallerAPI.getTallerOrdenes({ placa: placa, todos: true });
+                var prev = (data.filas || []).filter(function (x) { return x.id !== ordenId; })[0];
+                inp.value = prev && prev.kilometraje ? prev.kilometraje : '—';
+            } catch (e) { inp.value = '—'; }
+        }
+
+        function renderLineasErp() {
+            var tbody = document.getElementById('erp-lineas');
+            if (!erpLineasCache.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">Sin líneas en esta orden</td></tr>';
+                document.getElementById('erp-n-lineas').textContent = '0';
+                return;
+            }
+            tbody.innerHTML = erpLineasCache.map(function (l) {
+                var cod = l.inventario_id ? String(l.inventario_id) : '—';
+                var tipoLbl = l.tipo === 'mano_obra' ? 'Trabajo' : (l.tipo === 'repuesto' ? 'Producto' : 'Libre');
+                var del = !erpCerrada
+                    ? '<button type="button" style="border:none;background:#fcc;color:#c00;cursor:pointer;" onclick="eliminarLinea(' + ordenActivaId + ',' + l.id + ')">✕</button>' : '';
+                return '<tr><td>' + escHtml(cod) + '</td><td>' + escHtml(tipoLbl) + '</td><td>' + escHtml(l.descripcion) +
+                    '</td><td class="num">' + escHtml(l.cantidad) + '</td><td>' + escHtml(erpEmpleado || '—') + '</td><td>' + del + '</td></tr>';
+            }).join('');
+            document.getElementById('erp-n-lineas').textContent = String(erpLineasCache.length);
+        }
+
+        function renderErpOrden(data, facturasFe) {
+            erpOrdenData = data;
+            poblarErpDesdeOrden(data.orden, data.lineas || []);
+            document.getElementById('sel-orden-erp').value = String(data.orden.id);
+        }
+
+        async function guardarOrdenErp() {
+            if (erpCerrada) return;
+            var placa = document.getElementById('erp-v-placa').value.trim();
+            var cliente = document.getElementById('erp-c-nombre').value.trim();
+            if (!placa || !cliente) {
+                alert('Matrícula y nombre del cliente son obligatorios.');
+                return;
+            }
+            try {
+                if (!ordenActivaId) {
+                    var payload = {
+                        placa: placa,
+                        cliente_nombre: cliente,
+                        cliente_telefono: document.getElementById('erp-c-tlf').value.trim(),
+                        cliente_identificacion: document.getElementById('erp-c-nite').value.trim(),
+                        marca: document.getElementById('erp-v-marca').value.trim(),
+                        modelo: document.getElementById('erp-v-modelo').value.trim(),
+                        kilometraje: document.getElementById('erp-km-act').value.trim(),
+                        diagnostico: document.getElementById('erp-e-obs').value.trim(),
+                        observaciones: document.getElementById('erp-e-obs').value.trim(),
+                        imagen_base64: window._fotoNuevaBase64 || null
+                    };
+                    var sesion = typeof UsuarioSesion !== 'undefined' ? UsuarioSesion.get() : null;
+                    if (sesion && sesion.id) payload.usuario_id = sesion.id;
+                    var data = await TallerAPI.crearTallerOrden(payload);
+                    ordenActivaId = data.orden.id;
+                    await abrirOrden(ordenActivaId);
+                    mostrarToast('Orden #' + data.orden.numero + ' creada');
+                } else {
+                    await TallerAPI.actualizarTallerOrden(ordenActivaId, {
+                        diagnostico: document.getElementById('erp-e-obs').value.trim()
+                    });
+                    if (document.getElementById('erp-c-tlf').value.trim() && erpOrdenData && erpOrdenData.orden.cliente_id) {
+                        await TallerAPI.actualizarCliente(erpOrdenData.orden.cliente_id, {
+                            telefono: document.getElementById('erp-c-tlf').value.trim()
+                        });
+                    }
+                    mostrarToast('Orden guardada');
+                    await abrirOrden(ordenActivaId);
+                }
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function agregarLineaErp() {
+            if (!ordenActivaId) {
+                if (!confirm('Debe guardar la orden primero. ¿Guardar ahora?')) return;
+                await guardarOrdenErp();
+                if (!ordenActivaId) return;
+            }
+            if (erpCerrada) return;
+            var payload = {};
+            if (erpTabActivo === 'productos') {
+                var invId = document.getElementById('erp-e-inv').value;
+                if (!invId) { alert('Seleccione un repuesto.'); return; }
+                var item = inventarioCache.find(function (it) { return String(it.id) === String(invId); });
+                if (!item) return;
+                payload = {
+                    tipo: 'repuesto', inventario_id: item.id,
+                    descripcion: item.nombre + (item.codigo ? ' (' + item.codigo + ')' : ''),
+                    cantidad: Number(document.getElementById('erp-e-cant-p').value) || 1,
+                    precio_unitario: Number(item.precio) || 0
+                };
+            } else {
+                var ds = document.getElementById('erp-e-desc-s').value.trim();
+                if (!ds) { alert('Indique la descripción del trabajo.'); return; }
+                payload = {
+                    tipo: 'mano_obra', descripcion: ds,
+                    cantidad: Number(document.getElementById('erp-e-cant-s').value) || 1,
+                    precio_unitario: Number(document.getElementById('erp-e-precio-s').value) || 0
+                };
+            }
+            try {
+                await TallerAPI.agregarTallerLinea(ordenActivaId, payload);
+                await cargarInventarioCache();
+                poblarInventarioErp();
+                await abrirOrden(ordenActivaId);
+            } catch (e) { alert(e.message); }
+        }
+
+        async function guardarObservacionErp() {
+            if (!ordenActivaId) {
+                await guardarOrdenErp();
+                if (!ordenActivaId) return;
+            }
+            try {
+                await TallerAPI.actualizarTallerOrden(ordenActivaId, {
+                    diagnostico: document.getElementById('erp-e-obs').value.trim()
+                });
+                mostrarToast('Observación guardada');
+            } catch (e) { alert(e.message); }
+        }
+
+        function seleccionarOrdenErp(val) {
+            if (!val) { mostrarNuevaOrden(); return; }
+            abrirOrden(parseInt(val, 10));
+        }
+
+        async function buscarPlacaErp() {
+            var input = document.getElementById('erp-v-placa');
+            var sug = document.getElementById('sugerencias-placa-erp');
+            if (!input || !sug) return;
+            var placa = input.value.trim().toUpperCase();
+            if (placa.length < 2) { sug.style.display = 'none'; return; }
+            if (placaBusquedaTimer) clearTimeout(placaBusquedaTimer);
+            placaBusquedaTimer = setTimeout(async function () {
+                try {
+                    var exacto = await TallerAPI.buscarTallerVehiculoPlaca(placa);
+                    if (exacto) { llenarErpVehiculo(exacto); sug.style.display = 'none'; return; }
+                    var data = await TallerAPI.buscarTallerVehiculos(placa);
+                    var filas = data.filas || [];
+                    if (!filas.length) { sug.style.display = 'none'; return; }
+                    sug.innerHTML = filas.map(function (v) {
+                        return '<div onclick="aplicarVehiculoErp(' + v.id + ')"><strong>' + escHtml(v.placa) + '</strong> — ' +
+                            escHtml(v.marca || '') + ' ' + escHtml(v.modelo || '') + '</div>';
+                    }).join('');
+                    sug.style.display = 'block';
+                    window._sugerenciasPlacaCache = filas;
+                } catch (e) { sug.style.display = 'none'; }
+            }, 350);
+        }
+
+        function llenarErpVehiculo(v) {
+            if (!v) return;
+            document.getElementById('erp-v-placa').value = v.placa || '';
+            document.getElementById('erp-v-marca').value = v.marca || '';
+            document.getElementById('erp-v-modelo').value = v.modelo || '';
+            document.getElementById('erp-km-placa').textContent = v.placa || '—';
+            if (v.cliente_nombre) document.getElementById('erp-c-nombre').value = v.cliente_nombre;
+            if (v.cliente_telefono) document.getElementById('erp-c-tlf').value = v.cliente_telefono;
+            if (v.cliente_identificacion) document.getElementById('erp-c-nite').value = v.cliente_identificacion;
+            if (v.kilometraje) document.getElementById('erp-km-act').value = v.kilometraje;
+        }
+
+        function aplicarVehiculoErp(id) {
+            var filas = window._sugerenciasPlacaCache || [];
+            var v = filas.find(function (x) { return x.id === id; });
+            if (v) llenarErpVehiculo(v);
+            document.getElementById('sugerencias-placa-erp').style.display = 'none';
+        }
+
+        function abrirHistoricoErp() {
+            var placa = document.getElementById('erp-v-placa').value.trim();
+            if (!placa) { alert('Indique la matrícula del vehículo.'); return; }
+            TallerAPI.getTallerOrdenes({ placa: placa, todos: true }).then(function (data) {
+                var filas = data.filas || [];
+                if (!filas.length) { alert('Sin historial para ' + placa); return; }
+                var msg = filas.slice(0, 12).map(function (h) {
+                    return '#' + h.numero + ' · ' + (ESTADOS_LABEL[h.estado] || h.estado) + ' · ' + fmtColones(h.total);
+                }).join('\n');
+                if (confirm('Historial ' + placa + ':\n\n' + msg + '\n\n¿Abrir la más reciente?')) {
+                    abrirOrden(filas[0].id);
+                }
+            }).catch(function (e) { alert(e.message); });
+        }
+
+        function cobrarOrdenErp() {
+            if (!ordenActivaId || !erpOrdenData) return;
+            var o = erpOrdenData.orden;
+            if (o.estado === 'entregado' && (Number(o.saldo_pendiente) || 0) > 0) {
+                abrirModalAbono(o.id, o.saldo_pendiente);
+            } else {
+                abrirModalCobro(o.id, o.total, 0);
+            }
+        }
+
+        function enviarWaErp() {
+            if (ordenActivaId) enviarWhatsAppOrden(ordenActivaId, 'orden');
+        }
+        function verPdfErp() {
+            if (ordenActivaId) descargarPdfOrden(ordenActivaId, 'orden');
+        }
+        function abrirPresupuestoErp() {
+            if (ordenActivaId) abrirPresupuesto(ordenActivaId);
+        }
+        function imprimirOrdenErp() {
+            if (ordenActivaId) imprimirOrden(ordenActivaId);
+        }
+        function seleccionarFotoErp() {
+            fotoTargetOrdenId = ordenActivaId || 'nueva';
+            document.getElementById('input-foto-file').click();
+        }
+        function salirErp() {
+            window.location.href = '/abrir.html';
+        }
+
+        var inventarioCache = [];
+        var erpTabActivo = 'productos';
+        var erpLineasCache = [];
+        var erpOrdenData = null;
+        var erpCerrada = false;
+        var erpEmpleado = '';
+        var erpListaCache = [];
+        async function cargarInventarioCache() {
+            try {
+                const data = await TallerAPI.getTallerInventario();
+                inventarioCache = (data && data.filas) ? data.filas : [];
+            } catch (e) {
+                inventarioCache = [];
+            }
+        }
+
+        function opcionesInventarioHtml() {
+            if (!inventarioCache.length) return '';
+            var opts = '<option value="">— Repuesto del inventario —</option>';
+            inventarioCache.forEach(function (it) {
+                var stock = Number(it.cantidad) || 0;
+                opts += '<option value="' + it.id + '">' +
+                    escHtml(it.nombre) + (it.codigo ? ' (' + escHtml(it.codigo) + ')' : '') +
+                    ' · stock: ' + stock + '</option>';
+            });
+            return opts;
+        }
+
+        function seleccionarRepuestoInv() {
+            var sel = document.getElementById('l-inventario');
+            if (!sel || !sel.value) return;
+            var item = inventarioCache.find(function (it) { return String(it.id) === String(sel.value); });
+            if (!item) return;
+            var desc = document.getElementById('l-desc');
+            var precio = document.getElementById('l-precio');
+            var tipo = document.getElementById('l-tipo');
+            if (desc) desc.value = item.nombre + (item.codigo ? ' (' + item.codigo + ')' : '');
+            if (precio) precio.value = Number(item.precio) || 0;
+            if (tipo) tipo.value = 'repuesto';
+        }
+
+        function ejecutarAccionUrl() {
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var filtro = params.get('filtro');
+                if (filtro) {
+                    filtroActual = filtro;
+                    document.querySelectorAll('.ot-btn-sel[data-filtro]').forEach(function (b) {
+                        b.style.outline = b.getAttribute('data-filtro') === filtro ? '2px solid #2563eb' : '';
+                    });
+                    cargarListaOrdenes();
+                }
+                var accion = params.get('accion');
+                var ordenParam = params.get('orden');
+                if (ordenParam) {
+                    var oid = parseInt(ordenParam, 10);
+                    if (oid && typeof abrirOrden === 'function') {
+                        abrirOrden(oid);
+                    }
+                }
+                if (!accion) return;
+                if (accion === 'nueva' && typeof mostrarNuevaOrden === 'function') {
+                    mostrarNuevaOrden();
+                } else if (accion === 'pendientes' && typeof mostrarPendientesCobro === 'function') {
+                    mostrarPendientesCobro();
+                } else if (accion === 'fe') {
+                    window.location.href = '/configuracion.html?sec=fe';
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        async function cargarResumenHoy() {
+            const el = document.getElementById('header-resumen');
+            if (!el) return;
+            try {
+                const r = await TallerAPI.getTallerResumenHoy();
+                el.innerHTML =
+                    '<span>🚗 Activas: <strong>' + r.ordenes_activas + '</strong></span>' +
+                    '<span>✅ Listas: <strong>' + r.ordenes_listas + '</strong></span>' +
+                    '<span>📤 Hoy: <strong>' + r.entregadas_hoy + '</strong></span>' +
+                    '<span>💵 Cobrado hoy: <strong>' + fmtColones(r.cobrado_hoy) + '</strong></span>' +
+                    (r.pendientes_cobro > 0
+                        ? '<span>⏳ Pend.: <strong>' + r.pendientes_cobro + ' (' + fmtColones(r.saldo_pendiente_total) + ')</strong></span>'
+                        : '');
+            } catch (e) {
+                el.innerHTML = '';
+            }
+        }
+
+        function programarBusqueda() {
+            if (busquedaTimer) clearTimeout(busquedaTimer);
+            busquedaTimer = setTimeout(cargarListaOrdenes, 300);
+        }
+
+        function cambiarFiltro(filtro, btn) {
+            filtroActual = filtro;
+            document.querySelectorAll('.ot-btn-sel[data-filtro]').forEach(function (b) {
+                b.style.outline = b === btn ? '2px solid #2563eb' : '';
+            });
+            if (btn) btn.style.outline = '2px solid #2563eb';
+            cargarListaOrdenes();
+        }
+
+        function paramsLista() {
+            const q = document.getElementById('buscar-ordenes').value.trim();
+            const p = { q: q };
+            if (filtroActual === 'activas') { /* default API */ }
+            else if (filtroActual === 'todas') p.todos = true;
+            else if (filtroActual === 'pendientes') p.pendientes = true;
+            else p.estado = filtroActual;
+            return p;
+        }
+
+        async function cargarListaOrdenes() {
+            var sel = document.getElementById('sel-orden-erp');
+            var prev = sel ? sel.value : '';
+            try {
+                const data = await TallerAPI.getTallerOrdenes(paramsLista());
+                const filas = data.filas || [];
+                erpListaCache = filas;
+                if (sel) {
+                    sel.innerHTML = '<option value="">— Nueva orden de trabajo —</option>' +
+                        filas.map(function (o) {
+                            return '<option value="' + o.id + '">#' + o.numero + ' · ' + escHtml(o.placa) +
+                                ' · ' + escHtml(o.cliente_nombre || 'Sin cliente') + '</option>';
+                        }).join('');
+                    if (prev) sel.value = prev;
+                }
+            } catch (e) {
+                if (sel) sel.innerHTML = '<option value="">Error al cargar</option>';
+            }
+        }
+
+        async function abrirOrden(id) {
+            ordenActivaId = id;
+            try {
+                const data = await TallerAPI.getTallerOrden(id);
+                let facturasFe = [];
+                try {
+                    const fe = await TallerAPI.getTallerFacturasOrden(id);
+                    facturasFe = fe.facturas || [];
+                } catch (feErr) { /* sin facturas */ }
+                window._cobroCliente = {
+                    nombre: data.orden.cliente_nombre || '',
+                    identificacion: data.orden.cliente_identificacion || '',
+                    email: data.orden.cliente_email || ''
+                };
+                renderErpOrden(data, facturasFe);
+                history.replaceState(null, '', '/index.html?orden=' + id);
+                await cargarListaOrdenes();
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        function renderDetalleOrden(data, facturasFe) {
+            renderErpOrden(data, facturasFe);
+        }
+
+        function seleccionarFotoOrden(ordenId) {
+            fotoTargetOrdenId = ordenId;
+            document.getElementById('input-foto-file').click();
+        }
+
+        document.getElementById('input-foto-file').addEventListener('change', function (ev) {
+            const file = ev.target.files && ev.target.files[0];
+            ev.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function () {
+                const b64 = reader.result;
+                if (!ordenActivaId) {
+                    window._fotoNuevaBase64 = b64;
+                    mostrarToast('Foto lista — se guardará al crear la orden');
+                    return;
+                }
+                try {
+                    await TallerAPI.agregarTallerFoto(fotoTargetOrdenId || ordenActivaId, {
+                        imagen_base64: b64,
+                        titulo: 'Foto',
+                        tipo: 'general'
+                    });
+                    await abrirOrden(fotoTargetOrdenId || ordenActivaId);
+                    mostrarToast('Foto agregada');
+                } catch (e) {
+                    alert('No se pudo subir la foto: ' + e.message);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.addEventListener('click', function (ev) {
+            var sug = document.getElementById('sugerencias-placa-erp');
+            var placa = document.getElementById('erp-v-placa');
+            if (sug && placa && !sug.contains(ev.target) && ev.target !== placa) {
+                sug.style.display = 'none';
+            }
+        });
+
+        async function guardarDiagnostico(id) {
+            const val = document.getElementById('erp-e-obs').value;
+            await TallerAPI.actualizarTallerOrden(id, { diagnostico: val });
+            mostrarToast('Motivo guardado');
+            abrirOrden(id);
+        }
+
+        async function guardarTelefonoCliente(ordenId, clienteId) {
+            var tel = document.getElementById('erp-c-tlf').value.trim();
+            if (tel.replace(/\D/g, '').length < 8) {
+                alert('Ingrese un teléfono válido (mínimo 8 dígitos) para WhatsApp.');
+                return;
+            }
+            try {
+                await TallerAPI.actualizarCliente(clienteId, { telefono: tel });
+                mostrarToast('Teléfono actualizado');
+                abrirOrden(ordenId);
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function cambiarEstado(id, estado) {
+            await TallerAPI.actualizarTallerOrden(id, { estado: estado });
+            await abrirOrden(id);
+            await cargarListaOrdenes();
+        }
+
+        async function agregarLinea(ordenId) {
+            await agregarLineaErp();
+        }
+
+        async function eliminarLinea(ordenId, lineaId) {
+            if (!confirm('¿Eliminar esta línea? Si era un repuesto del inventario, se devolverá al stock.')) return;
+            await TallerAPI.eliminarTallerLinea(ordenId, lineaId);
+            await cargarInventarioCache();
+            await abrirOrden(ordenId);
+        }
+
+        async function cargarHistorialPlaca(placa, ordenActualId) {
+            const cont = document.getElementById('historial-placa');
+            if (!cont || !placa) return;
+            try {
+                const data = await TallerAPI.getTallerOrdenes({ placa: placa, todos: true });
+                const filas = (data.filas || []).filter(function (x) {
+                    return x.id !== ordenActualId;
+                }).slice(0, 8);
+                if (!filas.length) {
+                    cont.innerHTML = '<p style="color:#94a3b8;font-size:13px;">Sin órdenes anteriores para esta placa.</p>';
+                    return;
+                }
+                cont.innerHTML = filas.map(function (h) {
+                    return '<div class="historial-item" onclick="abrirOrden(' + h.id + ')">#' + h.numero +
+                        ' · ' + escHtml(ESTADOS_LABEL[h.estado] || h.estado) + ' · ' + fmtColones(h.total) +
+                        '<br><span style="color:#64748b;font-size:11px;">' + escHtml(h.fecha_ingreso || '') + '</span></div>';
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '';
+            }
+        }
+
+        async function cancelarOrden(id) {
+            if (!confirm('¿Cancelar esta orden de taller?')) return;
+            try {
+                await TallerAPI.actualizarTallerOrden(id, { estado: 'cancelado' });
+                await cargarListaOrdenes();
+                await abrirOrden(id);
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        function resetFeCobroModal() {
+            var chk = document.getElementById('modal-cobro-fe');
+            var campos = document.getElementById('modal-cobro-fe-campos');
+            var autoFe = feApiAutomatica();
+            if (chk) chk.checked = autoFe;
+            if (campos) campos.classList.toggle('activa', !!(chk && chk.checked));
+            var c = window._cobroCliente || {};
+            var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ''; };
+            set('modal-fe-nombre', c.nombre);
+            set('modal-fe-cedula', c.identificacion);
+            set('modal-fe-email', c.email);
+            set('modal-fe-tipo-id', '01');
+            actualizarUiFeCobro();
+        }
+
+        function actualizarUiFeCobro() {
+            var autoFe = feApiAutomatica();
+            var chk = document.getElementById('modal-cobro-fe');
+            var hint = document.getElementById('modal-cobro-fe-hint');
+            var label = document.getElementById('modal-cobro-fe-label');
+            var btn = document.getElementById('modal-cobro-confirmar');
+            var cfg = window._feConfig || {};
+            if (label) {
+                label.textContent = autoFe
+                    ? 'Factura electrónica automática (Hacienda vía ' + nombreProveedorFe(cfg.fe_proveedor) + ')'
+                    : 'Emitir factura electrónica (Hacienda CR)';
+            }
+            if (hint) {
+                hint.textContent = autoFe && chk && chk.checked
+                    ? 'Al confirmar, Sanmy envía la factura a Hacienda automáticamente. Solo verifique nombre y cédula del cliente.'
+                    : 'Sin marcar: tiquete interno. Con marcar: requiere nombre y cédula del cliente.';
+                hint.style.color = autoFe && chk && chk.checked ? '#15803d' : '#64748b';
+            }
+            if (btn) {
+                if (modoCobroModal === 'abono') {
+                    btn.textContent = (chk && chk.checked && autoFe) ? 'Confirmar abono y enviar a Hacienda' : 'Confirmar abono';
+                } else {
+                    btn.textContent = (chk && chk.checked && autoFe) ? 'Confirmar cobro y enviar a Hacienda' : 'Confirmar cobro';
+                }
+            }
+        }
+
+        function toggleCamposFeCobro() {
+            var chk = document.getElementById('modal-cobro-fe');
+            var campos = document.getElementById('modal-cobro-fe-campos');
+            if (campos) campos.classList.toggle('activa', chk && chk.checked);
+            actualizarUiFeCobro();
+        }
+
+        function leerPayloadFeCobro() {
+            var chk = document.getElementById('modal-cobro-fe');
+            if (!chk || !chk.checked) {
+                return { factura_electronica: { emitir: false } };
+            }
+            var nombre = document.getElementById('modal-fe-nombre').value.trim();
+            var cedula = document.getElementById('modal-fe-cedula').value.trim();
+            var email = document.getElementById('modal-fe-email').value.trim();
+            if (!nombre || !cedula) {
+                throw new Error('Para factura electrónica indique nombre e identificación del cliente.');
+            }
+            return {
+                factura_electronica: {
+                    emitir: true,
+                    tipo_identificacion: document.getElementById('modal-fe-tipo-id').value,
+                    identificacion: cedula,
+                    nombre: nombre,
+                    email: email
+                },
+                cliente_nombre: nombre,
+                cliente_identificacion: cedula
+            };
+        }
+
+        function abrirModalCobro(id, total, saldo) {
+            modoCobroModal = 'cobro';
+            cobroOrdenId = id;
+            cobroOrdenTotal = parseFloat(total) || 0;
+            cobroOrdenSaldo = parseFloat(saldo) || 0;
+            tipoCobroSeleccionado = 'contado';
+            metodoCobroSeleccionado = 'efectivo';
+            document.getElementById('modal-cobro-titulo').textContent = 'Cobrar y entregar';
+            document.getElementById('modal-cobro-confirmar').textContent = 'Confirmar cobro';
+            document.getElementById('modal-cobro-tabs').style.display = 'flex';
+            document.getElementById('modal-cobro-saldo-info').style.display = 'none';
+            document.querySelectorAll('.modal-cobro-tab').forEach(function (btn) {
+                btn.classList.toggle('activo', btn.getAttribute('data-tipo') === 'contado');
+            });
+            document.querySelectorAll('.modal-cobro-metodo').forEach(function (btn) {
+                btn.classList.toggle('seleccionado', btn.getAttribute('data-metodo') === 'efectivo');
+            });
+            document.getElementById('modal-cobro-total').textContent = 'Total: ' + fmtColones(cobroOrdenTotal);
+            document.getElementById('modal-cobro-monto-label').textContent = 'Monto cobrado';
+            document.getElementById('modal-cobro-monto').value = cobroOrdenTotal;
+            document.getElementById('modal-cobro-monto').readOnly = true;
+            actualizarPreviewCobro();
+            resetFeCobroModal();
+            document.getElementById('modal-cobro').classList.add('activa');
+        }
+
+        function abrirModalAbono(id, saldo) {
+            modoCobroModal = 'abono';
+            cobroOrdenId = id;
+            cobroOrdenTotal = 0;
+            cobroOrdenSaldo = parseFloat(saldo) || 0;
+            metodoCobroSeleccionado = 'efectivo';
+            document.getElementById('modal-cobro-titulo').textContent = 'Registrar abono';
+            document.getElementById('modal-cobro-confirmar').textContent = 'Confirmar abono';
+            document.getElementById('modal-cobro-tabs').style.display = 'none';
+            document.getElementById('modal-cobro-saldo-info').style.display = 'block';
+            document.getElementById('modal-cobro-saldo-info').textContent = 'Saldo pendiente: ' + fmtColones(cobroOrdenSaldo);
+            document.getElementById('modal-cobro-total').textContent = fmtColones(cobroOrdenSaldo);
+            document.getElementById('modal-cobro-monto-label').textContent = 'Monto del abono';
+            document.getElementById('modal-cobro-monto').value = cobroOrdenSaldo;
+            document.getElementById('modal-cobro-monto').readOnly = false;
+            document.querySelectorAll('.modal-cobro-metodo').forEach(function (btn) {
+                btn.classList.toggle('seleccionado', btn.getAttribute('data-metodo') === 'efectivo');
+            });
+            actualizarPreviewCobro();
+            resetFeCobroModal();
+            document.getElementById('modal-cobro').classList.add('activa');
+        }
+
+        function seleccionarTipoCobro(btn) {
+            tipoCobroSeleccionado = btn.getAttribute('data-tipo');
+            document.querySelectorAll('.modal-cobro-tab').forEach(function (b) {
+                b.classList.toggle('activo', b === btn);
+            });
+            const montoInput = document.getElementById('modal-cobro-monto');
+            if (tipoCobroSeleccionado === 'contado') {
+                document.getElementById('modal-cobro-monto-label').textContent = 'Monto cobrado';
+                montoInput.value = cobroOrdenTotal;
+                montoInput.readOnly = true;
+            } else if (tipoCobroSeleccionado === 'apartado') {
+                document.getElementById('modal-cobro-monto-label').textContent = 'Anticipo (apartado)';
+                montoInput.readOnly = false;
+                if (!montoInput.value || parseFloat(montoInput.value) >= cobroOrdenTotal) {
+                    montoInput.value = Math.max(1, Math.round(cobroOrdenTotal * 0.5));
+                }
+            } else {
+                document.getElementById('modal-cobro-monto-label').textContent = 'Abono inicial (opcional)';
+                montoInput.readOnly = false;
+                if (!montoInput.value) montoInput.value = 0;
+            }
+            actualizarPreviewCobro();
+        }
+
+        function actualizarPreviewCobro() {
+            const preview = document.getElementById('modal-cobro-preview');
+            if (!preview) return;
+            if (modoCobroModal === 'abono') {
+                const monto = parseFloat(document.getElementById('modal-cobro-monto').value) || 0;
+                const resta = Math.max(0, cobroOrdenSaldo - monto);
+                preview.textContent = resta > 0 ? 'Saldo después del abono: ' + fmtColones(resta) : 'Con este abono se liquida la orden.';
+                return;
+            }
+            const monto = tipoCobroSeleccionado === 'contado'
+                ? cobroOrdenTotal
+                : parseFloat(document.getElementById('modal-cobro-monto').value) || 0;
+            const saldo = Math.max(0, Math.round((cobroOrdenTotal - monto) * 100) / 100);
+            if (tipoCobroSeleccionado === 'contado') {
+                preview.textContent = 'Cobro completo al entregar.';
+            } else if (saldo > 0) {
+                preview.textContent = 'Saldo pendiente: ' + fmtColones(saldo);
+            } else {
+                preview.textContent = 'Cobro completo.';
+            }
+        }
+
+        document.getElementById('modal-cobro-monto').addEventListener('input', actualizarPreviewCobro);
+
+        function cerrarModalCobro() {
+            document.getElementById('modal-cobro').classList.remove('activa');
+            cobroOrdenId = null;
+            modoCobroModal = 'cobro';
+        }
+
+        function seleccionarMetodoCobro(btn) {
+            metodoCobroSeleccionado = btn.getAttribute('data-metodo');
+            document.querySelectorAll('.modal-cobro-metodo').forEach(function (b) {
+                b.classList.toggle('seleccionado', b === btn);
+            });
+        }
+
+        async function confirmarCobro() {
+            if (!cobroOrdenId) return;
+            const monto = parseFloat(document.getElementById('modal-cobro-monto').value);
+            let fePayload = {};
+            try {
+                fePayload = leerPayloadFeCobro();
+            } catch (feErr) {
+                alert(feErr.message);
+                return;
+            }
+            try {
+                let res;
+                if (modoCobroModal === 'abono') {
+                    if (!monto || monto <= 0) {
+                        alert('Indique un monto válido.');
+                        return;
+                    }
+                    res = await TallerAPI.abonarTallerOrden(cobroOrdenId, Object.assign({
+                        metodo_pago: metodoCobroSeleccionado,
+                        monto: monto
+                    }, fePayload));
+                } else {
+                    if (tipoCobroSeleccionado === 'apartado') {
+                        if (!monto || monto <= 0 || monto >= cobroOrdenTotal) {
+                            alert('Apartado: indique un anticipo menor al total.');
+                            return;
+                        }
+                    }
+                    res = await TallerAPI.cobrarTallerOrden(cobroOrdenId, Object.assign({
+                        metodo_pago: metodoCobroSeleccionado,
+                        monto: tipoCobroSeleccionado === 'contado' ? cobroOrdenTotal : monto,
+                        tipo_cobro: tipoCobroSeleccionado
+                    }, fePayload));
+                }
+                cerrarModalCobro();
+                var doc = res && res.factura_electronica;
+                if (doc && doc.ok === false) {
+                    mostrarToast('Cobro OK · factura falló: ' + (doc.error || 'error'));
+                    alert('Cobro registrado, pero la factura falló:\n' + (doc.error || 'error'));
+                } else if (doc && (doc.clave || doc.consecutivo || doc.tipo === 'tiquete')) {
+                    if (doc.tipo === 'tiquete') {
+                        mostrarToast('Cobro registrado · tiquete interno');
+                    } else if (doc.modo === 'api' || doc.estado === 'aceptado' || doc.estado === 'aceptada' || doc.estado === 'enviado') {
+                        mostrarToast('✓ Factura enviada a Hacienda' + (doc.consecutivo ? ' · #' + doc.consecutivo : ''));
+                    } else if (doc.modo === 'simulacion') {
+                        mostrarToast('Factura simulada (active modo API + Almendro para envío real)');
+                    }
+                    window.open('/factura-imprimir.html?orden=' + cobroOrdenId + '&tipo=factura', '_blank');
+                } else {
+                    mostrarToast('Cobro registrado correctamente');
+                }
+                await cargarResumenHoy();
+                await cargarListaOrdenes();
+                await abrirOrden(cobroOrdenId);
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        async function mostrarPendientesCobro() {
+            pendientesFiltroTipo = '';
+            document.querySelectorAll('.modal-pendientes-tabs button').forEach(function (b) {
+                b.classList.toggle('activo', b.getAttribute('data-tipo') === '');
+            });
+            await cargarListaPendientes();
+            document.getElementById('modal-pendientes').classList.add('activa');
+        }
+
+        function cerrarPendientesCobro() {
+            document.getElementById('modal-pendientes').classList.remove('activa');
+        }
+
+        async function filtrarPendientesCobro(tipo, btn) {
+            pendientesFiltroTipo = tipo || '';
+            document.querySelectorAll('.modal-pendientes-tabs button').forEach(function (b) {
+                b.classList.remove('activo');
+            });
+            if (btn) btn.classList.add('activo');
+            await cargarListaPendientes();
+        }
+
+        async function cargarListaPendientes() {
+            const cont = document.getElementById('lista-pendientes');
+            const resumen = document.getElementById('pendientes-resumen');
+            try {
+                const data = await TallerAPI.getTallerPendientesCobro(pendientesFiltroTipo || null);
+                resumen.textContent = data.cantidad + ' orden(es) · Saldo total: ' + fmtColones(data.saldo_total);
+                const filas = data.filas || [];
+                if (!filas.length) {
+                    cont.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:16px;">Sin pendientes</p>';
+                    return;
+                }
+                cont.innerHTML = filas.map(function (o) {
+                    const tipoLabel = o.tipo_cobro === 'apartado' ? '📦 Apartado' : o.tipo_cobro === 'credito' ? '📝 Crédito' : 'Pendiente';
+                    return '<div class="pendiente-item" onclick="cerrarPendientesCobro();abrirOrden(' + o.id + ')">' +
+                        '<strong>#' + o.numero + ' · ' + escHtml(o.placa) + '</strong> — ' + escHtml(o.cliente_nombre || '') +
+                        '<br>' + tipoLabel + ' · Total ' + fmtColones(o.total) + ' · Saldo <strong>' + fmtColones(o.saldo_pendiente) + '</strong></div>';
+                }).join('');
+            } catch (e) {
+                cont.innerHTML = '<p style="color:#b91c1c;">' + escHtml(e.message) + '</p>';
+            }
+        }
+
+        async function cobrarOrden(id, total) {
+            abrirModalCobro(id, total, 0);
+        }
+
+        function abrirTicoFactura(ordenId) {
+            window.location.href = '/facturacion.html?tab=tico&orden=' + encodeURIComponent(ordenId);
+        }
+
+        async function imprimirOrden(id) {
+            try {
+                const r = await TallerAPI.imprimirTallerOrden(id, {});
+                alert('Ticket enviado a: ' + (r.impresora || 'impresora'));
+            } catch (e) {
+                alert('No se pudo imprimir: ' + e.message + '\n\nConfigure la impresora en Windows (impresora predeterminada del sistema).');
+            }
+        }
+
+        async function enviarWhatsAppOrden(id, tipo) {
+            try {
+                const r = await TallerAPI.getWhatsAppOrden(id, tipo);
+                if (!r.tiene_telefono) {
+                    alert('El cliente no tiene teléfono válido. Use 8 dígitos (ej. 88881234) en la orden.');
+                    return;
+                }
+                if (!r.wa_url) {
+                    alert('No se pudo preparar el enlace de WhatsApp.');
+                    return;
+                }
+                window.open(r.wa_url, '_blank');
+            } catch (e) {
+                alert('WhatsApp: ' + e.message);
+            }
+        }
+
+        function abrirPresupuesto(id) {
+            window.location.href = '/proformas.html?proforma=' + encodeURIComponent(id);
+        }
+
+        function descargarPdfOrden(id, tipo) {
+            window.open(TallerAPI.pdfOrdenUrl(id, tipo || 'presupuesto'), '_blank');
+        }
+
+        function verFotoGrande(url) {
+            document.getElementById('modal-foto-img').src = url;
+            document.getElementById('modal-foto').classList.add('activa');
+        }
+
+        function cerrarModalFoto() {
+            document.getElementById('modal-foto').classList.remove('activa');
+        }
+
+        async function abrirModalFeConfig() {
+            var estado = document.getElementById('fe-cfg-estado');
+            if (estado) estado.textContent = '';
+            try {
+                var data = await TallerAPI.getFeConfig();
+                var cfg = data.config || data;
+                function set(id, val) { var el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; }
+                if (document.getElementById('fe-cfg-modo')) document.getElementById('fe-cfg-modo').value = cfg.fe_modo || 'simulacion';
+                set('fe-cfg-url', cfg.fe_api_url);
+                set('fe-cfg-token', cfg.fe_api_token);
+                set('fe-cfg-cedula', cfg.fe_emisor_cedula);
+                set('fe-cfg-nombre', cfg.fe_emisor_nombre);
+                set('fe-cfg-email', cfg.fe_emisor_email);
+                set('fe-cfg-actividad', cfg.fe_actividad_economica);
+                set('fe-cfg-sucursal', cfg.fe_sucursal);
+                set('fe-cfg-terminal', cfg.fe_terminal);
+            } catch (e) { /* usar valores por defecto del formulario */ }
+            document.getElementById('modal-fe-config').classList.add('activa');
+        }
+
+        function cerrarModalFeConfig() {
+            document.getElementById('modal-fe-config').classList.remove('activa');
+        }
+
+        function leerFeConfigForm() {
+            var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            return {
+                fe_modo: v('fe-cfg-modo') || 'simulacion',
+                fe_api_url: v('fe-cfg-url'),
+                fe_api_token: v('fe-cfg-token'),
+                fe_emisor_cedula: v('fe-cfg-cedula'),
+                fe_emisor_nombre: v('fe-cfg-nombre'),
+                fe_emisor_email: v('fe-cfg-email'),
+                fe_actividad_economica: v('fe-cfg-actividad') || '452000',
+                fe_sucursal: v('fe-cfg-sucursal') || '001',
+                fe_terminal: v('fe-cfg-terminal') || '001'
+            };
+        }
+
+        async function guardarFeConfig() {
+            var estado = document.getElementById('fe-cfg-estado');
+            var datos = leerFeConfigForm();
+            if (!datos.fe_emisor_cedula || !datos.fe_emisor_nombre) {
+                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'Cédula y nombre del emisor son obligatorios.'; }
+                return;
+            }
+            try {
+                await TallerAPI.saveFeConfig(datos);
+                if (estado) { estado.style.color = '#16a34a'; estado.textContent = '✓ Configuración guardada.'; }
+            } catch (e) {
+                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'No se pudo guardar: ' + e.message; }
+            }
+        }
+
+        async function probarFeConfig() {
+            var estado = document.getElementById('fe-cfg-estado');
+            if (estado) { estado.style.color = '#64748b'; estado.textContent = 'Probando…'; }
+            try {
+                var r = await TallerAPI.probarFeConexion();
+                if (estado) {
+                    estado.style.color = r && r.ok === false ? '#dc2626' : '#16a34a';
+                    estado.textContent = (r && r.mensaje) ? r.mensaje : '✓ Conexión correcta.';
+                }
+            } catch (e) {
+                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'Error al probar: ' + e.message; }
+            }
+        }
+
+        initTaller();
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Finanzas — Sanmy Taller Mecánico</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html { height: 100%; height: 100dvh; }
+        body { height: 100dvh; overflow: hidden; background: #eef2f7; color: #1e293b; display: flex; flex-direction: column; }
+
+        .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
+        .nav-item { flex: 1 1 0; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
+            color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
+        .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
+        .nav-item:hover { box-shadow: 0 6px 16px rgba(30,58,95,.15); }
+        .nav-item.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .cuerpo { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: clamp(10px,1.6vw,20px); gap: 12px; }
+        .tabs { display: flex; gap: 8px; flex-shrink: 0; }
+        .tab { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 8px 18px; font-weight: bold; font-size: 14px; cursor: pointer; color: #1e3a5f; }
+        .tab.activo { background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; border-color: #1e3a5f; }
+
+        .tarjetas { display: flex; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
+        .tarjeta { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; min-width: 180px; }
+        .tarjeta .lbl { font-size: 12px; color: #64748b; font-weight: bold; }
+        .tarjeta .val { font-size: clamp(18px,2.2vw,26px); font-weight: bold; color: #1e3a5f; margin-top: 2px; }
+        .tarjeta.rojo .val { color: #b91c1c; }
+
+        .tabla-wrap { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        thead th { position: sticky; top: 0; background: #1e3a5f; color: #fff; text-align: left; padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+        tbody td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; }
+        tbody tr:hover { background: #f8fafc; }
+        .num { text-align: right; }
+        .saldo { color: #b91c1c; font-weight: bold; }
+        .badge { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: bold; background: #e0e7ff; color: #1e3a5f; }
+        .btn { border: none; border-radius: 6px; padding: 5px 10px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-azul { background: #dbeafe; color: #1d4ed8; text-decoration: none; }
+        .vacio { padding: 24px; text-align: center; color: #94a3b8; }
+        .aviso { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 12px; padding: 18px; font-size: 14px; }
+        .aviso h3 { margin-bottom: 6px; }
+
+        .estado-pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: bold; }
+        .estado-pill.pend { background: #fee2e2; color: #b91c1c; }
+        .estado-pill.pag { background: #dcfce7; color: #15803d; }
+        .btn-verde { background: #dcfce7; color: #15803d; }
+        .btn-gris { background: #e2e8f0; color: #475569; }
+        .btn-rojo { background: #fee2e2; color: #b91c1c; }
+        tr.vencida td { background: #fff1f2; }
+
+        .modal-cxp { position: fixed; inset: 0; background: rgba(15,29,51,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+        .modal-cxp.activa { display: flex; }
+        .modal-cxp-box { background: #fff; border-radius: 14px; padding: 20px; width: min(480px,100%); max-height: 92dvh; overflow: auto; }
+        .modal-cxp .campo { margin-bottom: 10px; }
+        .modal-cxp label { font-size: 12px; color: #475569; font-weight: bold; display: block; margin-bottom: 4px; }
+        .modal-cxp input { width: 100%; padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        .grid2cxp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
+        <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
+        <a class="nav-item activo" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+    </nav>
+
+    <div class="cuerpo">
+        <div class="tabs">
+            <button type="button" class="tab activo" id="tab-cxc" onclick="verTab('cxc')">💰 Cuentas por Cobrar</button>
+            <button type="button" class="tab" id="tab-cxp" onclick="verTab('cxp')">📤 Cuentas por Pagar</button>
+        </div>
+
+        <!-- CxC -->
+        <div id="vista-cxc" style="display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;">
+            <div class="tarjetas">
+                <div class="tarjeta rojo"><div class="lbl">Saldo total por cobrar</div><div class="val" id="card-saldo">₡0</div></div>
+                <div class="tarjeta"><div class="lbl">Clientes / órdenes con saldo</div><div class="val" id="card-cant">0</div></div>
+            </div>
+            <div class="tabla-wrap">
+                <table>
+                    <thead>
+                        <tr><th>#</th><th>Placa</th><th>Cliente</th><th>Teléfono</th><th>Tipo</th><th class="num">Total</th><th class="num">Saldo</th><th>Acción</th></tr>
+                    </thead>
+                    <tbody id="tbody-cxc"><tr><td colspan="8" class="vacio">Cargando…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CxP -->
+        <div id="vista-cxp" style="display:none;flex-direction:column;gap:12px;flex:1;min-height:0;">
+            <div class="tarjetas">
+                <div class="tarjeta rojo"><div class="lbl">Total por pagar (pendiente)</div><div class="val" id="card-cxp-saldo">₡0</div></div>
+                <div class="tarjeta"><div class="lbl">Cuentas registradas</div><div class="val" id="card-cxp-cant">0</div></div>
+                <div class="tarjeta" style="display:flex;align-items:center;">
+                    <button type="button" class="btn" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;padding:10px 16px;font-size:14px;" onclick="abrirNuevaCxp()">➕ Registrar cuenta por pagar</button>
+                </div>
+            </div>
+            <div class="tabla-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Proveedor</th><th>Descripción</th><th>Vence</th><th class="num">Monto</th><th>Estado</th><th>Acción</th></tr>
+                    </thead>
+                    <tbody id="tbody-cxp"><tr><td colspan="6" class="vacio">Cargando…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-cxp" id="modal-cxp">
+        <div class="modal-cxp-box">
+            <h3 style="color:#1e3a5f;margin-bottom:12px;">📤 Nueva cuenta por pagar</h3>
+            <div class="campo"><label>Proveedor *</label><input id="cxp-prov" type="text" placeholder="Nombre del proveedor"></div>
+            <div class="campo"><label>Descripción</label><input id="cxp-desc" type="text" placeholder="Ej. Compra de repuestos"></div>
+            <div class="grid2cxp">
+                <div class="campo"><label>Monto (₡)</label><input id="cxp-monto" type="number" step="0.01" value="0"></div>
+                <div class="campo"><label>Fecha de vencimiento</label><input id="cxp-venc" type="date"></div>
+            </div>
+            <div class="campo"><label>Nota (opcional)</label><input id="cxp-nota" type="text" placeholder="Comentario"></div>
+            <div id="cxp-estado" style="font-size:13px;color:#dc2626;min-height:18px;"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+                <button type="button" class="btn" style="background:#e2e8f0;color:#1e3a5f;padding:9px 16px;" onclick="cerrarCxp()">Cancelar</button>
+                <button type="button" class="btn" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;padding:9px 16px;" id="btn-cxp-guardar" onclick="guardarCxp()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="taller-api.js"></script>
+    <script src="enter-next.js"></script>
+    <script>
+        function fmt(v) { var n = Number(v) || 0; return '₡' + n.toLocaleString('es-CR', { maximumFractionDigits: 0 }); }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function verTab(t) {
+            document.getElementById('tab-cxc').classList.toggle('activo', t === 'cxc');
+            document.getElementById('tab-cxp').classList.toggle('activo', t === 'cxp');
+            document.getElementById('vista-cxc').style.display = t === 'cxc' ? 'flex' : 'none';
+            document.getElementById('vista-cxp').style.display = t === 'cxp' ? 'flex' : 'none';
+            if (t === 'cxp') cargarCxP();
+        }
+
+        function hoyISO() { return new Date().toISOString().slice(0, 10); }
+
+        async function cargarCxP() {
+            var tbody = document.getElementById('tbody-cxp');
+            try {
+                var data = await TallerAPI.getCuentasPagar();
+                var filas = data.filas || [];
+                document.getElementById('card-cxp-saldo').textContent = fmt(data.total_pendiente);
+                document.getElementById('card-cxp-cant').textContent = filas.length;
+                if (!filas.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="vacio">No hay cuentas por pagar registradas.</td></tr>';
+                    return;
+                }
+                var hoy = hoyISO();
+                tbody.innerHTML = filas.map(function (c) {
+                    var pend = c.estado === 'pendiente';
+                    var vencida = pend && c.fecha_vencimiento && c.fecha_vencimiento < hoy;
+                    var accion = pend
+                        ? '<button class="btn btn-verde" onclick="pagarCxp(' + c.id + ')">✓ Pagar</button> '
+                        : '<button class="btn btn-gris" onclick="reabrirCxp(' + c.id + ')">↩ Reabrir</button> ';
+                    accion += '<button class="btn btn-rojo" onclick="eliminarCxp(' + c.id + ')">✕</button>';
+                    return '<tr class="' + (vencida ? 'vencida' : '') + '">' +
+                        '<td><strong>' + esc(c.proveedor) + '</strong></td>' +
+                        '<td>' + esc(c.descripcion || '—') + '</td>' +
+                        '<td>' + esc(c.fecha_vencimiento || '—') + (vencida ? ' ⚠' : '') + '</td>' +
+                        '<td class="num">' + fmt(c.monto) + '</td>' +
+                        '<td><span class="estado-pill ' + (pend ? 'pend' : 'pag') + '">' + (pend ? 'Pendiente' : 'Pagada') + '</span></td>' +
+                        '<td>' + accion + '</td>' +
+                        '</tr>';
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="vacio">Error: ' + esc(e.message) + '</td></tr>';
+            }
+        }
+
+        function abrirNuevaCxp() {
+            document.getElementById('cxp-prov').value = '';
+            document.getElementById('cxp-desc').value = '';
+            document.getElementById('cxp-monto').value = '0';
+            document.getElementById('cxp-venc').value = '';
+            document.getElementById('cxp-nota').value = '';
+            document.getElementById('cxp-estado').textContent = '';
+            document.getElementById('modal-cxp').classList.add('activa');
+        }
+        function cerrarCxp() { document.getElementById('modal-cxp').classList.remove('activa'); }
+
+        async function guardarCxp() {
+            var estado = document.getElementById('cxp-estado');
+            var prov = document.getElementById('cxp-prov').value.trim();
+            if (!prov) { estado.textContent = 'El proveedor es obligatorio.'; return; }
+            var btn = document.getElementById('btn-cxp-guardar');
+            btn.disabled = true;
+            try {
+                await TallerAPI.crearCuentaPagar({
+                    proveedor: prov,
+                    descripcion: document.getElementById('cxp-desc').value.trim(),
+                    monto: document.getElementById('cxp-monto').value,
+                    fecha: hoyISO(),
+                    fecha_vencimiento: document.getElementById('cxp-venc').value,
+                    nota: document.getElementById('cxp-nota').value.trim()
+                });
+                cerrarCxp();
+                cargarCxP();
+            } catch (e) {
+                estado.textContent = 'No se pudo guardar: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function pagarCxp(id) {
+            try { await TallerAPI.actualizarCuentaPagar(id, { estado: 'pagado' }); cargarCxP(); }
+            catch (e) { alert('Error: ' + e.message); }
+        }
+        async function reabrirCxp(id) {
+            try { await TallerAPI.actualizarCuentaPagar(id, { estado: 'pendiente' }); cargarCxP(); }
+            catch (e) { alert('Error: ' + e.message); }
+        }
+        async function eliminarCxp(id) {
+            if (!confirm('¿Eliminar esta cuenta por pagar?')) return;
+            try { await TallerAPI.eliminarCuentaPagar(id); cargarCxP(); }
+            catch (e) { alert('Error: ' + e.message); }
+        }
+
+        document.getElementById('modal-cxp').addEventListener('click', function (e) {
+            if (e.target === this) cerrarCxp();
+        });
+
+        function tipoLabel(t) {
+            if (t === 'credito') return '<span class="badge">Crédito</span>';
+            if (t === 'apartado') return '<span class="badge">Apartado</span>';
+            return '<span class="badge">Contado</span>';
+        }
+
+        async function cargarCxC() {
+            var tbody = document.getElementById('tbody-cxc');
+            try {
+                var data = await TallerAPI.getTallerPendientesCobro();
+                var filas = data.filas || [];
+                document.getElementById('card-saldo').textContent = fmt(data.saldo_total);
+                document.getElementById('card-cant').textContent = filas.length;
+                if (!filas.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="vacio">🎉 No hay saldos pendientes de cobro.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = filas.map(function (o) {
+                    return '<tr>' +
+                        '<td>#' + o.numero + '</td>' +
+                        '<td><strong>' + esc(o.placa) + '</strong></td>' +
+                        '<td>' + esc(o.cliente_nombre || 'Sin cliente') + '</td>' +
+                        '<td>' + esc(o.cliente_telefono || '—') + '</td>' +
+                        '<td>' + tipoLabel(o.tipo_cobro) + '</td>' +
+                        '<td class="num">' + fmt(o.total) + '</td>' +
+                        '<td class="num saldo">' + fmt(o.saldo_pendiente) + '</td>' +
+                        '<td><a class="btn btn-azul" href="/index.html">Ver / cobrar</a></td>' +
+                        '</tr>';
+                }).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="8" class="vacio">Error: ' + esc(e.message) + '</td></tr>';
+            }
+        }
+
+        cargarCxC();
+    </script>
+</body>
+</html>

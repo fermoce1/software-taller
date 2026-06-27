@@ -1,0 +1,8 @@
+node_modules/
+data/*.db
+data/*.db-*
+logs/
+*.log
+sanmy-taller-servidor.pid
+sanmy-taller-terminal-ip.txt
+browser-profile/
