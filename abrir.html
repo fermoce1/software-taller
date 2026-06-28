@@ -141,12 +141,12 @@
         .estado.error { background: rgba(239,68,68,.35); }
         .panel-botones {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 10px;
             width: min(440px, 100%);
             margin: 0 auto;
         }
-        .btn-entrar, .btn-config {
+        .btn-entrar {
             width: 100%;
             border: none;
             border-radius: 12px;
@@ -156,16 +156,10 @@
             cursor: pointer;
             box-shadow: 0 10px 24px rgba(0,0,0,.22);
             transition: transform .08s, box-shadow .15s;
-        }
-        .btn-entrar:hover, .btn-config:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(0,0,0,.28); }
-        .btn-entrar {
             color: #1e3a5f;
             background: #fff;
         }
-        .btn-config {
-            color: #fff;
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
+        .btn-entrar:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(0,0,0,.28); }
         .btn-ayuda {
             width: 100%;
             border: none;
@@ -350,7 +344,6 @@
         <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
         <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
         <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
-        <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
         <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
     </nav>
 
@@ -388,7 +381,6 @@
             <p id="texto-ayuda">Comprobando servidor…</p>
             <div class="panel-botones">
                 <button type="button" class="btn-entrar" onclick="entrarTaller()">🔧 Entrar al taller</button>
-                <button type="button" class="btn-config" onclick="window.location.href='/configuracion.html'">⚙️ Configuración</button>
             </div>
             <button type="button" class="btn-ayuda" id="btn-ayuda-toggle" onclick="togglePanelAyuda()">❓ Ayuda — preguntar al sistema</button>
             <div id="panel-ayuda" class="panel-ayuda" aria-hidden="true">
@@ -403,7 +395,7 @@
                     <button type="button" onclick="enviarPreguntaAyuda()">Enviar</button>
                 </div>
             </div>
-            <p style="opacity:.9;font-size:clamp(12px,1.2vw,14px);margin-top:12px;font-weight:bold;">Use Configuración para facturación, usuarios, impresoras y red.</p>
+            <p style="opacity:.9;font-size:clamp(12px,1.2vw,14px);margin-top:12px;font-weight:bold;">Use el botón verde abajo a la derecha para facturación, usuarios, impresoras y red.</p>
             <p id="sesion-usuario" style="margin-top:10px;font-size:12px;opacity:.9;"></p>
             <a href="/login.html" id="link-login" style="display:inline-block;margin-top:8px;font-size:12px;color:#fff;font-weight:bold;">🔐 Iniciar sesión</a>
         </section>
@@ -413,7 +405,6 @@
             <h3>Acciones Rápidas</h3>
             <a class="accion primaria" href="/index.html?accion=nueva"><span class="ico">➕</span> Nueva Orden</a>
             <a class="accion" href="/index.html?accion=pendientes"><span class="ico">📋</span> Pendientes de Cobro</a>
-            <a class="accion config" href="/configuracion.html"><span class="ico">⚙️</span> Configuración</a>
             <a class="accion fe" href="/configuracion.html?sec=fe"><span class="ico">🧾</span> Factura electrónica</a>
             <a class="accion mitchell" href="https://mic.mymitchell.com/Login.aspx?ReturnUrl=%2fdefault.aspx" target="_blank" rel="noopener noreferrer"><span class="ico">🔧</span> Mitchell OnDemand</a>
             <a class="accion diagramas" href="https://automentor.online/acceso-a-data/" target="_blank" rel="noopener noreferrer"><span class="ico">📐</span> Diagramas / Pinout</a>
@@ -450,12 +441,15 @@
             link.href = '/login.html?return=/abrir.html';
         }
 
+        // --- Selector de empresa en Inicio (multi-empresa) ---
+        // Permite cambiar qué negocio está "encendido" sin ir a Configuración
         var empresasInicioCache = [];
 
         function escHtmlEmpresa(s) {
             return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
+        /** Pone el nombre de la empresa activa en el título y el pie de página. */
         function aplicarNombreEmpresa(activa) {
             if (!activa || !activa.nombre) return;
             var el = document.getElementById('nombre-empresa-activa');
@@ -465,6 +459,7 @@
             document.title = activa.nombre + ' — Inicio';
         }
 
+        /** Dibuja los botones "Trabajar con" en la pantalla de inicio. */
         function pintarSelectorEmpresas(data) {
             empresasInicioCache = data.filas || [];
             var bloque = document.getElementById('bloque-empresas');
@@ -493,6 +488,7 @@
             }).join('');
         }
 
+        /** Usuario tocó otra empresa: la activamos en el servidor y refrescamos la lista. */
         async function cambiarEmpresaInicio(id) {
             var actual = empresasInicioCache.find(function (e) { return e.es_activa; });
             if (actual && actual.id === id) return;
@@ -517,6 +513,7 @@
             }
         }
 
+        /** Al abrir Inicio, preguntamos al servidor qué empresas hay y cuál está activa. */
         async function cargarEmpresaActiva() {
             try {
                 var data = await TallerAPI.getEmpresas();

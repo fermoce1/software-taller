@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { calcTotalesDesdeSubtotal } = require('../db/database');
+// Servicio de empresas: nos dice cuál empresa está activa y si comparte o aísla datos
+const empresaService = require('./empresa-service');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const FOTOS_DIR = path.join(DATA_DIR, 'taller-fotos');
@@ -14,6 +16,38 @@ const ESTADOS_ORDEN = [
   'entregado',
   'cancelado'
 ];
+
+// =============================================================================
+// AYUDAS PARA MULTI-EMPRESA
+// Cada función pequeña hace una sola cosa fácil de entender:
+// - politicaActiva: lee las reglas de la empresa encendida ahora
+// - appendFiltroEmpresa: agrega al SQL "solo muestra lo de esta empresa"
+// - empresaIdRegistro: al guardar, pone el id de empresa o NULL si comparte
+// - asegurarEnScope: lanza error si intentas tocar datos de otra empresa
+// =============================================================================
+
+/** Pregunta al módulo empresa qué reglas aplicar (compartir clientes, inventario, etc.). */
+function politicaActiva(db) {
+  return empresaService.obtenerPoliticaActiva(db);
+}
+
+/** Une el filtro SQL de empresa a una consulta que ya teníamos armada. */
+function appendFiltroEmpresa(sql, params, compartir, column, empresaId) {
+  const f = empresaService.filtroSqlEmpresa(compartir, column, empresaId);
+  return { sql: sql + f.clause, params: params.concat(f.params) };
+}
+
+/** Devuelve qué valor guardar en la columna empresa_id al crear un registro nuevo. */
+function empresaIdRegistro(compartir, empresaId) {
+  return empresaService.empresaIdParaRegistro(compartir, empresaId);
+}
+
+/** Si el registro no es de la empresa activa, cortamos con un mensaje de error claro. */
+function asegurarEnScope(row, compartir, empresaId, mensaje) {
+  if (!empresaService.registroEnScope(row, compartir, empresaId)) {
+    throw new Error(mensaje || 'No pertenece a la empresa activa');
+  }
+}
 
 function ensureFotosDir() {
   if (!fs.existsSync(FOTOS_DIR)) {
@@ -73,19 +107,31 @@ function recalcOrden(db, ordenId) {
   return { subtotal, iva, total };
 }
 
-function siguienteNumeroOrden(db) {
+function siguienteNumeroOrden(db, empresaId) {
+  if (empresaId) {
+    const row = db
+      .prepare('SELECT COALESCE(MAX(numero), 0) AS n FROM taller_ordenes WHERE empresa_id = ?')
+      .get(empresaId);
+    return (row.n || 0) + 1;
+  }
   const row = db.prepare('SELECT COALESCE(MAX(numero), 0) AS n FROM taller_ordenes').get();
   return (row.n || 0) + 1;
 }
 
 function buscarOCrearCliente(db, datos) {
+  // Paso 1: leer reglas de la empresa activa (¿comparte clientes con otras?)
+  const pol = politicaActiva(db);
   const nombre = String(datos.cliente_nombre || datos.nombre || '').trim();
   if (!nombre) return null;
   const identificacion = String(datos.cliente_identificacion || datos.identificacion || '').trim();
+  // Paso 2: decidir si el cliente nuevo lleva id de empresa o queda "común" (NULL)
+  const empIdReg = empresaIdRegistro(pol.compartir_clientes, pol.empresa_id);
   if (identificacion) {
-    const existente = db
-      .prepare('SELECT id FROM taller_clientes WHERE identificacion = ?')
-      .get(identificacion);
+    // Paso 3: buscar solo dentro del "mundo" de esta empresa (compartido o aparte)
+    let sql = 'SELECT id FROM taller_clientes WHERE identificacion = ?';
+    let params = [identificacion];
+    const filtrado = appendFiltroEmpresa(sql, params, pol.compartir_clientes, 'empresa_id', pol.empresa_id);
+    const existente = db.prepare(filtrado.sql).get(...filtrado.params);
     if (existente) {
       db.prepare(
         'UPDATE taller_clientes SET nombre = ?, telefono = COALESCE(?, telefono), email = COALESCE(?, email) WHERE id = ?'
@@ -100,24 +146,31 @@ function buscarOCrearCliente(db, datos) {
   }
   const result = db
     .prepare(
-      `INSERT INTO taller_clientes (nombre, identificacion, telefono, email)
-       VALUES (?, ?, ?, ?)`
+      `INSERT INTO taller_clientes (nombre, identificacion, telefono, email, empresa_id)
+       VALUES (?, ?, ?, ?, ?)`
     )
     .run(
       nombre,
       identificacion || null,
       datos.cliente_telefono || datos.telefono || null,
-      datos.cliente_email || datos.email || null
+      datos.cliente_email || datos.email || null,
+      empIdReg
     );
   return result.lastInsertRowid;
 }
 
 function buscarOCrearVehiculo(db, datos, clienteId) {
+  // Igual que clientes: placa única por empresa (empresa aparte no ve placas de otra)
+  const pol = politicaActiva(db);
   const placa = String(datos.placa || '').trim().toUpperCase();
   if (!placa) {
     throw new Error('La placa del vehículo es obligatoria');
   }
-  const existente = db.prepare('SELECT id FROM taller_vehiculos WHERE placa = ?').get(placa);
+  const empIdReg = empresaIdRegistro(pol.compartir_clientes, pol.empresa_id);
+  let sql = 'SELECT id FROM taller_vehiculos WHERE placa = ?';
+  let params = [placa];
+  const filtrado = appendFiltroEmpresa(sql, params, pol.compartir_clientes, 'empresa_id', pol.empresa_id);
+  const existente = db.prepare(filtrado.sql).get(...filtrado.params);
   if (existente) {
     db.prepare(
       `UPDATE taller_vehiculos SET
@@ -144,8 +197,8 @@ function buscarOCrearVehiculo(db, datos, clienteId) {
   const result = db
     .prepare(
       `INSERT INTO taller_vehiculos
-       (cliente_id, placa, marca, modelo, anio, color, kilometraje, observaciones)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+       (cliente_id, placa, marca, modelo, anio, color, kilometraje, observaciones, empresa_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       clienteId,
@@ -155,7 +208,8 @@ function buscarOCrearVehiculo(db, datos, clienteId) {
       datos.anio ? Number(datos.anio) : null,
       datos.color || null,
       datos.kilometraje ? Number(datos.kilometraje) : null,
-      datos.observaciones_vehiculo || null
+      datos.observaciones_vehiculo || null,
+      empIdReg
     );
   return result.lastInsertRowid;
 }
@@ -203,6 +257,12 @@ function listarOrdenes(db, query) {
   }
   if (query.proforma === '1' || query.proforma === 'true') {
     sql += " AND LOWER(IFNULL(o.observaciones, '')) LIKE '%proforma%'";
+  }
+  const empresaId = empresaService.getEmpresaActivaId(db);
+  // Solo listamos órdenes de la empresa que está "encendida" ahora
+  if (empresaId) {
+    sql += ' AND o.empresa_id = ?';
+    params.push(empresaId);
   }
   sql += ' ORDER BY o.fecha_ingreso DESC, o.id DESC LIMIT 100';
   const filas = db.prepare(sql).all(...params).map(mapOrdenRow);
@@ -253,20 +313,22 @@ function obtenerOrden(db, id) {
 function crearOrden(db, datos) {
   const clienteId = buscarOCrearCliente(db, datos);
   const vehiculoId = buscarOCrearVehiculo(db, datos, clienteId);
-  const numero = siguienteNumeroOrden(db);
+  const empresaId = empresaService.getEmpresaActivaId(db);
+  const numero = siguienteNumeroOrden(db, empresaId);
   const usuarioId = datos.usuario_id ? Number(datos.usuario_id) : null;
 
   const result = db
     .prepare(
       `INSERT INTO taller_ordenes
-       (numero, vehiculo_id, cliente_id, usuario_id, estado, diagnostico, observaciones)
-       VALUES (?, ?, ?, ?, 'ingreso', ?, ?)`
+       (numero, vehiculo_id, cliente_id, usuario_id, empresa_id, estado, diagnostico, observaciones)
+       VALUES (?, ?, ?, ?, ?, 'ingreso', ?, ?)`
     )
     .run(
       numero,
       vehiculoId,
       clienteId,
       usuarioId,
+      empresaId,
       String(datos.diagnostico || '').trim() || null,
       String(datos.observaciones || '').trim() || null
     );
@@ -335,8 +397,17 @@ function agregarLinea(db, ordenId, datos) {
   let itemInv = null;
   if (inventarioId) {
     itemInv = db.prepare('SELECT * FROM taller_inventario WHERE id = ?').get(inventarioId);
+    if (itemInv) {
+      const polInv = politicaActiva(db);
+      try {
+        asegurarEnScope(itemInv, polInv.compartir_inventario, polInv.empresa_id, 'Repuesto no disponible para esta empresa');
+      } catch (e) {
+        itemInv = null;
+        inventarioId = null;
+      }
+    }
     if (!itemInv) {
-      inventarioId = null; // el item ya no existe: tratamos la línea como manual
+      inventarioId = null;
     }
   }
 
@@ -545,19 +616,23 @@ function registrarAbono(db, ordenId, datos) {
 }
 
 function listarPendientesCobro(db) {
-  const filas = db
-    .prepare(
-      `SELECT o.*,
+  // Cobros pendientes: solo de la empresa activa
+  const empresaId = empresaService.getEmpresaActivaId(db);
+  let sql = `
+      SELECT o.*,
               v.placa, v.marca, v.modelo,
               c.nombre AS cliente_nombre, c.telefono AS cliente_telefono
        FROM taller_ordenes o
        JOIN taller_vehiculos v ON v.id = o.vehiculo_id
        LEFT JOIN taller_clientes c ON c.id = o.cliente_id
-       WHERE o.saldo_pendiente > 0 AND o.estado != 'cancelado'
-       ORDER BY o.fecha_entrega DESC, o.id DESC`
-    )
-    .all()
-    .map(mapOrdenRow);
+       WHERE o.saldo_pendiente > 0 AND o.estado != 'cancelado'`;
+  const params = [];
+  if (empresaId) {
+    sql += ' AND o.empresa_id = ?';
+    params.push(empresaId);
+  }
+  sql += ' ORDER BY o.fecha_entrega DESC, o.id DESC';
+  const filas = db.prepare(sql).all(...params).map(mapOrdenRow);
   const saldoTotal = filas.reduce(function (s, o) {
     return s + (Number(o.saldo_pendiente) || 0);
   }, 0);
@@ -565,32 +640,42 @@ function listarPendientesCobro(db) {
 }
 
 function resumenHoy(db) {
+  // Resumen del día (órdenes, cobros): números solo de la empresa activa
+  const empresaId = empresaService.getEmpresaActivaId(db);
+  const filtroOrd = empresaId ? ' AND empresa_id = ?' : '';
+  const filtroOrdParams = empresaId ? [empresaId] : [];
   const activas = db
     .prepare(
-      "SELECT COUNT(*) AS n FROM taller_ordenes WHERE estado NOT IN ('entregado', 'cancelado')"
+      "SELECT COUNT(*) AS n FROM taller_ordenes WHERE estado NOT IN ('entregado', 'cancelado')" +
+        filtroOrd
     )
-    .get().n || 0;
+    .get(...filtroOrdParams).n || 0;
   const listas = db
-    .prepare("SELECT COUNT(*) AS n FROM taller_ordenes WHERE estado = 'listo'")
-    .get().n || 0;
+    .prepare("SELECT COUNT(*) AS n FROM taller_ordenes WHERE estado = 'listo'" + filtroOrd)
+    .get(...filtroOrdParams).n || 0;
   const entregadasHoy = db
     .prepare(
       `SELECT COUNT(*) AS n FROM taller_ordenes
-       WHERE estado = 'entregado' AND date(fecha_entrega) = date('now', 'localtime')`
+       WHERE estado = 'entregado' AND date(fecha_entrega) = date('now', 'localtime')` + filtroOrd
     )
-    .get().n || 0;
-  const cobradoHoy = db
-    .prepare(
-      `SELECT COALESCE(SUM(monto), 0) AS t FROM taller_orden_abonos
-       WHERE date(fecha) = date('now', 'localtime')`
-    )
-    .get().t || 0;
-  const pendientes = db
-    .prepare(
-      `SELECT COUNT(*) AS n, COALESCE(SUM(saldo_pendiente), 0) AS saldo
-       FROM taller_ordenes WHERE saldo_pendiente > 0 AND estado != 'cancelado'`
-    )
-    .get();
+    .get(...filtroOrdParams).n || 0;
+  let abonoSql = `SELECT COALESCE(SUM(a.monto), 0) AS t FROM taller_orden_abonos a
+       JOIN taller_ordenes o ON o.id = a.orden_id
+       WHERE date(a.fecha) = date('now', 'localtime')`;
+  const abonoParams = [];
+  if (empresaId) {
+    abonoSql += ' AND o.empresa_id = ?';
+    abonoParams.push(empresaId);
+  }
+  const cobradoHoy = db.prepare(abonoSql).get(...abonoParams).t || 0;
+  let pendSql = `SELECT COUNT(*) AS n, COALESCE(SUM(saldo_pendiente), 0) AS saldo
+       FROM taller_ordenes WHERE saldo_pendiente > 0 AND estado != 'cancelado'`;
+  const pendParams = [];
+  if (empresaId) {
+    pendSql += ' AND empresa_id = ?';
+    pendParams.push(empresaId);
+  }
+  const pendientes = db.prepare(pendSql).get(...pendParams);
   return {
     ordenes_activas: activas,
     ordenes_listas: listas,
@@ -602,34 +687,36 @@ function resumenHoy(db) {
 }
 
 function buscarVehiculos(db, q) {
+  const pol = politicaActiva(db);
   const term = String(q || '').trim().toUpperCase();
   if (!term) return [];
   const like = '%' + term + '%';
-  return db
-    .prepare(
-      `SELECT v.*, c.nombre AS cliente_nombre, c.identificacion AS cliente_identificacion,
+  let sql = `
+      SELECT v.*, c.nombre AS cliente_nombre, c.identificacion AS cliente_identificacion,
               c.telefono AS cliente_telefono, c.email AS cliente_email
        FROM taller_vehiculos v
        LEFT JOIN taller_clientes c ON c.id = v.cliente_id
-       WHERE v.placa LIKE ? OR v.marca LIKE ? OR v.modelo LIKE ?
-       ORDER BY CASE WHEN v.placa = ? THEN 0 ELSE 1 END, v.placa
-       LIMIT 30`
-    )
-    .all(like, like, like, term);
+       WHERE (v.placa LIKE ? OR v.marca LIKE ? OR v.modelo LIKE ?)`;
+  let params = [like, like, like];
+  const filtrado = appendFiltroEmpresa(sql, params, pol.compartir_clientes, 'v.empresa_id', pol.empresa_id);
+  filtrado.sql += ' ORDER BY CASE WHEN v.placa = ? THEN 0 ELSE 1 END, v.placa LIMIT 30';
+  filtrado.params.push(term);
+  return db.prepare(filtrado.sql).all(...filtrado.params);
 }
 
 function obtenerVehiculoPorPlaca(db, placa) {
+  const pol = politicaActiva(db);
   const p = String(placa || '').trim().toUpperCase();
   if (!p) return null;
-  return db
-    .prepare(
-      `SELECT v.*, c.nombre AS cliente_nombre, c.identificacion AS cliente_identificacion,
+  let sql = `
+      SELECT v.*, c.nombre AS cliente_nombre, c.identificacion AS cliente_identificacion,
               c.telefono AS cliente_telefono, c.email AS cliente_email
        FROM taller_vehiculos v
        LEFT JOIN taller_clientes c ON c.id = v.cliente_id
-       WHERE v.placa = ?`
-    )
-    .get(p);
+       WHERE v.placa = ?`;
+  let params = [p];
+  const filtrado = appendFiltroEmpresa(sql, params, pol.compartir_clientes, 'v.empresa_id', pol.empresa_id);
+  return db.prepare(filtrado.sql).get(...filtrado.params);
 }
 
 function prepararDatosTicket(db, ordenId) {
@@ -671,17 +758,34 @@ function prepararDatosTicket(db, ordenId) {
 }
 
 function listarClientes(db, query) {
+  // Lista clientes filtrados: empresa aparte = solo los suyos; compartida = pool común (empresa_id NULL)
   query = query || {};
+  const pol = politicaActiva(db);
   const q = String(query.q || '').trim();
-  let sql = `
-    SELECT c.id, c.nombre, c.identificacion, c.telefono, c.email, c.fecha_registro,
-           (SELECT COUNT(*) FROM taller_vehiculos v WHERE v.cliente_id = c.id) AS vehiculos,
-           (SELECT COUNT(*) FROM taller_ordenes o WHERE o.cliente_id = c.id) AS ordenes,
+  const fCli = empresaService.filtroSqlEmpresa(pol.compartir_clientes, 'c.empresa_id', pol.empresa_id);
+  const fVeh = empresaService.filtroSqlEmpresa(pol.compartir_clientes, 'v.empresa_id', pol.empresa_id);
+  const ordenEmpresa = pol.empresa_id ? ' AND o.empresa_id = ?' : '';
+  let sql =
+    `SELECT c.id, c.nombre, c.identificacion, c.telefono, c.email, c.fecha_registro,
+           (SELECT COUNT(*) FROM taller_vehiculos v WHERE v.cliente_id = c.id` +
+    fVeh.clause +
+    `) AS vehiculos,
+           (SELECT COUNT(*) FROM taller_ordenes o WHERE o.cliente_id = c.id` +
+    ordenEmpresa +
+    `) AS ordenes,
            (SELECT IFNULL(SUM(o.saldo_pendiente), 0) FROM taller_ordenes o
-              WHERE o.cliente_id = c.id AND o.estado != 'cancelado') AS saldo_pendiente
+              WHERE o.cliente_id = c.id AND o.estado != 'cancelado'` +
+    ordenEmpresa +
+    `) AS saldo_pendiente
     FROM taller_clientes c
-    WHERE 1=1`;
-  const params = [];
+    WHERE 1=1` +
+    fCli.clause;
+  const params = fVeh.params.slice();
+  if (pol.empresa_id) {
+    params.push(pol.empresa_id);
+    params.push(pol.empresa_id);
+  }
+  params.push.apply(params, fCli.params);
   if (q) {
     sql += ' AND (c.nombre LIKE ? OR c.identificacion LIKE ? OR c.telefono LIKE ?)';
     const like = '%' + q + '%';
@@ -693,12 +797,17 @@ function listarClientes(db, query) {
 }
 
 function obtenerClienteVehiculos(db, clienteId) {
-  return db
-    .prepare(
-      `SELECT id, placa, marca, modelo, anio, color FROM taller_vehiculos
-       WHERE cliente_id = ? ORDER BY placa`
-    )
-    .all(clienteId);
+  const pol = politicaActiva(db);
+  const cli = db.prepare('SELECT id, empresa_id FROM taller_clientes WHERE id = ?').get(clienteId);
+  if (!cli) return [];
+  asegurarEnScope(cli, pol.compartir_clientes, pol.empresa_id, 'Cliente no encontrado');
+  let sql =
+    `SELECT id, placa, marca, modelo, anio, color FROM taller_vehiculos
+       WHERE cliente_id = ?`;
+  let params = [clienteId];
+  const filtrado = appendFiltroEmpresa(sql, params, pol.compartir_clientes, 'empresa_id', pol.empresa_id);
+  filtrado.sql += ' ORDER BY placa';
+  return db.prepare(filtrado.sql).all(...filtrado.params);
 }
 
 function normItemInventario(datos) {
@@ -723,10 +832,15 @@ function normItemInventario(datos) {
 }
 
 function listarInventario(db, query) {
+  // Repuestos: misma lógica que clientes pero con la bandera compartir_inventario
   query = query || {};
+  const pol = politicaActiva(db);
   const q = String(query.q || '').trim();
   let sql = 'SELECT * FROM taller_inventario WHERE activo = 1';
-  const params = [];
+  let params = [];
+  const filtrado = appendFiltroEmpresa(sql, params, pol.compartir_inventario, 'empresa_id', pol.empresa_id);
+  sql = filtrado.sql;
+  params = filtrado.params;
   if (q) {
     sql += ' AND (nombre LIKE ? OR codigo LIKE ? OR categoria LIKE ? OR proveedor LIKE ?)';
     const like = '%' + q + '%';
@@ -744,20 +858,24 @@ function listarInventario(db, query) {
 }
 
 function crearItemInventario(db, datos) {
+  const pol = politicaActiva(db);
   const it = normItemInventario(datos);
   if (!it.nombre) throw new Error('El nombre del repuesto es obligatorio');
+  const empIdReg = empresaIdRegistro(pol.compartir_inventario, pol.empresa_id);
   const r = db
     .prepare(
-      `INSERT INTO taller_inventario (codigo, nombre, categoria, proveedor, cantidad, stock_minimo, costo, precio, cabys, unidad_medida, iva)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO taller_inventario (codigo, nombre, categoria, proveedor, cantidad, stock_minimo, costo, precio, cabys, unidad_medida, iva, empresa_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(it.codigo, it.nombre, it.categoria, it.proveedor, it.cantidad, it.stock_minimo, it.costo, it.precio, it.cabys, it.unidad_medida, it.iva);
+    .run(it.codigo, it.nombre, it.categoria, it.proveedor, it.cantidad, it.stock_minimo, it.costo, it.precio, it.cabys, it.unidad_medida, it.iva, empIdReg);
   return db.prepare('SELECT * FROM taller_inventario WHERE id = ?').get(r.lastInsertRowid);
 }
 
 function actualizarItemInventario(db, id, datos) {
+  const pol = politicaActiva(db);
   const existente = db.prepare('SELECT * FROM taller_inventario WHERE id = ?').get(id);
   if (!existente) throw new Error('Repuesto no encontrado');
+  asegurarEnScope(existente, pol.compartir_inventario, pol.empresa_id, 'Repuesto no encontrado');
   const it = normItemInventario(datos);
   if (!it.nombre) throw new Error('El nombre del repuesto es obligatorio');
   db.prepare(
@@ -771,31 +889,38 @@ function actualizarItemInventario(db, id, datos) {
 }
 
 function eliminarItemInventario(db, id) {
-  const existente = db.prepare('SELECT id FROM taller_inventario WHERE id = ?').get(id);
+  const pol = politicaActiva(db);
+  const existente = db.prepare('SELECT * FROM taller_inventario WHERE id = ?').get(id);
   if (!existente) throw new Error('Repuesto no encontrado');
+  asegurarEnScope(existente, pol.compartir_inventario, pol.empresa_id, 'Repuesto no encontrado');
   db.prepare('UPDATE taller_inventario SET activo = 0 WHERE id = ?').run(id);
   return { ok: true };
 }
 
 function crearCliente(db, datos) {
+  const pol = politicaActiva(db);
   const nombre = String(datos.nombre || '').trim();
   if (!nombre) throw new Error('El nombre del cliente es obligatorio');
+  const empIdReg = empresaIdRegistro(pol.compartir_clientes, pol.empresa_id);
   const r = db
     .prepare(
-      `INSERT INTO taller_clientes (nombre, identificacion, telefono, email) VALUES (?, ?, ?, ?)`
+      `INSERT INTO taller_clientes (nombre, identificacion, telefono, email, empresa_id) VALUES (?, ?, ?, ?, ?)`
     )
     .run(
       nombre,
       String(datos.identificacion || '').trim() || null,
       String(datos.telefono || '').trim() || null,
-      String(datos.email || '').trim() || null
+      String(datos.email || '').trim() || null,
+      empIdReg
     );
   return db.prepare('SELECT * FROM taller_clientes WHERE id = ?').get(r.lastInsertRowid);
 }
 
 function actualizarCliente(db, id, datos) {
+  const pol = politicaActiva(db);
   const existente = db.prepare('SELECT * FROM taller_clientes WHERE id = ?').get(id);
   if (!existente) throw new Error('Cliente no encontrado');
+  asegurarEnScope(existente, pol.compartir_clientes, pol.empresa_id, 'Cliente no encontrado');
   const nombre = datos.nombre != null
     ? String(datos.nombre).trim()
     : String(existente.nombre || '').trim();
@@ -816,9 +941,14 @@ function actualizarCliente(db, id, datos) {
 }
 
 function listarCuentasPagar(db, query) {
+  // Cuentas por pagar solo se comparten si clientes E inventario se comparten
   query = query || {};
+  const pol = politicaActiva(db);
   let sql = 'SELECT * FROM taller_cuentas_pagar WHERE 1=1';
-  const params = [];
+  let params = [];
+  const filtrado = appendFiltroEmpresa(sql, params, pol.compartir_finanzas, 'empresa_id', pol.empresa_id);
+  sql = filtrado.sql;
+  params = filtrado.params;
   if (query.estado === 'pendiente' || query.estado === 'pagado') {
     sql += ' AND estado = ?';
     params.push(query.estado);
@@ -833,13 +963,15 @@ function listarCuentasPagar(db, query) {
 }
 
 function crearCuentaPagar(db, datos) {
+  const pol = politicaActiva(db);
   const proveedor = String(datos.proveedor || '').trim();
   if (!proveedor) throw new Error('El proveedor es obligatorio');
   const monto = parseFloat(datos.monto);
+  const empIdReg = empresaIdRegistro(pol.compartir_finanzas, pol.empresa_id);
   const r = db
     .prepare(
-      `INSERT INTO taller_cuentas_pagar (proveedor, descripcion, monto, fecha, fecha_vencimiento, estado, nota)
-       VALUES (?, ?, ?, ?, ?, 'pendiente', ?)`
+      `INSERT INTO taller_cuentas_pagar (proveedor, descripcion, monto, fecha, fecha_vencimiento, estado, nota, empresa_id)
+       VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?)`
     )
     .run(
       proveedor,
@@ -847,14 +979,17 @@ function crearCuentaPagar(db, datos) {
       isNaN(monto) ? 0 : monto,
       String(datos.fecha || '').trim() || null,
       String(datos.fecha_vencimiento || '').trim() || null,
-      String(datos.nota || '').trim() || null
+      String(datos.nota || '').trim() || null,
+      empIdReg
     );
   return db.prepare('SELECT * FROM taller_cuentas_pagar WHERE id = ?').get(r.lastInsertRowid);
 }
 
 function actualizarCuentaPagar(db, id, datos) {
+  const pol = politicaActiva(db);
   const existente = db.prepare('SELECT * FROM taller_cuentas_pagar WHERE id = ?').get(id);
   if (!existente) throw new Error('Cuenta no encontrada');
+  asegurarEnScope(existente, pol.compartir_finanzas, pol.empresa_id, 'Cuenta no encontrada');
   if (datos.estado === 'pagado') {
     db.prepare(
       "UPDATE taller_cuentas_pagar SET estado = 'pagado', fecha_pago = CURRENT_TIMESTAMP WHERE id = ?"
@@ -868,8 +1003,10 @@ function actualizarCuentaPagar(db, id, datos) {
 }
 
 function eliminarCuentaPagar(db, id) {
-  const existente = db.prepare('SELECT id FROM taller_cuentas_pagar WHERE id = ?').get(id);
+  const pol = politicaActiva(db);
+  const existente = db.prepare('SELECT * FROM taller_cuentas_pagar WHERE id = ?').get(id);
   if (!existente) throw new Error('Cuenta no encontrada');
+  asegurarEnScope(existente, pol.compartir_finanzas, pol.empresa_id, 'Cuenta no encontrada');
   db.prepare('DELETE FROM taller_cuentas_pagar WHERE id = ?').run(id);
   return { ok: true };
 }

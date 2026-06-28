@@ -12,6 +12,7 @@ const pdfService = require('./pdf-service');
 const whatsappService = require('./whatsapp-service');
 const ticketService = require('./ticket-service');
 const usuarioService = require('./usuario-service');
+const empresaService = require('./empresa-service');
 
 const router = express.Router();
 
@@ -508,9 +509,11 @@ router.delete('/taller/inventario/:id', (req, res) => {
 router.get('/taller/config', (req, res) => {
   try {
     const db = getDb();
+    const activaId = empresaService.getEmpresaActivaId(db);
     res.json({
       nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mecánico'),
-      impuesto_iva: getConfig(db, 'impuesto_iva', '0.13')
+      impuesto_iva: getConfig(db, 'impuesto_iva', '0.13'),
+      empresa_activa_id: activaId
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -527,11 +530,79 @@ router.patch('/taller/config', (req, res) => {
     if (body.impuesto_iva != null) {
       setConfig(db, 'impuesto_iva', String(body.impuesto_iva));
     }
+    empresaService.persistirDesdeConfigGlobal(db, body);
     res.json({
       ok: true,
       nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mecánico'),
-      impuesto_iva: getConfig(db, 'impuesto_iva', '0.13')
+      impuesto_iva: getConfig(db, 'impuesto_iva', '0.13'),
+      empresa_activa_id: empresaService.getEmpresaActivaId(db)
     });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// =============================================================================
+// RUTAS DE EMPRESAS (multi-empresa)
+// La pantalla de Configuración llama a estas URLs para crear, editar y activar empresas.
+// =============================================================================
+
+router.get('/taller/empresas', (req, res) => {
+  try {
+    const db = getDb();
+    res.json(empresaService.listarEmpresas(db));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/** Obtiene una empresa por id (para editar). */
+router.get('/taller/empresas/:id', (req, res) => {
+  try {
+    const db = getDb();
+    const emp = empresaService.obtenerEmpresa(db, req.params.id);
+    if (!emp) return res.status(404).json({ error: 'Empresa no encontrada' });
+    res.json(emp);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/** Crea una empresa nueva (POST = guardar por primera vez). */
+router.post('/taller/empresas', (req, res) => {
+  try {
+    const db = getDb();
+    res.status(201).json(empresaService.crearEmpresa(db, req.body || {}));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+/** Actualiza datos de una empresa ya existente. */
+router.patch('/taller/empresas/:id', (req, res) => {
+  try {
+    const db = getDb();
+    res.json(empresaService.actualizarEmpresa(db, parseInt(req.params.id, 10), req.body || {}));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+/** El usuario eligió "Usar esta empresa": la ponemos como activa en todo el sistema. */
+router.post('/taller/empresas/:id/activar', (req, res) => {
+  try {
+    const db = getDb();
+    res.json(empresaService.activarEmpresa(db, parseInt(req.params.id, 10)));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+/** Desactiva una empresa (no borra la base de datos, solo la oculta de la lista). */
+router.delete('/taller/empresas/:id', (req, res) => {
+  try {
+    const db = getDb();
+    res.json(empresaService.eliminarEmpresa(db, parseInt(req.params.id, 10)));
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -682,6 +753,7 @@ router.put('/fe/config', (req, res) => {
   try {
     const db = getDb();
     const config = feService.saveConfig(db, req.body || {});
+    empresaService.persistirDesdeConfigGlobal(db, {});
     res.json({ ok: true, config: config });
   } catch (e) {
     res.status(400).json({ error: e.message });

@@ -48,7 +48,13 @@ const TallerAPI = (function () {
       return {};
     });
     if (!res.ok) {
-      const err = new Error(data.error || res.statusText || 'Error de API');
+      let errMsg = data.error || res.statusText || 'Error de API';
+      // Si el servidor es viejo y no tiene rutas de empresas, avisamos cómo reiniciarlo
+      if (res.status === 404 && path.indexOf('/taller/empresas') >= 0) {
+        errMsg =
+          'El servidor está desactualizado (falta módulo de empresas). Cierre y vuelva a abrir con INICIAR-SERVIDOR.bat.';
+      }
+      const err = new Error(errMsg);
       err.status = res.status;
       err.data = data;
       throw err;
@@ -168,12 +174,15 @@ const TallerAPI = (function () {
     getEmpresa: function (id) {
       return request('/taller/empresas/' + id);
     },
+    /** Guarda una empresa nueva en el servidor (botón Guardar empresa en modo nueva). */
     crearEmpresa: function (datos) {
       return request('/taller/empresas', { method: 'POST', body: JSON.stringify(datos) });
     },
+    /** Cambia nombre, cédula, modo compartido/aparte de una empresa ya creada. */
     actualizarEmpresa: function (id, datos) {
       return request('/taller/empresas/' + id, { method: 'PATCH', body: JSON.stringify(datos) });
     },
+    /** Pone esta empresa como la activa (la que usa el taller en este momento). */
     activarEmpresa: function (id) {
       return request('/taller/empresas/' + id + '/activar', { method: 'POST', body: '{}' });
     },

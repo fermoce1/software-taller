@@ -61,6 +61,8 @@
         .nota { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #475569; line-height: 1.55; margin-bottom: 14px; }
         .nota.azul { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
         .nota.verde { background: #f0fdf4; border-color: #86efac; color: #166534; }
+        .nota.amarilla { background: #fffbeb; border-color: #fcd34d; color: #92400e; }
+        #card-empresa-form.modo-nueva { box-shadow: 0 0 0 2px #fcd34d; }
 
         .modulos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
         .mod-card {
@@ -167,6 +169,9 @@
 
                 <div class="card" id="card-empresa-form">
                     <h4 style="font-size:15px;color:#1e3a5f;margin-bottom:12px;" id="empresa-form-titulo">Datos de la empresa</h4>
+                    <div class="nota amarilla" id="empresa-nueva-hint" hidden>
+                        <strong>Modo nueva empresa aparte.</strong> Empieza en cero: sin clientes, repuestos, órdenes ni facturas de otras empresas. Solo complete nombre y datos fiscales. Use <em>✓ Usar esta empresa</em> para trabajar con ella.
+                    </div>
                     <div class="form-grid">
                         <div class="campo full">
                             <label for="cfg-nombre">Nombre / razón social *</label>
@@ -427,8 +432,8 @@
             },
             factun: { prod: 'https://api.factun.com/v1/comprobantes', sandbox: '' }
         };
-        var empresaEditId = null;
-        var empresasCache = [];
+        var empresaEditId = null; // null = estamos creando empresa NUEVA; número = editando una existente
+        var empresasCache = []; // copia local de la lista que devolvió el servidor
 
         function setIvaSelect(val) {
             var iva = String(val || '0.13');
@@ -451,6 +456,7 @@
             if (!empresasCache.length) {
                 lista.innerHTML = '<li style="color:#64748b;font-size:13px;">Sin empresas — cree la primera.</li>';
                 if (banner) banner.textContent = 'Ninguna empresa activa.';
+                actualizarModoNuevaEmpresaUi();
                 return;
             }
 
@@ -480,6 +486,7 @@
                     badgeModo +
                     (e.es_activa ? '<span class="badge-activa">ACTIVA</span>' : '') + '</li>';
             }).join('');
+            actualizarModoNuevaEmpresaUi();
         }
 
         function aplicarModoDatosUi() {
@@ -521,8 +528,8 @@
         }
 
         function setModoDatosEmpresa(e) {
-            var compCli = e ? e.compartir_clientes !== false : true;
-            var compInv = e ? e.compartir_inventario !== false : true;
+            var compCli = e ? e.compartir_clientes !== false : false;
+            var compInv = e ? e.compartir_inventario !== false : false;
             if (compCli && compInv) {
                 document.getElementById('modo-datos-compartido').checked = true;
             } else if (!compCli && !compInv) {
@@ -536,10 +543,26 @@
         }
 
         function leerCompartirDatosForm() {
+            // Lee si la empresa comparte datos o trabaja aparte (radios del formulario)
+            if (document.getElementById('modo-datos-compartido').checked) {
+                return { compartir_clientes: true, compartir_inventario: true };
+            }
+            if (document.getElementById('modo-datos-aislado').checked) {
+                return { compartir_clientes: false, compartir_inventario: false };
+            }
             return {
                 compartir_clientes: document.getElementById('cfg-compartir-clientes').checked,
                 compartir_inventario: document.getElementById('cfg-compartir-inventario').checked
             };
+        }
+
+        /** Muestra borde amarillo cuando el formulario está en modo "nueva empresa". */
+        function actualizarModoNuevaEmpresaUi() {
+            var esNueva = !empresaEditId;
+            var card = document.getElementById('card-empresa-form');
+            var hint = document.getElementById('empresa-nueva-hint');
+            if (card) card.classList.toggle('modo-nueva', esNueva && empresasCache.length > 0);
+            if (hint) hint.hidden = !(esNueva && empresasCache.length > 0);
         }
 
         function escHtml(s) {
@@ -559,22 +582,39 @@
             var btnAct = document.getElementById('btn-activar-empresa');
             if (btnAct) btnAct.style.display = e && e.es_activa ? 'none' : '';
             setModoDatosEmpresa(e);
+            actualizarModoNuevaEmpresaUi();
         }
 
-        async function cargarGeneral() {
+        function mensajeErrorEmpresas(err) {
+            // Traduce errores técnicos a mensajes que el usuario entiende
+            if (err && err.status === 404) {
+                return 'El servidor no tiene el módulo de empresas. Cierre el servidor (CERRAR-SERVIDOR.bat) y ábralo de nuevo (INICIAR-SERVIDOR.bat).';
+            }
+            return (err && err.message) ? err.message : 'Error desconocido';
+        }
+
+        /** Carga la lista de empresas; selectId = tras guardar, seleccionar la que acabamos de crear. */
+        async function cargarGeneral(selectId) {
             try {
                 var data = await TallerAPI.getEmpresas();
                 pintarListaEmpresas(data);
-                var activa = (data.filas || []).find(function (e) { return e.es_activa; });
-                if (activa) {
-                    llenarFormEmpresa(activa);
-                } else if ((data.filas || []).length) {
-                    llenarFormEmpresa(data.filas[0]);
+                var filas = data.filas || [];
+                var elegida = selectId ? filas.find(function (e) { return e.id === selectId; }) : null;
+                if (elegida) {
+                    llenarFormEmpresa(elegida);
+                    seleccionarEmpresa(selectId);
                 } else {
-                    nuevaEmpresaForm();
+                    var activa = filas.find(function (e) { return e.es_activa; });
+                    if (activa) {
+                        llenarFormEmpresa(activa);
+                    } else if (filas.length) {
+                        llenarFormEmpresa(filas[0]);
+                    } else {
+                        nuevaEmpresaForm();
+                    }
                 }
             } catch (e) {
-                msg('msg-general', 'Error al cargar empresas: ' + e.message, false);
+                msg('msg-general', 'Error al cargar empresas: ' + mensajeErrorEmpresas(e), false);
             }
         }
 
@@ -590,11 +630,15 @@
         }
 
         function nuevaEmpresaForm() {
+            // Formulario en blanco + modo "totalmente aparte" por defecto (empresa desde cero)
             empresaEditId = null;
             llenarFormEmpresa(null);
+            document.getElementById('modo-datos-aislado').checked = true;
+            aplicarModoDatosUi();
             document.getElementById('cfg-nombre').focus();
-            msg('msg-general', 'Complete los datos y pulse Guardar. Puede activarla después.', true);
+            msg('msg-general', 'Empresa nueva en blanco. Complete nombre y datos y pulse Guardar.', true);
             document.getElementById('msg-general').style.color = '#475569';
+            actualizarModoNuevaEmpresaUi();
         }
 
         function leerDatosEmpresaForm() {
@@ -615,19 +659,24 @@
         async function guardarEmpresaForm() {
             var datos = leerDatosEmpresaForm();
             if (!datos.nombre) { msg('msg-general', 'Indique el nombre de la empresa.', false); return; }
+            var guardadaId = empresaEditId;
             try {
                 if (empresaEditId) {
+                    // Ya existe: actualizamos (PATCH)
                     await TallerAPI.actualizarEmpresa(empresaEditId, datos);
+                    guardadaId = empresaEditId;
                     msg('msg-general', '✓ Empresa actualizada.', true);
                 } else {
+                    // Es nueva: creamos (POST). Solo la primera empresa se activa sola.
                     datos.activar = empresasCache.length === 0;
                     var creada = await TallerAPI.crearEmpresa(datos);
+                    guardadaId = creada.id;
                     empresaEditId = creada.id;
-                    msg('msg-general', '✓ Empresa creada' + (datos.activar ? ' y activada.' : '.'), true);
+                    msg('msg-general', '✓ Empresa creada' + (datos.activar ? ' y activada.' : '. Pulse «Usar esta empresa» para activarla.'), true);
                 }
-                await cargarGeneral();
+                await cargarGeneral(guardadaId);
             } catch (e) {
-                msg('msg-general', e.message, false);
+                msg('msg-general', mensajeErrorEmpresas(e), false);
             }
         }
 
