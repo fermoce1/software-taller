@@ -5,4 +5,5 @@ logs/
 *.log
 sanmy-taller-servidor.pid
 sanmy-taller-terminal-ip.txt
+github-repo-nombre.txt
 browser-profile/
