@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Facturación — Sanmy Taller (Responsive)</title>
+    <link rel="stylesheet" href="facturacion-responsive.css">
+</head>
+<body>
+
+    <!-- ============ BARRA SUPERIOR ============ -->
+    <header class="topbar">
+        <div class="topbar-logo">🔧 <span>Sanmy Taller</span></div>
+        <div class="topbar-buscar">
+            <input type="search" id="buscar-caja" placeholder="🔍 Buscar cliente o placa" autocomplete="off">
+            <div id="sugerencias-caja" class="sugerencias" hidden></div>
+        </div>
+        <select id="sel-ordenes-pend" class="topbar-select" title="Órdenes pendientes">
+            <option value="">— Abrir orden —</option>
+        </select>
+        <button type="button" class="btn-salir" id="btn-salir" title="Salir al menú principal">
+            <span>🏠</span><span class="txt-salir">Salir</span>
+        </button>
+    </header>
+
+    <!-- ============ TABS MÓVIL (solo se ven en pantallas angostas) ============ -->
+    <nav class="tabs-movil" id="tabs-movil" aria-label="Secciones">
+        <button type="button" class="tab-movil activo" data-panel="datos">👤 Datos</button>
+        <button type="button" class="tab-movil" data-panel="detalle">🧰 Detalle</button>
+        <button type="button" class="tab-movil" data-panel="cobro">💰 Cobro</button>
+    </nav>
+
+    <!-- ============ CONTENEDOR PRINCIPAL (grid fluido) ============ -->
+    <main class="contenedor">
+
+        <!-- Columna principal: cliente + vehículo + categorías + tabla -->
+        <div class="col-principal">
+
+            <div id="aviso-cerrada" class="aviso-cerrada" hidden>Esta orden ya fue cobrada.</div>
+
+            <!-- Datos cliente / vehículo -->
+            <section class="fila-datos panel-movil activo" data-panel="datos">
+                <article class="tarjeta tarjeta-cliente">
+                    <header class="tarjeta-header cliente">👤 Datos del Cliente</header>
+                    <div class="tarjeta-cuerpo">
+                        <div class="campo">
+                            <label>Nombre</label>
+                            <input id="c-nombre" type="text" placeholder="—" readonly>
+                        </div>
+                        <div class="campo">
+                            <label>Teléfono</label>
+                            <input id="c-tel" type="tel" placeholder="—" readonly>
+                        </div>
+                        <details class="mas-datos">
+                            <summary>Más datos (email, cédula)</summary>
+                            <div class="campo">
+                                <label>Email</label>
+                                <input id="c-email" type="email" placeholder="—" readonly>
+                            </div>
+                            <div class="campo">
+                                <label>Cédula / NITE (FE)</label>
+                                <input id="c-cedula" type="text" placeholder="—" readonly>
+                            </div>
+                        </details>
+                    </div>
+                </article>
+
+                <article class="tarjeta tarjeta-vehiculo">
+                    <header class="tarjeta-header vehiculo">🚗 Datos del Vehículo</header>
+                    <div class="tarjeta-cuerpo">
+                        <div class="campo campo-placa">
+                            <label>Placa</label>
+                            <input id="c-placa" type="text" placeholder="— — —" readonly>
+                        </div>
+                        <div class="fila-doble">
+                            <div class="campo">
+                                <label>Marca</label>
+                                <input id="c-marca" type="text" placeholder="—" readonly>
+                            </div>
+                            <div class="campo">
+                                <label>Modelo</label>
+                                <input id="c-modelo" type="text" placeholder="—" readonly>
+                            </div>
+                        </div>
+                        <p class="nota-vehiculo">Se asocia automáticamente al buscar el cliente</p>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Botones de categoría -->
+            <section class="fila-categorias panel-movil" data-panel="detalle">
+                <button type="button" class="cat-btn cat-servicio" id="btn-add-serv" data-tipo="servicio">
+                    <span class="cat-ico">🔧</span><span class="cat-txt">Servicio</span><span class="cat-key">F2</span>
+                </button>
+                <button type="button" class="cat-btn cat-repuesto" id="btn-add-rep" data-tipo="repuesto">
+                    <span class="cat-ico">📦</span><span class="cat-txt">Repuesto</span><span class="cat-key">F3</span>
+                </button>
+                <button type="button" class="cat-btn cat-libre" id="btn-add-libre" data-tipo="libre">
+                    <span class="cat-ico">✏️</span><span class="cat-txt">Producto libre</span><span class="cat-key">F4</span>
+                </button>
+            </section>
+
+            <!-- Tabla de líneas (se transforma en tarjetas en móvil) -->
+            <section class="bloque-tabla panel-movil" data-panel="detalle">
+                <div class="tabla-wrap">
+                    <table class="tabla-lineas" id="tabla-lineas">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th class="num">Cant.</th>
+                                <th class="num">Precio</th>
+                                <th class="num">IVA %</th>
+                                <th class="num">Subtotal</th>
+                                <th class="acc"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-lineas">
+                            <tr class="fila-vacia"><td colspan="6">Sin líneas — añada un servicio, repuesto o producto libre</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pie-tabla">
+                    <span>Orden <strong id="txt-num-orden">—</strong></span>
+                    <span id="txt-cant-lineas">0 líneas</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- Columna lateral: pago / totales / acciones -->
+        <aside class="col-lateral panel-movil" data-panel="cobro">
+
+            <section class="tarjeta tarjeta-config">
+                <div class="bloque">
+                    <h3>🖨️ Impresión</h3>
+                    <div class="chips-fila">
+                        <label class="chip"><input type="checkbox" id="chk-imprimir-ticket" checked> Ticket</label>
+                        <label class="chip"><input type="checkbox" id="chk-imprimir-pantalla" checked> Pantalla</label>
+                    </div>
+                </div>
+
+                <div class="bloque">
+                    <h3>💳 Forma de pago</h3>
+                    <div id="pagos-container" class="chips-fila"></div>
+                </div>
+
+                <div class="bloque">
+                    <h3>📄 Tipo de documento</h3>
+                    <div class="chips-fila" id="tipo-doc-fila">
+                        <button type="button" class="chip-doc" data-tipo="presupuesto">Proforma</button>
+                        <button type="button" class="chip-doc activo" data-tipo="orden">Orden</button>
+                    </div>
+                </div>
+
+                <div class="bloque">
+                    <label class="chk-fe">
+                        <input type="checkbox" id="chk-fe">
+                        Factura electrónica (Hacienda)
+                    </label>
+                    <div id="fe-campos" class="fe-campos" hidden>
+                        <input id="fe-nombre" type="text" placeholder="Nombre del cliente (FE)">
+                        <select id="fe-tipo-id">
+                            <option value="01">Cédula Física (01)</option>
+                            <option value="02">Cédula Jurídica (02)</option>
+                            <option value="03">Dímex (03)</option>
+                            <option value="04">NITE (04)</option>
+                        </select>
+                        <input id="fe-cedula" type="text" placeholder="Identificación">
+                        <input id="fe-email" type="email" placeholder="Email para FE">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-whatsapp" id="btn-enviar-cliente" disabled>
+                    💬 Enviar por WhatsApp
+                </button>
+            </section>
+
+            <section class="tarjeta tarjeta-totales">
+                <div class="totales-grid">
+                    <div class="total-item">
+                        <span class="lbl">Subtotal</span>
+                        <span class="val" id="t-sub">₡0</span>
+                    </div>
+                    <div class="total-item">
+                        <span class="lbl" id="lbl-iva">IVA (13%)</span>
+                        <span class="val" id="t-iva">₡0</span>
+                    </div>
+                </div>
+                <div class="total-general">
+                    <span class="lbl">Total a pagar</span>
+                    <span class="val" id="t-total">₡0</span>
+                </div>
+                <div class="acciones">
+                    <button type="button" class="btn btn-primario" id="btn-factura">✔ Generar factura</button>
+                    <button type="button" class="btn btn-secundario" id="btn-reimprimir" hidden>🖨️ Reimprimir</button>
+                    <button type="button" class="btn btn-fantasma" id="btn-nueva-orden">➕ Nueva orden</button>
+                </div>
+            </section>
+        </aside>
+    </main>
+
+    <!-- ============ MODAL: agregar línea ============ -->
+    <div id="modal-linea" class="modal-overlay" hidden>
+        <div class="modal-box">
+            <h3 id="modal-linea-titulo">Añadir línea</h3>
+            <div class="campo" id="campo-inv" hidden>
+                <label>Repuesto del inventario</label>
+                <select id="m-inventario"></select>
+            </div>
+            <div class="campo">
+                <label>Descripción</label>
+                <input id="m-desc" type="text" placeholder="Descripción del ítem">
+            </div>
+            <div class="fila-doble">
+                <div class="campo">
+                    <label>Cantidad</label>
+                    <input id="m-cant" type="number" step="0.01" min="0.01" value="1">
+                </div>
+                <div class="campo">
+                    <label>Precio unitario (₡)</label>
+                    <input id="m-precio" type="number" step="0.01" min="0" value="0">
+                </div>
+            </div>
+            <div class="modal-acciones">
+                <button type="button" class="btn btn-fantasma" id="btn-cancelar-linea">Cancelar</button>
+                <button type="button" class="btn btn-primario" id="btn-confirmar-linea">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script src="facturacion-responsive.js"></script>
+</body>
+</html>

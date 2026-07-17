@@ -1,0 +1,26 @@
+HERRAMIENTAS SOLO VENDEDOR — NO ENTREGAR A CLIENTES
+
+====================================================
+
+
+
+Esta carpeta NO se incluye en el ZIP ni en instalaciones de talleres.
+
+
+
+GENERADOR-LICENCIAS.bat
+
+  Abre el generador universal SANMY (restaurante-prototipo/generador-licencias.html).
+
+  Una sola clave sirve para TPV, Taller, Conta y demas productos Sanmy del mismo equipo.
+
+
+
+Requisito: tener la carpeta restaurante-prototipo al mismo nivel que taller-prototipo.
+
+
+
+El servidor Sanmy Taller bloquea el acceso web a esta carpeta por seguridad.
+
+Use siempre este .bat para abrir el generador.
+

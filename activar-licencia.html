@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Activar licencia — Sanmy Taller</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        body {
+            min-height: 100dvh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #16243b 0%, #1e3a5f 45%, #2563eb 100%);
+            padding: 20px; color: #1e293b;
+        }
+        .card {
+            width: min(520px, 100%); background: #fff; border-radius: 16px;
+            padding: 28px 24px; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+        }
+        .card h1 { font-size: 22px; color: #1e3a5f; margin-bottom: 4px; }
+        .card .sub { font-size: 13px; color: #64748b; margin-bottom: 18px; line-height: 1.45; }
+        .estado {
+            border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.4;
+        }
+        .estado.ok { background: #ecfdf5; border: 1px solid #6ee7b7; color: #047857; }
+        .estado.error { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+        .estado.info { background: #eff6ff; border: 1px solid #93c5fd; color: #1d4ed8; }
+        .campo { margin-bottom: 14px; }
+        .campo label { display: block; font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 4px; }
+        .campo input, .campo textarea {
+            width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1;
+            border-radius: 8px; font-size: 15px;
+        }
+        .campo textarea { min-height: 72px; font-family: Consolas, monospace; text-transform: uppercase; }
+        .id-pcid { font-family: Consolas, monospace; font-size: 13px; word-break: break-all; color: #334155; }
+        .btn {
+            width: 100%; border: none; border-radius: 10px; padding: 12px;
+            font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 6px;
+        }
+        .btn-prim { background: linear-gradient(135deg, #2563eb, #1e3a5f); color: #fff; }
+        .btn-sec { background: #e2e8f0; color: #334155; margin-top: 8px; }
+        .btn:disabled { opacity: .6; cursor: not-allowed; }
+        .hint { font-size: 12px; color: #64748b; margin-top: 14px; line-height: 1.45; }
+        .links { margin-top: 12px; font-size: 13px; }
+        .links a { color: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔐 Activar licencia Sanmy Taller</h1>
+        <p class="sub">Licencia SANMY universal (TPV, Taller, Conta…). Vinculada a este equipo vía PCID.</p>
+
+        <div id="bloque-estado" class="estado info">Comprobando licencia…</div>
+
+        <div class="campo">
+            <label>CODE de este equipo (PCID)</label>
+            <div id="txt-id-equipo" class="id-pcid">Detectando…</div>
+            <p class="hint" style="margin-top:6px;">Si está vacío, ejecute <strong>OBTENER-ID-EQUIPO.bat</strong> en la carpeta del programa.</p>
+        </div>
+
+        <div class="campo">
+            <label>Clave de licencia</label>
+            <input id="inp-clave" type="text" placeholder="SANMY-YYYYMMDD-CCCC-MMMM-SSSS" autocomplete="off" style="text-transform:uppercase;">
+        </div>
+
+        <button type="button" class="btn btn-prim" id="btn-activar" onclick="activar()">Activar licencia</button>
+        <button type="button" class="btn btn-sec" onclick="irInicio()">🏠 Volver al inicio</button>
+
+        <p class="hint">
+            Formato: <code>SANMY-YYYYMMDD-CCCC-MMMM-SSSS</code>. La misma clave sirve en todos los productos Sanmy de este equipo.
+        </p>
+        <div class="links">
+            <a href="#" onclick="copiarId(); return false;">📋 Copiar CODE del equipo</a>
+        </div>
+    </div>
+
+    <script src="licencia-sanmy.js"></script>
+    <script src="taller-api.js"></script>
+    <script>
+        var idEquipoActual = '';
+
+        function returnUrl() {
+            var p = new URLSearchParams(window.location.search);
+            var r = p.get('return');
+            return r && r.startsWith('/') ? r : '/abrir.html';
+        }
+
+        function irInicio() {
+            window.location.href = returnUrl();
+        }
+
+        function formatearFecha(yyyymmdd) {
+            if (!yyyymmdd || yyyymmdd === '99991231') return 'Sin vencimiento';
+            return yyyymmdd.substring(6, 8) + '/' + yyyymmdd.substring(4, 6) + '/' + yyyymmdd.substring(0, 4);
+        }
+
+        function pintarEstado(data) {
+            var el = document.getElementById('bloque-estado');
+            if (data && data.valida) {
+                var tipo = data.tipo === 'perpetua' ? 'Perpetua' : (data.tipo === 'trial' ? 'Prueba' : 'Anual');
+                el.className = 'estado ok';
+                el.innerHTML = '✅ Licencia activa' +
+                    (data.nombreCliente ? ' — <strong>' + data.nombreCliente + '</strong>' : '') +
+                    '<br>Tipo: ' + tipo +
+                    (data.fechaExpiracion ? ' · Vence: ' + formatearFecha(data.fechaExpiracion) : '') +
+                    (data.codigoCliente ? ' · Código: ' + data.codigoCliente : '');
+                document.getElementById('inp-clave').value = data.clave || '';
+                return true;
+            }
+            el.className = 'estado error';
+            el.textContent = (data && data.error) ? data.error : 'Sin licencia activa en este equipo.';
+            return false;
+        }
+
+        async function cargarEstado() {
+            try {
+                var data = await TallerAPI.getLicenciaEstado();
+                if (pintarEstado(data) && data.clave) {
+                    SanmyLicencia.guardarLicenciaLocal({
+                        valida: true,
+                        clave: data.clave,
+                        codigoCliente: data.codigoCliente,
+                        tipo: data.tipo,
+                        fechaExpiracion: data.fechaExpiracion,
+                        fechaExpiracionISO: data.fechaExpiracionISO,
+                        idEquipo: data.idEquipo
+                    });
+                }
+            } catch (e) {
+                document.getElementById('bloque-estado').className = 'estado error';
+                document.getElementById('bloque-estado').textContent =
+                    'No se pudo contactar al servidor. Inicie el servidor (ABRIR-SISTEMA.bat) e intente de nuevo.';
+            }
+        }
+
+        async function detectarEquipo() {
+            idEquipoActual = await SanmyLicencia.detectarIdEquipo();
+            var txt = document.getElementById('txt-id-equipo');
+            if (idEquipoActual) {
+                txt.textContent = SanmyLicencia.formatearCodigoPCID(idEquipoActual);
+            } else {
+                txt.textContent = '(No detectado — use OBTENER-ID-EQUIPO.bat)';
+            }
+        }
+
+        function copiarId() {
+            if (!idEquipoActual) {
+                alert('Primero obtenga el CODE con OBTENER-ID-EQUIPO.bat');
+                return;
+            }
+            var texto = SanmyLicencia.formatearCodigoPCID(idEquipoActual);
+            navigator.clipboard.writeText(texto).then(function () {
+                alert('CODE copiado al portapapeles');
+            });
+        }
+
+        async function activar() {
+            var clave = document.getElementById('inp-clave').value.trim();
+            if (!clave) {
+                alert('Ingrese la clave de licencia');
+                return;
+            }
+            if (!idEquipoActual) {
+                await detectarEquipo();
+            }
+            if (!idEquipoActual) {
+                alert('No se detectó el CODE de PCID. Ejecute OBTENER-ID-EQUIPO.bat.');
+                return;
+            }
+
+            var local = SanmyLicencia.validar(clave, idEquipoActual);
+            if (!local.valida) {
+                alert('❌ ' + (local.error || 'Licencia inválida'));
+                return;
+            }
+
+            var btn = document.getElementById('btn-activar');
+            btn.disabled = true;
+            try {
+                var res = await TallerAPI.activarLicencia({ clave: clave, idEquipo: idEquipoActual });
+                SanmyLicencia.guardarLicenciaLocal(local);
+                if (res.estado) pintarEstado(res.estado);
+                alert('✅ Licencia activada correctamente');
+                window.location.href = returnUrl();
+            } catch (e) {
+                alert(e.message || 'No se pudo activar la licencia en el servidor');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        detectarEquipo();
+        cargarEstado();
+    </script>
+</body>
+</html>

@@ -61,9 +61,11 @@
         <a class="nav-item activo" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
         <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
         <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
-        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/caja.html"><span class="ico">💵</span>CAJA<br>(FACTURAR)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FE / HACIENDA</a>
         <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
         <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+        <a class="nav-item" href="/facturacion-responsive.html" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-color:#7c3aed;"><span class="ico">🆕</span>VISTA PREVIA<br>(NUEVO DISEÑO)</a>
     </nav>
 
     <div class="cuerpo">
@@ -77,7 +79,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Cliente</th><th>Identificación</th><th>Teléfono</th>
+                        <th>Cliente</th><th>Cédula</th><th>Teléfono</th>
                         <th>Vehículos</th><th>Órdenes</th><th>Saldo pendiente</th><th>Acción</th>
                     </tr>
                 </thead>
@@ -91,8 +93,9 @@
     <div class="modal" id="modal">
         <div class="modal-box">
             <h3 id="modal-titulo">Nuevo cliente</h3>
-            <div class="campo"><label>Nombre *</label><input id="f-nombre" type="text" placeholder="Nombre del cliente"></div>
-            <div class="campo"><label>Identificación / cédula</label><input id="f-id" type="text" placeholder="1-2345-6789"></div>
+            <div class="campo"><label>Nombre *</label><input id="f-nombre" type="text" placeholder="Nombre"></div>
+            <div class="campo"><label>Apellidos</label><input id="f-apellidos" type="text" placeholder="Apellidos"></div>
+            <div class="campo"><label>Cédula</label><input id="f-id" type="text" placeholder="1-2345-6789"></div>
             <div class="campo"><label>Teléfono</label><input id="f-tel" type="text" placeholder="8888-8888"></div>
             <div class="campo"><label>Correo (opcional)</label><input id="f-email" type="email" placeholder="cliente@correo.com"></div>
             <div id="modal-estado"></div>
@@ -103,7 +106,11 @@
         </div>
     </div>
 
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
     <script src="enter-next.js"></script>
     <script>
         var timer = null;
@@ -128,8 +135,9 @@
                 }
                 tbody.innerHTML = filas.map(function (c) {
                     var saldoCero = Number(c.saldo_pendiente) <= 0;
+                    var nombreCompleto = [c.nombre, c.apellidos].filter(Boolean).join(' ').trim();
                     return '<tr>' +
-                        '<td><strong>' + esc(c.nombre) + '</strong></td>' +
+                        '<td><strong>' + esc(nombreCompleto || c.nombre) + '</strong></td>' +
                         '<td>' + esc(c.identificacion || '—') + '</td>' +
                         '<td>' + esc(c.telefono || '—') + '</td>' +
                         '<td><span class="badge">' + (c.vehiculos || 0) + '</span></td>' +
@@ -148,6 +156,7 @@
             editId = null;
             document.getElementById('modal-titulo').textContent = 'Nuevo cliente';
             document.getElementById('f-nombre').value = '';
+            document.getElementById('f-apellidos').value = '';
             document.getElementById('f-id').value = '';
             document.getElementById('f-tel').value = '';
             document.getElementById('f-email').value = '';
@@ -158,6 +167,7 @@
             editId = c.id;
             document.getElementById('modal-titulo').textContent = 'Editar cliente';
             document.getElementById('f-nombre').value = c.nombre || '';
+            document.getElementById('f-apellidos').value = c.apellidos || '';
             document.getElementById('f-id').value = c.identificacion || '';
             document.getElementById('f-tel').value = c.telefono || '';
             document.getElementById('f-email').value = c.email || '';
@@ -170,6 +180,7 @@
             var estado = document.getElementById('modal-estado');
             var datos = {
                 nombre: document.getElementById('f-nombre').value.trim(),
+                apellidos: document.getElementById('f-apellidos').value.trim(),
                 identificacion: document.getElementById('f-id').value.trim(),
                 telefono: document.getElementById('f-tel').value.trim(),
                 email: document.getElementById('f-email').value.trim()

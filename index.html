@@ -291,6 +291,22 @@
         }
         .modal-overlay.activa { display: flex; }
         .modal-foto-grande { max-width: 95vw; max-height: 90dvh; border-radius: 12px; }
+        .modal-camara-box { background: white; border-radius: 14px; padding: 20px; width: min(480px, 94vw); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+        .modal-camara-box h3 { margin-bottom: 12px; color: #0f172a; font-size: 1.05rem; }
+        .camara-preview-wrap { position: relative; width: 100%; aspect-ratio: 4/3; background: #0f172a; border-radius: 10px;
+            overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .camara-preview-wrap video, .camara-preview-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .camara-error { color: #dc2626; font-size: .85rem; margin-top: 10px; text-align: center; }
+        .camara-fallback { text-align: center; margin-top: 8px; }
+        .camara-fallback a { color: #2563eb; font-size: .85rem; font-weight: 600; cursor: pointer; text-decoration: underline; }
+        .camara-acc { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; flex-wrap: wrap; }
+        .camara-acc button { padding: 9px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: .85rem; }
+        .btn-cam-cancelar { background: #e2e8f0; color: #475569; }
+        .btn-cam-cancelar:hover { background: #cbd5e1; }
+        .btn-cam-capturar { background: #2563eb; color: #fff; }
+        .btn-cam-capturar:hover { background: #1d4ed8; }
+        .btn-cam-repetir { background: #64748b; color: #fff; }
+        .btn-cam-usar { background: #16a34a; color: #fff; }
         .estado-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
         #input-foto-file { display: none; }
         .msg-api { padding: 8px 12px; background: #fef3c7; color: #92400e; font-size: 13px; text-align: center; }
@@ -488,8 +504,10 @@
             padding: 5px 10px; font-size: 11px; font-weight: bold; cursor: pointer; border-radius: 3px;
         }
         .ot-btn-sel.prim { background: linear-gradient(180deg, #90ee90, #4caf50); border-color: #2e7d32; color: #fff; }
-        .main-erp { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-        .erp-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+        .main-erp { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+        .erp-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+        .erp-barra-fija { position: sticky; bottom: 0; z-index: 30; flex-shrink: 0; background: #eef2f7;
+            box-shadow: 0 -4px 10px rgba(0,0,0,.15); }
         .erp-top {
             display: flex; align-items: center; justify-content: center;
             padding: 6px 16px 2px; position: relative; flex-shrink: 0;
@@ -506,7 +524,7 @@
         }
         .erp-panel {
             background: rgba(255,255,255,.75); border: 2px solid #5a8aaa;
-            border-radius: 4px; overflow: hidden;
+            border-radius: 4px; overflow: visible;
         }
         .erp-panel-head {
             background: linear-gradient(180deg, #ffff66, #e8e800);
@@ -739,9 +757,11 @@
             <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
             <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
             <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
-            <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+            <a class="nav-item" href="/caja.html"><span class="ico">💵</span>CAJA<br>(FACTURAR)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FE / HACIENDA</a>
             <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
             <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+            <a class="nav-item" href="/facturacion-responsive.html" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-color:#7c3aed;"><span class="ico">🆕</span>VISTA PREVIA<br>(NUEVO DISEÑO)</a>
         </nav>
         <div id="msg-api" class="msg-api" style="display:none;"></div>
         <div class="barra-taller">
@@ -796,8 +816,8 @@
                                     <input id="erp-v-placa" type="text" placeholder="ABC-123" autocomplete="off" oninput="buscarPlacaErp()" style="text-transform:uppercase">
                                     <div id="sugerencias-placa-erp" class="sugerencias-placa-erp" style="display:none;"></div>
                                 </td>
-                                <td><input id="erp-v-marca" type="text" placeholder="Toyota"></td>
-                                <td><input id="erp-v-modelo" type="text" placeholder="Corolla"></td>
+                                <td><select id="erp-v-marca" style="width:100%;padding:3px 6px;border:1px solid #888;border-radius:2px;font-size:12px;background:#fff;"><option value="">— Marca —</option></select></td>
+                                <td><select id="erp-v-modelo" style="width:100%;padding:3px 6px;border:1px solid #888;border-radius:2px;font-size:12px;background:#fff;"><option value="">— Modelo —</option></select></td>
                             </tr></tbody>
                         </table>
                     </div>
@@ -811,9 +831,9 @@
                 <button type="button" onclick="window.location.href='/clientes.html'">🚗 Nuevo Vehículo</button>
             </div>
             <div class="erp-tabs">
-                <button type="button" class="erp-tab activo" data-tab="productos" onclick="selTabErp('productos', this)">⚙️ Productos <kbd>F5</kbd></button>
-                <button type="button" class="erp-tab" data-tab="servicios" onclick="selTabErp('servicios', this)">🎨 Trabajo a realizar <kbd>F6</kbd></button>
-                <button type="button" class="erp-tab" data-tab="libre" onclick="selTabErp('libre', this)">💡 Texto Libre / Observación <kbd>F7</kbd></button>
+                <button type="button" class="erp-tab activo" data-tab="productos" onclick="selTabErp('productos', this)">⚙️ Productos <kbd>F2</kbd></button>
+                <button type="button" class="erp-tab" data-tab="servicios" onclick="selTabErp('servicios', this)">🎨 Trabajo a realizar <kbd>F3</kbd></button>
+                <button type="button" class="erp-tab" data-tab="libre" onclick="selTabErp('libre', this)">💡 Texto Libre / Observación <kbd>F4</kbd></button>
             </div>
             <div class="erp-entrada" id="erp-entrada-productos">
                 <div class="campo" style="flex:1;min-width:200px;">
@@ -841,30 +861,32 @@
                     <tbody id="erp-lineas"><tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">Complete datos y pulse «Nueva Orden trabajo» o guarde la orden para agregar líneas</td></tr></tbody>
                 </table>
             </div>
-            <div class="erp-footer">
-                <div>
-                    <div class="erp-estado-row" id="erp-estados"></div>
-                    <div class="erp-totales" id="erp-totales"></div>
+            <div class="erp-barra-fija">
+                <div class="erp-footer">
+                    <div>
+                        <div class="erp-estado-row" id="erp-estados"></div>
+                        <div class="erp-totales" id="erp-totales"></div>
+                    </div>
+                    <div class="erp-km-box">
+                        <div class="placa-lbl" id="erp-km-placa">—</div>
+                        <div class="erp-campo"><label>Kms. Anterior</label><input id="erp-km-ant" type="text" readonly></div>
+                        <div class="erp-campo"><label>Kms. Actual</label><input id="erp-km-act" type="text"></div>
+                    </div>
+                    <div class="erp-acciones">
+                        <button type="button" class="btn-erp-cobrar" id="erp-btn-cobrar" onclick="cobrarOrdenErp()" disabled>💵 Cobrar</button>
+                        <button type="button" onclick="enviarWaErp()">📱 WhatsApp</button>
+                        <button type="button" onclick="verPdfErp()">📄 PDF</button>
+                        <button type="button" class="btn-erp-salir" onclick="salirErp()">🏠 Salir</button>
+                    </div>
                 </div>
-                <div class="erp-km-box">
-                    <div class="placa-lbl" id="erp-km-placa">—</div>
-                    <div class="erp-campo"><label>Kms. Anterior</label><input id="erp-km-ant" type="text" readonly></div>
-                    <div class="erp-campo"><label>Kms. Actual</label><input id="erp-km-act" type="text"></div>
-                </div>
-                <div class="erp-acciones">
-                    <button type="button" class="btn-erp-cobrar" id="erp-btn-cobrar" onclick="cobrarOrdenErp()" disabled>💵 Cobrar</button>
-                    <button type="button" onclick="enviarWaErp()">📱 WhatsApp</button>
-                    <button type="button" onclick="verPdfErp()">📄 PDF</button>
-                    <button type="button" class="btn-erp-salir" onclick="salirErp()">🏠 Salir</button>
-                </div>
-            </div>
-            <div class="erp-barra-inf">
-                <div class="info">ℹ️ Orden <strong id="erp-num">—</strong> · Líneas: <strong id="erp-n-lineas">0</strong> · <span id="erp-badge-estado"></span></div>
-                <div class="erp-acciones">
-                    <button type="button" id="erp-btn-guardar" onclick="guardarOrdenErp()">💾 Guardar orden</button>
-                    <button type="button" onclick="abrirPresupuestoErp()">📋 Proforma</button>
-                    <button type="button" onclick="imprimirOrdenErp()">🖨️ Imprimir</button>
-                    <button type="button" onclick="seleccionarFotoErp()">📷 Foto</button>
+                <div class="erp-barra-inf">
+                    <div class="info">ℹ️ Orden <strong id="erp-num">—</strong> · Líneas: <strong id="erp-n-lineas">0</strong> · <span id="erp-badge-estado"></span></div>
+                    <div class="erp-acciones">
+                        <button type="button" id="erp-btn-guardar" onclick="guardarOrdenErp()">💾 Guardar orden</button>
+                        <button type="button" onclick="abrirPresupuestoErp()">📋 Proforma</button>
+                        <button type="button" onclick="imprimirOrdenErp()">🖨️ Imprimir</button>
+                        <button type="button" onclick="seleccionarFotoErp()">📷 Foto</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -875,6 +897,25 @@
 
     <div id="modal-foto" class="modal-overlay" onclick="cerrarModalFoto()">
         <img id="modal-foto-img" class="modal-foto-grande" alt="Foto vehículo" onclick="event.stopPropagation()">
+    </div>
+
+    <div id="modal-camara-foto" class="modal-overlay" onclick="if(event.target===this) cerrarCamaraFoto()">
+        <div class="modal-camara-box" onclick="event.stopPropagation()">
+            <h3>📷 Foto de respaldo (celular, tablet o PC)</h3>
+            <div class="camara-preview-wrap">
+                <video id="cam-erp-video" autoplay playsinline muted></video>
+                <img id="cam-erp-foto" hidden alt="Foto capturada">
+            </div>
+            <canvas id="cam-erp-canvas" hidden></canvas>
+            <p id="cam-erp-error" class="camara-error" hidden></p>
+            <p class="camara-fallback" id="cam-erp-fallback" hidden><a onclick="usarArchivoFotoErp()">📁 Elegir archivo en su lugar</a></p>
+            <div class="camara-acc">
+                <button type="button" class="btn-cam-cancelar" onclick="cerrarCamaraFoto()">Cancelar</button>
+                <button type="button" class="btn-cam-capturar" id="cam-erp-btn-tomar" onclick="tomarFotoErp()">📸 Capturar</button>
+                <button type="button" class="btn-cam-repetir" id="cam-erp-btn-repetir" onclick="rehacerFotoErp()" hidden>🔄 Repetir</button>
+                <button type="button" class="btn-cam-usar" id="cam-erp-btn-usar" onclick="confirmarFotoErp()" hidden>✔ Usar esta foto</button>
+            </div>
+        </div>
     </div>
 
     <div id="modal-cobro" class="modal-overlay" onclick="cerrarModalCobro()">
@@ -889,12 +930,7 @@
                 <button type="button" class="modal-cobro-tab credito" data-tipo="credito" onclick="seleccionarTipoCobro(this)">📝 Crédito</button>
             </div>
             <p style="font-size:13px;color:#64748b;margin-bottom:8px;">Método de pago</p>
-            <div class="modal-cobro-metodos">
-                <button type="button" class="modal-cobro-metodo seleccionado" data-metodo="efectivo" onclick="seleccionarMetodoCobro(this)">💵 Efectivo</button>
-                <button type="button" class="modal-cobro-metodo" data-metodo="tarjeta" onclick="seleccionarMetodoCobro(this)">💳 Tarjeta</button>
-                <button type="button" class="modal-cobro-metodo" data-metodo="sinpe" onclick="seleccionarMetodoCobro(this)">📱 SINPE</button>
-                <button type="button" class="modal-cobro-metodo" data-metodo="otro" onclick="seleccionarMetodoCobro(this)">Otro</button>
-            </div>
+            <div class="modal-cobro-metodos" id="modal-cobro-metodos-list"></div>
             <label id="modal-cobro-monto-label" style="font-size:12px;font-weight:bold;color:#64748b;">Monto cobrado</label>
             <input id="modal-cobro-monto" type="number" step="0.01" style="width:100%;padding:10px;margin-top:4px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;">
             <p id="modal-cobro-preview" style="font-size:12px;color:#64748b;margin-top:8px;"></p>
@@ -904,6 +940,7 @@
                     <span id="modal-cobro-fe-label">Emitir factura electrónica (Hacienda CR)</span>
                 </label>
                 <p id="modal-cobro-fe-hint" style="font-size:11px;color:#64748b;margin-top:4px;">Sin marcar: factura de tiquete imprimible. Con marcar: requiere nombre y cédula del cliente.</p>
+                <div id="modal-cobro-fe-alerta" style="display:none;margin-top:8px;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.45;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;"></div>
                 <div id="modal-cobro-fe-campos" class="fe-cobro-campos">
                     <label for="modal-fe-tipo-id">Tipo identificación</label>
                     <select id="modal-fe-tipo-id">
@@ -932,40 +969,6 @@
             <div style="display:flex;gap:8px;margin-top:16px;">
                 <button type="button" class="btn-verde" style="flex:1;" id="modal-cobro-confirmar" onclick="confirmarCobro()">Confirmar cobro</button>
                 <button type="button" class="btn-secundario" onclick="cerrarModalCobro()">Cerrar</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-fe-config" class="modal-overlay" onclick="cerrarModalFeConfig()">
-        <div class="modal-fe-config-box" onclick="event.stopPropagation()">
-            <h3 style="margin-bottom:12px;">📄 Factura electrónica — configuración</h3>
-            <p style="font-size:13px;color:#64748b;margin-bottom:14px;">Costa Rica (Hacienda). Modo simulación para pruebas sin API. Conecte su proveedor FE en modo API.</p>
-            <label>Modo</label>
-            <select id="fe-cfg-modo">
-                <option value="simulacion">Simulación (pruebas)</option>
-                <option value="api">API proveedor FE</option>
-            </select>
-            <label>URL API (POST factura)</label>
-            <input id="fe-cfg-url" type="url" placeholder="https://api.proveedor-fe.com/v1/facturas">
-            <label>Token API (Bearer)</label>
-            <input id="fe-cfg-token" type="password" placeholder="Token opcional">
-            <label>Cédula jurídica emisor *</label>
-            <input id="fe-cfg-cedula" type="text" placeholder="3-101-123456">
-            <label>Nombre emisor *</label>
-            <input id="fe-cfg-nombre" type="text" placeholder="Razón social del taller">
-            <label>Email emisor</label>
-            <input id="fe-cfg-email" type="email" placeholder="taller@correo.com">
-            <label>Actividad económica (CIIU)</label>
-            <input id="fe-cfg-actividad" type="text" value="452000" placeholder="452000 — taller mecánico">
-            <label>Sucursal</label>
-            <input id="fe-cfg-sucursal" type="text" value="001">
-            <label>Terminal</label>
-            <input id="fe-cfg-terminal" type="text" value="001">
-            <p id="fe-cfg-estado" style="font-size:13px;margin:10px 0;"></p>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <button type="button" class="btn-primario" onclick="guardarFeConfig()">Guardar</button>
-                <button type="button" class="btn-secundario" onclick="probarFeConfig()">Probar conexión</button>
-                <button type="button" class="btn-secundario" onclick="cerrarModalFeConfig()">Cerrar</button>
             </div>
         </div>
     </div>
@@ -1003,8 +1006,12 @@
 
     <script src="vehiculos-marcas.js?v=3"></script>
     <script src="vehiculo-picker.js?v=2"></script>
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
+    <script src="metodos-pago-client.js"></script>
     <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
     <script src="enter-next.js"></script>
     <script>
         var filtroActual = 'activas';
@@ -1102,9 +1109,15 @@
                 await cargarInventarioCache();
                 await cargarResumenHoy();
                 await cargarFeConfigCache();
+                try {
+                    await MetodosPagoUI.cargar();
+                } catch (e) { /* ignore */ }
             }
             await cargarListaOrdenes();
             poblarInventarioErp();
+            if (typeof enlazarSelectsMarcaModelo === 'function') {
+                enlazarSelectsMarcaModelo('erp-v-marca', 'erp-v-modelo');
+            }
             document.getElementById('erp-fecha').value = new Date().toISOString().slice(0, 10);
             var btnActivas = document.querySelector('.ot-btn-sel[data-filtro="activas"]');
             if (btnActivas) btnActivas.style.outline = '2px solid #2563eb';
@@ -1133,9 +1146,9 @@
         }
 
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'F5' && !erpCerrada) { e.preventDefault(); selTabErp('productos', document.querySelector('.erp-tab[data-tab=productos]')); }
-            if (e.key === 'F6' && !erpCerrada) { e.preventDefault(); selTabErp('servicios', document.querySelector('.erp-tab[data-tab=servicios]')); }
-            if (e.key === 'F7') { e.preventDefault(); selTabErp('libre', document.querySelector('.erp-tab[data-tab=libre]')); }
+            if (e.key === 'F2' && !erpCerrada) { e.preventDefault(); selTabErp('productos', document.querySelector('.erp-tab[data-tab=productos]')); }
+            if (e.key === 'F3' && !erpCerrada) { e.preventDefault(); selTabErp('servicios', document.querySelector('.erp-tab[data-tab=servicios]')); }
+            if (e.key === 'F4') { e.preventDefault(); selTabErp('libre', document.querySelector('.erp-tab[data-tab=libre]')); }
         });
 
         function limpiarErpForm() {
@@ -1145,9 +1158,17 @@
             erpCerrada = false;
             erpEmpleado = '';
             ['erp-c-nombre','erp-c-direccion','erp-c-poblacion','erp-c-provincia','erp-c-nite','erp-c-email','erp-c-tlf',
-             'erp-v-placa','erp-v-marca','erp-v-modelo','erp-km-ant','erp-km-act','erp-e-desc-s','erp-e-obs'].forEach(function (id) {
+             'erp-v-placa','erp-km-ant','erp-km-act','erp-e-desc-s','erp-e-obs'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) { el.value = ''; el.readOnly = false; }
+            });
+            if (typeof llenarSelectMarcas === 'function') {
+                llenarSelectMarcas('erp-v-marca', '');
+                llenarSelectModelos('erp-v-marca', 'erp-v-modelo', '');
+            }
+            ['erp-v-marca','erp-v-modelo'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.disabled = false;
             });
             document.getElementById('erp-titulo').textContent = 'Ordenes de trabajo — Sanmy Taller 🇨🇷';
             document.getElementById('erp-num').textContent = '—';
@@ -1182,8 +1203,13 @@
             document.getElementById('erp-c-email').value = o.cliente_email || '';
             document.getElementById('erp-c-tlf').value = o.cliente_telefono || '';
             document.getElementById('erp-v-placa').value = o.placa || '';
-            document.getElementById('erp-v-marca').value = o.marca || '';
-            document.getElementById('erp-v-modelo').value = o.modelo || '';
+            if (typeof llenarSelectMarcas === 'function') {
+                llenarSelectMarcas('erp-v-marca', o.marca || '');
+                llenarSelectModelos('erp-v-marca', 'erp-v-modelo', o.modelo || '');
+            } else {
+                document.getElementById('erp-v-marca').value = o.marca || '';
+                document.getElementById('erp-v-modelo').value = o.modelo || '';
+            }
             document.getElementById('erp-km-placa').textContent = o.placa || '—';
             document.getElementById('erp-km-act').value = o.kilometraje || '';
             document.getElementById('erp-e-obs').value = o.diagnostico || o.observaciones || '';
@@ -1202,9 +1228,13 @@
                 }).join('');
             }
             var ro = erpCerrada;
-            ['erp-c-nombre','erp-c-nite','erp-c-email','erp-c-tlf','erp-v-placa','erp-v-marca','erp-v-modelo','erp-km-act'].forEach(function (id) {
+            ['erp-c-nombre','erp-c-nite','erp-c-email','erp-c-tlf','erp-v-placa','erp-km-act'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.readOnly = ro;
+            });
+            ['erp-v-marca','erp-v-modelo'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.disabled = ro;
             });
             document.getElementById('erp-btn-cobrar').disabled = erpCerrada || !(Number(o.total) > 0);
             document.getElementById('erp-btn-cobrar').textContent = erpCerrada && (Number(o.saldo_pendiente) || 0) > 0
@@ -1378,8 +1408,13 @@
         function llenarErpVehiculo(v) {
             if (!v) return;
             document.getElementById('erp-v-placa').value = v.placa || '';
-            document.getElementById('erp-v-marca').value = v.marca || '';
-            document.getElementById('erp-v-modelo').value = v.modelo || '';
+            if (typeof llenarSelectMarcas === 'function') {
+                llenarSelectMarcas('erp-v-marca', v.marca || '');
+                llenarSelectModelos('erp-v-marca', 'erp-v-modelo', v.modelo || '');
+            } else {
+                document.getElementById('erp-v-marca').value = v.marca || '';
+                document.getElementById('erp-v-modelo').value = v.modelo || '';
+            }
             document.getElementById('erp-km-placa').textContent = v.placa || '—';
             if (v.cliente_nombre) document.getElementById('erp-c-nombre').value = v.cliente_nombre;
             if (v.cliente_telefono) document.getElementById('erp-c-tlf').value = v.cliente_telefono;
@@ -1433,7 +1468,7 @@
         }
         function seleccionarFotoErp() {
             fotoTargetOrdenId = ordenActivaId || 'nueva';
-            document.getElementById('input-foto-file').click();
+            abrirCamaraFoto();
         }
         function salirErp() {
             window.location.href = '/abrir.html';
@@ -1600,7 +1635,26 @@
 
         function seleccionarFotoOrden(ordenId) {
             fotoTargetOrdenId = ordenId;
-            document.getElementById('input-foto-file').click();
+            abrirCamaraFoto();
+        }
+
+        async function procesarFotoBase64Erp(b64) {
+            if (!ordenActivaId) {
+                window._fotoNuevaBase64 = b64;
+                mostrarToast('Foto lista — se guardará al crear la orden');
+                return;
+            }
+            try {
+                await TallerAPI.agregarTallerFoto(fotoTargetOrdenId || ordenActivaId, {
+                    imagen_base64: b64,
+                    titulo: 'Foto',
+                    tipo: 'general'
+                });
+                await abrirOrden(fotoTargetOrdenId || ordenActivaId);
+                mostrarToast('Foto agregada');
+            } catch (e) {
+                alert('No se pudo subir la foto: ' + e.message);
+            }
         }
 
         document.getElementById('input-foto-file').addEventListener('change', function (ev) {
@@ -1608,27 +1662,79 @@
             ev.target.value = '';
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = async function () {
-                const b64 = reader.result;
-                if (!ordenActivaId) {
-                    window._fotoNuevaBase64 = b64;
-                    mostrarToast('Foto lista — se guardará al crear la orden');
-                    return;
-                }
-                try {
-                    await TallerAPI.agregarTallerFoto(fotoTargetOrdenId || ordenActivaId, {
-                        imagen_base64: b64,
-                        titulo: 'Foto',
-                        tipo: 'general'
-                    });
-                    await abrirOrden(fotoTargetOrdenId || ordenActivaId);
-                    mostrarToast('Foto agregada');
-                } catch (e) {
-                    alert('No se pudo subir la foto: ' + e.message);
-                }
-            };
+            reader.onload = function () { procesarFotoBase64Erp(reader.result); };
             reader.readAsDataURL(file);
         });
+
+        // ---------- cámara en vivo para foto de respaldo (celular, tablet o PC) ----------
+        var camErpStream = null;
+        var camErpFotoTemp = null;
+
+        function camErpResetUI() {
+            document.getElementById('cam-erp-error').hidden = true;
+            document.getElementById('cam-erp-fallback').hidden = true;
+            document.getElementById('cam-erp-video').hidden = false;
+            document.getElementById('cam-erp-foto').hidden = true;
+            document.getElementById('cam-erp-btn-tomar').hidden = false;
+            document.getElementById('cam-erp-btn-repetir').hidden = true;
+            document.getElementById('cam-erp-btn-usar').hidden = true;
+        }
+        function camErpDetenerStream() {
+            if (camErpStream) { camErpStream.getTracks().forEach(function (t) { t.stop(); }); camErpStream = null; }
+        }
+        function camErpError(msg) {
+            var el = document.getElementById('cam-erp-error');
+            el.textContent = msg; el.hidden = false;
+            document.getElementById('cam-erp-fallback').hidden = false;
+        }
+        function abrirCamaraFoto() {
+            camErpResetUI();
+            camErpFotoTemp = null;
+            document.getElementById('modal-camara-foto').classList.add('activa');
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                camErpError('Este dispositivo o navegador no permite acceder a la cámara.');
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+                .catch(function () { return navigator.mediaDevices.getUserMedia({ video: true, audio: false }); })
+                .then(function (stream) {
+                    camErpStream = stream;
+                    document.getElementById('cam-erp-video').srcObject = stream;
+                })
+                .catch(function (e) { camErpError('No se pudo acceder a la cámara: ' + (e.message || e.name)); });
+        }
+        function cerrarCamaraFoto() {
+            camErpDetenerStream();
+            document.getElementById('modal-camara-foto').classList.remove('activa');
+        }
+        function tomarFotoErp() {
+            var video = document.getElementById('cam-erp-video');
+            if (!video.videoWidth) { camErpError('La cámara aún no está lista, espere un segundo.'); return; }
+            var canvas = document.getElementById('cam-erp-canvas');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            camErpFotoTemp = canvas.toDataURL('image/jpeg', 0.85);
+            var img = document.getElementById('cam-erp-foto');
+            img.src = camErpFotoTemp; img.hidden = false;
+            video.hidden = true;
+            document.getElementById('cam-erp-btn-tomar').hidden = true;
+            document.getElementById('cam-erp-btn-repetir').hidden = false;
+            document.getElementById('cam-erp-btn-usar').hidden = false;
+        }
+        function rehacerFotoErp() {
+            camErpFotoTemp = null;
+            camErpResetUI();
+        }
+        function confirmarFotoErp() {
+            if (!camErpFotoTemp) return;
+            var b64 = camErpFotoTemp;
+            cerrarCamaraFoto();
+            procesarFotoBase64Erp(b64);
+        }
+        function usarArchivoFotoErp() {
+            cerrarCamaraFoto();
+            document.getElementById('input-foto-file').click();
+        }
 
         document.addEventListener('click', function (ev) {
             var sug = document.getElementById('sugerencias-placa-erp');
@@ -1723,6 +1829,7 @@
             set('modal-fe-email', c.email);
             set('modal-fe-tipo-id', '01');
             actualizarUiFeCobro();
+            mostrarAlertasFeCobro(window._feValidacionCobro);
         }
 
         function actualizarUiFeCobro() {
@@ -1757,6 +1864,40 @@
             var campos = document.getElementById('modal-cobro-fe-campos');
             if (campos) campos.classList.toggle('activa', chk && chk.checked);
             actualizarUiFeCobro();
+            mostrarAlertasFeCobro(window._feValidacionCobro);
+        }
+
+        function mostrarAlertasFeCobro(validacion) {
+            var el = document.getElementById('modal-cobro-fe-alerta');
+            var chk = document.getElementById('modal-cobro-fe');
+            if (!el) return;
+            if (!validacion || !chk || !chk.checked) {
+                el.style.display = 'none';
+                el.innerHTML = '';
+                return;
+            }
+            var partes = [];
+            (validacion.errors || []).forEach(function (m) { partes.push('❌ ' + m); });
+            (validacion.warnings || []).forEach(function (m) { partes.push('⚠ ' + m); });
+            if (!partes.length) {
+                el.style.display = 'none';
+                return;
+            }
+            el.innerHTML = partes.join('<br>');
+            el.style.display = 'block';
+            el.style.background = (validacion.errors && validacion.errors.length) ? '#fef2f2' : '#fff7ed';
+            el.style.borderColor = (validacion.errors && validacion.errors.length) ? '#fecaca' : '#fed7aa';
+            el.style.color = (validacion.errors && validacion.errors.length) ? '#991b1b' : '#9a3412';
+        }
+
+        async function cargarValidacionFeCobro(ordenId) {
+            window._feValidacionCobro = null;
+            try {
+                window._feValidacionCobro = await TallerAPI.validarOrdenFe(ordenId);
+                mostrarAlertasFeCobro(window._feValidacionCobro);
+            } catch (e) {
+                /* sin bloqueo si falla la consulta */
+            }
         }
 
         function leerPayloadFeCobro() {
@@ -1783,13 +1924,19 @@
             };
         }
 
+        function pintarMetodosCobroModal() {
+            MetodosPagoUI.setSeleccionado(metodoCobroSeleccionado || MetodosPagoUI.primerCodigo());
+            MetodosPagoUI.renderBotones('modal-cobro-metodos-list');
+            metodoCobroSeleccionado = MetodosPagoUI.getSeleccionado();
+        }
+
         function abrirModalCobro(id, total, saldo) {
             modoCobroModal = 'cobro';
             cobroOrdenId = id;
             cobroOrdenTotal = parseFloat(total) || 0;
             cobroOrdenSaldo = parseFloat(saldo) || 0;
             tipoCobroSeleccionado = 'contado';
-            metodoCobroSeleccionado = 'efectivo';
+            metodoCobroSeleccionado = MetodosPagoUI.primerCodigo();
             document.getElementById('modal-cobro-titulo').textContent = 'Cobrar y entregar';
             document.getElementById('modal-cobro-confirmar').textContent = 'Confirmar cobro';
             document.getElementById('modal-cobro-tabs').style.display = 'flex';
@@ -1797,15 +1944,14 @@
             document.querySelectorAll('.modal-cobro-tab').forEach(function (btn) {
                 btn.classList.toggle('activo', btn.getAttribute('data-tipo') === 'contado');
             });
-            document.querySelectorAll('.modal-cobro-metodo').forEach(function (btn) {
-                btn.classList.toggle('seleccionado', btn.getAttribute('data-metodo') === 'efectivo');
-            });
+            pintarMetodosCobroModal();
             document.getElementById('modal-cobro-total').textContent = 'Total: ' + fmtColones(cobroOrdenTotal);
             document.getElementById('modal-cobro-monto-label').textContent = 'Monto cobrado';
             document.getElementById('modal-cobro-monto').value = cobroOrdenTotal;
             document.getElementById('modal-cobro-monto').readOnly = true;
             actualizarPreviewCobro();
             resetFeCobroModal();
+            cargarValidacionFeCobro(id);
             document.getElementById('modal-cobro').classList.add('activa');
         }
 
@@ -1814,7 +1960,7 @@
             cobroOrdenId = id;
             cobroOrdenTotal = 0;
             cobroOrdenSaldo = parseFloat(saldo) || 0;
-            metodoCobroSeleccionado = 'efectivo';
+            metodoCobroSeleccionado = MetodosPagoUI.primerCodigo();
             document.getElementById('modal-cobro-titulo').textContent = 'Registrar abono';
             document.getElementById('modal-cobro-confirmar').textContent = 'Confirmar abono';
             document.getElementById('modal-cobro-tabs').style.display = 'none';
@@ -1824,11 +1970,10 @@
             document.getElementById('modal-cobro-monto-label').textContent = 'Monto del abono';
             document.getElementById('modal-cobro-monto').value = cobroOrdenSaldo;
             document.getElementById('modal-cobro-monto').readOnly = false;
-            document.querySelectorAll('.modal-cobro-metodo').forEach(function (btn) {
-                btn.classList.toggle('seleccionado', btn.getAttribute('data-metodo') === 'efectivo');
-            });
+            pintarMetodosCobroModal();
             actualizarPreviewCobro();
             resetFeCobroModal();
+            cargarValidacionFeCobro(id);
             document.getElementById('modal-cobro').classList.add('activa');
         }
 
@@ -1888,6 +2033,7 @@
 
         function seleccionarMetodoCobro(btn) {
             metodoCobroSeleccionado = btn.getAttribute('data-metodo');
+            MetodosPagoUI.setSeleccionado(metodoCobroSeleccionado);
             document.querySelectorAll('.modal-cobro-metodo').forEach(function (b) {
                 b.classList.toggle('seleccionado', b === btn);
             });
@@ -1901,6 +2047,11 @@
                 fePayload = leerPayloadFeCobro();
             } catch (feErr) {
                 alert(feErr.message);
+                return;
+            }
+            var chkFe = document.getElementById('modal-cobro-fe');
+            if (chkFe && chkFe.checked && window._feValidacionCobro && window._feValidacionCobro.errors && window._feValidacionCobro.errors.length) {
+                alert('Corrija antes de facturar electrónicamente:\n\n' + window._feValidacionCobro.errors.join('\n'));
                 return;
             }
             try {
@@ -2047,72 +2198,8 @@
             document.getElementById('modal-foto').classList.remove('activa');
         }
 
-        async function abrirModalFeConfig() {
-            var estado = document.getElementById('fe-cfg-estado');
-            if (estado) estado.textContent = '';
-            try {
-                var data = await TallerAPI.getFeConfig();
-                var cfg = data.config || data;
-                function set(id, val) { var el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; }
-                if (document.getElementById('fe-cfg-modo')) document.getElementById('fe-cfg-modo').value = cfg.fe_modo || 'simulacion';
-                set('fe-cfg-url', cfg.fe_api_url);
-                set('fe-cfg-token', cfg.fe_api_token);
-                set('fe-cfg-cedula', cfg.fe_emisor_cedula);
-                set('fe-cfg-nombre', cfg.fe_emisor_nombre);
-                set('fe-cfg-email', cfg.fe_emisor_email);
-                set('fe-cfg-actividad', cfg.fe_actividad_economica);
-                set('fe-cfg-sucursal', cfg.fe_sucursal);
-                set('fe-cfg-terminal', cfg.fe_terminal);
-            } catch (e) { /* usar valores por defecto del formulario */ }
-            document.getElementById('modal-fe-config').classList.add('activa');
-        }
-
-        function cerrarModalFeConfig() {
-            document.getElementById('modal-fe-config').classList.remove('activa');
-        }
-
-        function leerFeConfigForm() {
-            var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
-            return {
-                fe_modo: v('fe-cfg-modo') || 'simulacion',
-                fe_api_url: v('fe-cfg-url'),
-                fe_api_token: v('fe-cfg-token'),
-                fe_emisor_cedula: v('fe-cfg-cedula'),
-                fe_emisor_nombre: v('fe-cfg-nombre'),
-                fe_emisor_email: v('fe-cfg-email'),
-                fe_actividad_economica: v('fe-cfg-actividad') || '452000',
-                fe_sucursal: v('fe-cfg-sucursal') || '001',
-                fe_terminal: v('fe-cfg-terminal') || '001'
-            };
-        }
-
-        async function guardarFeConfig() {
-            var estado = document.getElementById('fe-cfg-estado');
-            var datos = leerFeConfigForm();
-            if (!datos.fe_emisor_cedula || !datos.fe_emisor_nombre) {
-                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'Cédula y nombre del emisor son obligatorios.'; }
-                return;
-            }
-            try {
-                await TallerAPI.saveFeConfig(datos);
-                if (estado) { estado.style.color = '#16a34a'; estado.textContent = '✓ Configuración guardada.'; }
-            } catch (e) {
-                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'No se pudo guardar: ' + e.message; }
-            }
-        }
-
-        async function probarFeConfig() {
-            var estado = document.getElementById('fe-cfg-estado');
-            if (estado) { estado.style.color = '#64748b'; estado.textContent = 'Probando…'; }
-            try {
-                var r = await TallerAPI.probarFeConexion();
-                if (estado) {
-                    estado.style.color = r && r.ok === false ? '#dc2626' : '#16a34a';
-                    estado.textContent = (r && r.mensaje) ? r.mensaje : '✓ Conexión correcta.';
-                }
-            } catch (e) {
-                if (estado) { estado.style.color = '#dc2626'; estado.textContent = 'Error al probar: ' + e.message; }
-            }
+        function abrirModalFeConfig() {
+            window.location.href = '/configuracion.html?sec=fe';
         }
 
         initTaller();

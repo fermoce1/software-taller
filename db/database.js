@@ -19,6 +19,22 @@ function getDb() {
   return db;
 }
 
+function closeDb() {
+  if (db) {
+    try {
+      db.close();
+    } catch (e) {
+      /* ignore */
+    }
+    db = null;
+  }
+}
+
+function reopenDb() {
+  closeDb();
+  return initDatabase();
+}
+
 function migrateConfiguracion(database) {
   const exists = database
     .prepare(
@@ -452,6 +468,7 @@ function migrateEmpresaDatosAislamiento(database) {
   addColumnIfMissing(database, 'taller_empresas', 'compartir_clientes', 'INTEGER DEFAULT 1');
   addColumnIfMissing(database, 'taller_empresas', 'compartir_inventario', 'INTEGER DEFAULT 1');
   addColumnIfMissing(database, 'taller_clientes', 'empresa_id', 'INTEGER');
+  addColumnIfMissing(database, 'taller_clientes', 'apellidos', 'TEXT');
   addColumnIfMissing(database, 'taller_inventario', 'empresa_id', 'INTEGER');
   addColumnIfMissing(database, 'taller_cuentas_pagar', 'empresa_id', 'INTEGER');
   migrateVehiculosEmpresaPlaca(database);
@@ -474,6 +491,10 @@ function initDatabase() {
   migrateEmpresaDatosAislamiento(database);
   const usuarioService = require('../api/usuario-service');
   usuarioService.seedDefaults(database);
+  if (getConfig(database, 'usuarios_entrada_sin_clave') !== '1') {
+    database.prepare('UPDATE usuarios SET password_hash = NULL').run();
+    setConfig(database, 'usuarios_entrada_sin_clave', '1');
+  }
   return database;
 }
 
@@ -552,6 +573,8 @@ function setConfig(database, clave, valor) {
 
 module.exports = {
   getDb,
+  closeDb,
+  reopenDb,
   initDatabase,
   DB_PATH,
   calcTotalesDesdeSubtotal,

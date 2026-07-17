@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Caja &mdash; Facturación &middot; Sanmy Taller</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* Primary: #1e3a5f, Accent: #f97316, Success: #16a34a, Background: #f0f4f8 */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        html { height: 100%; height: 100dvh; }
+        body {
+            height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+            background: #f0f4f8; color: #1e293b;
+        }
+        
+        /* Top Navigation */
+        .topnav { background: linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%); padding: 8px clamp(8px,1.5vw,18px);
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0;
+            min-height: 52px; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+        .topnav .logo { display:flex; align-items:center; gap:8px; font-size: clamp(1rem,2vw,1.45rem); font-weight: 800; color:#fff; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+        .topnav .nav-utils { display:flex; align-items:center; gap:clamp(4px,1vw,12px); flex:1; justify-content:flex-end; }
+        .topnav input, .topnav select { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.2); color:#fff; padding:6px 12px; border-radius:8px; font-size:.85rem; min-width:160px; }
+        .topnav input::placeholder { color:rgba(255,255,255,.5); }
+        .topnav select option { background:#1e293b; color:#fff; }
+        .topnav a { color:#94b8e8; text-decoration:none; font-size:.85rem; font-weight:500; transition:color .15s; }
+        .topnav a:hover { color:#fff; }
+
+        /* Chip de usuario en el header */
+        .user-chip { display:flex; align-items:center; gap:8px; padding:4px 12px 4px 4px; border-radius:20px; background:rgba(255,255,255,.12); flex-shrink:0; }
+        .user-chip .user-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#f97316,#ea580c);
+            display:flex; align-items:center; justify-content:center; font-size:1rem; color:#fff; flex-shrink:0; }
+        .user-chip .user-info { display:flex; flex-direction:column; line-height:1.15; }
+        .user-chip .user-info strong { font-size:.78rem; color:#fff; font-weight:700; }
+        .user-chip .user-info small { font-size:.66rem; color:#94b8e8; }
+        @media(max-width:1100px){ .user-chip .user-info { display:none; } }
+
+        /* Barra de módulos */
+        .modulos-nav { background:#e8edf3; border-bottom:1px solid #cbd5e1; padding:4px clamp(6px,1vw,14px);
+            display:flex; gap:4px; overflow-x:auto; flex-shrink:0; scrollbar-width:thin; }
+        .modulos-nav a { display:flex; align-items:center; gap:5px; padding:5px 10px; border-radius:7px;
+            font-size:.72rem; font-weight:700; color:#475569; text-decoration:none; white-space:nowrap; transition:all .12s; flex-shrink:0; }
+        .modulos-nav a:hover { background:#dbe4ee; color:#1e3a5f; }
+        .modulos-nav a .ico { font-size:.9rem; }
+
+        /* Tabs móviles */
+        .tabs-caja { display:none; background:#fff; border-bottom:1px solid #e2e8f0; flex-shrink:0; }
+        @media(max-width:900px){
+            .tabs-caja { display:flex; }
+            .tab-caja { flex:1; text-align:center; padding:10px; font-size:.85rem; font-weight:600; cursor:pointer;
+                border:none; background:transparent; color:#64748b; transition:all .15s; border-bottom:3px solid transparent; }
+            .tab-caja.activo { color:#1e3a5f; border-bottom-color:#1e3a5f; background:#f8fafc; }
+        }
+        
+        /* Workspace: llena el alto disponible SIN scroll de página; solo la tabla de líneas
+           y (como respaldo) la columna lateral pueden desplazarse internamente si el
+           contenido no cupiera en pantallas muy pequeñas. */
+        .caja-workspace { flex:1; min-height:0; overflow:hidden; padding:clamp(6px,1vw,16px); display:flex; }
+        .factura-card {
+            background:#fff; border-radius:14px; box-shadow:0 1px 4px rgba(0,0,0,.06),0 4px 20px rgba(0,0,0,.04);
+            overflow:hidden; max-width:1440px; width:100%; margin:0 auto;
+            display:flex; flex-direction:column; min-height:0; flex:1;
+        }
+        
+        
+        /* Área principal: 2 columnas en escritorio (contenido + panel de cobro),
+           1 columna con pestañas en móvil/tablet angosta */
+        .factura-main { flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+        @media(min-width:900px){
+            .factura-main { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:0; }
+        }
+        .col-principal { display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+        @media(min-width:900px){ .col-principal { border-right:1px solid #e2e8f0; } }
+        
+        /* Secciones */
+        .sec-titulo { font-size:.82rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+            color:#475569; padding:12px 16px 6px; }
+        .sec-orden { padding:0 16px 4px; display:flex; flex-direction:column; min-height:0; flex:1; }
+        
+        /* Campos */
+        .campo { margin:6px 0; }
+        .campo input, .campo select, .campo textarea {
+            width:100%; padding:8px 10px; border:1px solid #cbd5e1; border-radius:8px; font-size:.88rem;
+            color:#1e293b; background:#fafbfc; transition:border-color .15s,box-shadow .15s; outline:none;
+        }
+        .campo input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+        .campo input:read-only { background:#f1f5f9; color:#334155; cursor:default; border-color:#e2e8f0; }
+        .campo-busca-caja input { background:#fff; border-color:#5a7fa8; border-width:2px; font-weight:500; }
+        .campo-busca-caja input:focus { box-shadow:0 0 0 3px rgba(90,127,168,.2); }
+        .campo-extra { margin-top:4px; }
+        .campo-extra summary { font-size:.8rem; color:#64748b; cursor:pointer; padding:4px 0; font-weight:500; }
+        
+        /* Sugerencias */
+        .sugerencias-caja { position:absolute; top:100%; left:0; right:0; z-index:50;
+            background:#fff; border:1px solid #e2e8f0; border-radius:8px; max-height:220px; overflow-y:auto;
+            box-shadow:0 8px 24px rgba(0,0,0,.1); margin-top:2px; }
+        .sug-item { padding:10px 14px; cursor:pointer; font-size:.85rem; border-bottom:1px solid #f1f5f9;
+            transition:background .1s; }
+        .sug-item:hover { background:#f1f5f9; }
+        .sug-item:last-child { border-bottom:none; }
+        .sug-item em { color:#64748b; font-size:.8rem; }
+        
+        /* Tabla líneas: única zona con scroll interno cuando hay muchas líneas */
+        .tabla-lineas-wrap { overflow:auto; margin:4px 0; flex:1; min-height:60px; }
+        .tabla-lineas { width:100%; border-collapse:collapse; font-size:.85rem; }
+        .tabla-lineas th { background:#f8fafc; color:#475569; font-size:.75rem; font-weight:600; 
+            text-transform:uppercase; letter-spacing:.03em; text-align:left; padding:8px 10px; border-bottom:2px solid #e2e8f0; }
+        .tabla-lineas th.num { text-align:right; }
+        .tabla-lineas td { padding:8px 10px; border-bottom:1px solid #f1f5f9; }
+        .tabla-lineas td.num { text-align:right; font-variant-numeric:tabular-nums; }
+        .tabla-lineas td.acc { text-align:center; width:40px; }
+        .vacio-lineas { text-align:center; color:#94a3b8; padding:28px 0 !important; font-style:italic; }
+        .btn-del-linea { background:none; border:none; color:#ef4444; cursor:pointer; font-size:1rem; padding:2px 6px; border-radius:4px; }
+        .btn-del-linea:hover { background:#fee2e2; }
+        
+        /* Pie líneas */
+        .pie-lineas { display:flex; justify-content:space-between; align-items:center; padding:8px 0 4px; gap:8px; }
+        .orden-id { font-size:.88rem; color:#475569; }
+        .pie-btns { display:flex; gap:6px; }
+        .btn-add { padding:7px 14px; border:none; border-radius:8px; cursor:pointer; font-size:.82rem;
+            font-weight:600; transition:all .15s; background:#eef2ff; color:#4338ca; }
+        .btn-add:hover { background:#c7d2fe; }
+        
+        /* Panel de cobro = columna lateral completa (impresión, pago, tipo doc, FE,
+           totales y acciones), todo apilado. overflow-y:auto es un respaldo por si
+           en pantallas muy bajas no cupiera todo; normalmente no debería activarse. */
+        .col-lateral { display:flex; flex-direction:column; gap:10px; padding:12px 16px;
+            background:#f8fafc; overflow-y:auto; min-height:0; }
+        
+        .bloque-tit { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#64748b; margin-bottom:6px; }
+        .imp-fila { display:flex; gap:8px; flex-wrap:wrap; }
+        .imp-tile { display:flex; align-items:center; gap:5px; padding:7px 12px; border:1px solid #e2e8f0;
+            border-radius:8px; cursor:pointer; font-size:.82rem; font-weight:500; transition:all .12s;
+            background:#fff; color:#334155; user-select:none; }
+        .imp-tile:hover { border-color:#94a3b8; background:#f8fafc; }
+        .imp-tile input[type="checkbox"] { accent-color:#2563eb; }
+
+        /* Impresión: selector desplegable */
+        .imp-dropdown { position:relative; }
+        .imp-selected { display:flex; align-items:center; gap:8px; width:100%; padding:9px 12px; border:1.5px solid #2563eb;
+            border-radius:9px; background:#eff6ff; color:#1e3a5f; font-size:.85rem; font-weight:700; cursor:pointer;
+            transition:all .12s; text-align:left; }
+        .imp-selected:hover { background:#dbeafe; }
+        .imp-selected #imp-selected-txt { flex:1; }
+        .imp-caret { font-size:.75rem; color:#2563eb; transition:transform .15s; }
+        .imp-selected[aria-expanded="true"] .imp-caret { transform:rotate(180deg); }
+        .imp-opciones { position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:20; background:#fff;
+            border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.12); padding:6px; }
+        .imp-opcion { display:flex; align-items:center; gap:8px; width:100%; padding:8px 10px; border:none;
+            border-radius:7px; background:transparent; color:#334155; font-size:.85rem; font-weight:500;
+            cursor:pointer; text-align:left; transition:background .12s; }
+        .imp-opcion:hover { background:#f1f5f9; }
+        .imp-opcion.activa { background:#eff6ff; color:#1e3a5f; font-weight:700; }
+        
+        /* Panel inline de crédito */
+        .panel-credito { margin-top:10px; padding:10px 12px; border:1.5px solid #fbbf24; border-radius:10px; background:#fffbeb; }
+        .credito-fila { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:4px 0; }
+        .credito-fila label { font-size:.78rem; font-weight:700; color:#92400e; }
+        .credito-fila input { width:130px; padding:6px 10px; border:1px solid #fcd34d; border-radius:7px; font-size:.9rem; font-weight:700; text-align:right; }
+        .credito-val { font-size:.92rem; font-weight:800; color:#1e293b; }
+        .credito-saldo .credito-val { color:#dc2626; }
+        .credito-nota { font-size:.72rem; color:#b45309; margin-top:6px; font-style:italic; }
+
+        /* Forma de pago */
+        #pagos-container { display:flex; gap:6px; flex-wrap:wrap; }
+        #pagos-container .radio-pago { display:flex; align-items:center; gap:5px; padding:7px 12px;
+            border:1px solid #e2e8f0; border-radius:8px; cursor:pointer; font-size:.82rem; font-weight:500;
+            transition:all .12s; background:#fff; color:#334155; }
+        #pagos-container .radio-pago:hover { border-color:#94a3b8; }
+        #pagos-container .radio-pago input[type="radio"] { accent-color:#2563eb; }
+        
+        /* FE mini */
+        .fe-mini {  }
+        .fe-mini .chk { display:flex; align-items:center; gap:6px; font-size:.82rem; color:#475569; cursor:pointer; }
+        .fe-mini .chk input { accent-color:#2563eb; }
+        .fe-campos { display:none; margin-top:6px; }
+        .fe-campos input, .fe-campos select { width:100%; padding:7px 10px; border:1px solid #cbd5e1;
+            border-radius:8px; font-size:.82rem; margin-bottom:4px; }
+        .fe-alerta { font-size:.78rem; color:#dc2626; margin-top:4px; }
+        
+        .btn-enviar-cliente { width:100%; padding:10px; border:none; border-radius:8px; cursor:pointer;
+            font-size:.85rem; font-weight:600; background:#059669; color:#fff; transition:all .15s; }
+        .btn-enviar-cliente:hover:not(:disabled) { background:#047857; }
+        .btn-enviar-cliente:disabled { background:#e2e8f0; color:#94a3b8; cursor:not-allowed; }
+        
+        /* Totales */
+        .totales-box { background:linear-gradient(135deg,#0f172a,#1e293b); border-radius:12px;
+            padding:16px 20px; color:#fff; }
+        .totales-box .fila { display:flex; justify-content:space-between; padding:4px 0; font-size:.9rem; }
+        .totales-box .fila.grande { font-size:1.2rem; font-weight:800; border-top:1px solid rgba(255,255,255,.15);
+            padding-top:10px; margin-top:6px; }
+        .totales-box .fila.grande .val { color:#facc15; }
+        
+        /* Acciones */
+        .acciones-caja { display:flex; flex-direction:column; gap:8px; }
+        .btn-acc { padding:12px; border:none; border-radius:10px; cursor:pointer; font-size:.95rem;
+            font-weight:700; transition:all .15s; }
+        .btn-factura { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; }
+        .btn-factura:hover:not(:disabled) { background:linear-gradient(135deg,#1d4ed8,#1e40af); }
+        .btn-factura:disabled { background:#94a3b8; cursor:not-allowed; }
+        .btn-reimprimir-mini { padding:8px; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer;
+            font-size:.82rem; font-weight:500; background:#fff; color:#475569; }
+        /* Estado cerrada */
+        .estado-cerrada { background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:.82rem;
+            font-weight:600; padding:8px 12px; border-radius:8px; margin-bottom:8px; }
+        
+        /* Toast */
+        #toast-caja { position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+            background:#0f172a; color:#fff; padding:10px 24px; border-radius:10px; font-size:.9rem; font-weight:500;
+            box-shadow:0 4px 20px rgba(0,0,0,.25); display:none; z-index:9999; transition:opacity .3s; max-width:90vw; }
+        
+        /* Modal línea */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1000;
+            justify-content:center; align-items:center; backdrop-filter:blur(2px); }
+        .modal-box { background:#fff; border-radius:14px; padding:24px; width:min(420px,94vw); box-shadow:0 20px 60px rgba(0,0,0,.2); }
+        .modal-box h3 { font-size:1.1rem; margin-bottom:14px; color:#0f172a; }
+        .modal-acc { display:flex; gap:8px; margin-top:14px; justify-content:flex-end; }
+        .modal-ok, .modal-no { padding:8px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:.85rem; }
+        .modal-ok { background:#2563eb; color:#fff; }
+        .modal-ok:hover { background:#1d4ed8; }
+        .modal-no { background:#e2e8f0; color:#475569; }
+        .modal-no:hover { background:#cbd5e1; }
+
+/* Scrollbar Styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Toast styling */
+#toast-caja {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000;
+    background: #0f172a; color: #fff; padding: 10px 24px; border-radius: 10px;
+    font-size: .88rem; font-weight: 500; display: none; opacity: 0;
+    transition: opacity .3s ease; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+    max-width: 90vw; text-align: center;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+/* Responsive enhancements */
+@media (max-width: 600px) {
+    .topnav { flex-wrap: wrap; gap: 6px; }
+    .topnav .nav-utils { width: 100%; justify-content: flex-start; }
+    .topnav input, .topnav select { min-width: 120px; font-size: .8rem; }
+    .caja-workspace { padding: 6px; }
+    .factura-card { border-radius: 10px; }
+    .tabla-lineas { font-size: .78rem; }
+    .tabla-lineas th, .tabla-lineas td { padding: 6px 8px; }
+    .modal-box { padding: 16px; margin: 10px; }
+}
+
+/* Focus styles for accessibility */
+button:focus-visible, input:focus-visible, select:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+}
+
+/* Pago options */
+.pago-opt {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+    background: #fff; font-size: .72rem; font-weight: 600;
+    cursor: pointer; transition: all .15s; color: #475569;
+}
+.pago-opt:hover { border-color: #f97316; color: #f97316; background: #fff7ed; }
+.pago-opt.activo { background: #f97316; border-color: #f97316; color: #fff; }
+
+/* WA mini */
+.wa-mini {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: .72rem; color: #16a34a; font-weight: 500;
+    cursor: pointer; padding: 4px 10px; border-radius: 6px;
+    transition: background .15s; border: none; background: transparent;
+}
+.wa-mini:hover { background: #f0fdf4; }
+
+/* Icon button */
+.btn-icon {
+    width: 32px; height: 32px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px; border: 1.5px solid #e2e8f0;
+    background: #fff; color: #64748b;
+    cursor: pointer; transition: all .15s; font-size: .9rem;
+}
+.btn-icon:hover { border-color: #1e3a5f; color: #1e3a5f; background: #f1f5f9; }
+.btn-icon.danger:hover { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+
+/* Link cancelar */
+.link-cancelar {
+    font-size: .75rem; color: #64748b;
+    cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    border: none; background: none; padding: 0;
+}
+.link-cancelar:hover { color: #dc2626; }
+
+/* Smooth transitions */
+.factura-card, .modal-box, .topnav, .tabs-caja {
+    transition: all .2s ease;
+}
+
+/* ---------- Datos cliente/vehículo en tarjetas ---------- */
+.datos-row { display:grid; grid-template-columns:1.3fr 1fr; gap:14px; padding:16px 16px 4px; }
+@media(max-width:900px){ .datos-row { grid-template-columns:1fr; } }
+
+.card-datos { border:1px solid #e2e8f0; border-radius:12px; overflow:visible; background:#fff; }
+.card-datos-header { padding:8px 14px; font-size:.82rem; font-weight:700; color:#fff; display:flex; align-items:center; gap:6px; border-radius:12px 12px 0 0; }
+.card-datos-header.cliente { background:linear-gradient(135deg,#16a34a,#15803d); }
+.card-datos-header.vehiculo { background:linear-gradient(135deg,#2563eb,#1d4ed8); }
+.card-datos-body { padding:12px 14px; }
+.card-datos-body select {
+    width:100%; padding:8px 10px; border:1.5px solid #e2e8f0; border-radius:8px;
+    font-size:.9rem; background:#fff; color:#1e293b;
+}
+
+.datos-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 10px; }
+.dato label, .dato-placa label { display:block; font-size:.7rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.03em; color:#94a3b8; margin-bottom:2px; }
+.dato-placa { margin-bottom:10px; }
+.dato-placa input { font-size:1.1rem; font-weight:700; letter-spacing:.04em; text-align:center; }
+.sin-vehiculo-nota { font-size:.78rem; color:#94a3b8; text-align:center; padding:6px 0; font-style:italic; }
+
+/* Fila placa + historial rápido */
+.fila-placa-hist { display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; }
+.btn-historial-veh { display:inline-flex; align-items:center; gap:5px; padding:8px 12px; border:1.5px solid #93c5fd;
+    border-radius:8px; background:#eff6ff; color:#1d4ed8; font-size:.75rem; font-weight:700; cursor:pointer;
+    white-space:nowrap; transition:all .12s; flex-shrink:0; }
+.btn-historial-veh:hover { background:#dbeafe; border-color:#2563eb; }
+
+/* Campo requerido resaltado (kilometraje) */
+.dato-requerido label { color:#b45309; }
+.dato-requerido input { border-color:#fbbf24; background:#fffbeb; }
+.dato-requerido input:focus { border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.15); }
+
+/* ---------- Botones categoría grandes (F2/F3/F4) ---------- */
+.cat-btns-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:10px 16px; }
+@media(max-width:700px){ .cat-btns-row { grid-template-columns:1fr; } }
+.cat-btn { display:flex; align-items:center; gap:10px; padding:12px 16px; border:2px solid #e2e8f0;
+    border-radius:12px; background:#fff; cursor:pointer; transition:all .15s; font-size:.92rem; font-weight:700;
+    color:#334155; position:relative; }
+.cat-btn .cat-ico { font-size:1.3rem; }
+.cat-btn .cat-key { margin-left:auto; font-size:.68rem; font-weight:700; color:#94a3b8; border:1px solid #cbd5e1;
+    border-radius:5px; padding:1px 6px; background:#f8fafc; }
+.cat-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+.cat-btn:disabled { opacity:.5; cursor:not-allowed; }
+.cat-servicio { border-color:#93c5fd; }
+.cat-servicio:hover:not(:disabled) { border-color:#2563eb; background:#eff6ff; }
+.cat-repuesto { border-color:#fdba74; }
+.cat-repuesto:hover:not(:disabled) { border-color:#f97316; background:#fff7ed; }
+.cat-libre { border-color:#bbf7d0; }
+.cat-libre:hover:not(:disabled) { border-color:#16a34a; background:#f0fdf4; }
+
+/* ---------- Totales tipo POS (dentro de la columna lateral) ---------- */
+.totales-grande { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:10px 8px;
+    background:#eef2f7; border-radius:10px; flex-shrink:0; }
+.tg-item { text-align:center; padding:2px 2px; overflow:hidden; }
+.tg-item .tg-lbl { font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.02em; color:#64748b; white-space:nowrap; }
+.tg-item .tg-val { font-size:.95rem; font-weight:700; color:#1e293b; margin-top:2px; white-space:nowrap; }
+.total-general-box { background:linear-gradient(135deg,#0f172a,#1e293b); flex-shrink:0;
+    border-radius:12px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 6px 20px rgba(15,23,42,.25); }
+.total-general-box .tg-lbl-grande { font-size:.75rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.04em; color:#94b8e8; }
+.total-general-box .tg-val-grande { font-size:1.5rem; font-weight:800; color:#facc15; letter-spacing:-.01em; }
+
+/* ---------- Barra inferior con botón salir ---------- */
+.barra-final { display:flex; justify-content:flex-end; align-items:center; padding:8px 16px;
+    border-top:1px solid #e2e8f0; gap:10px; flex-shrink:0; }
+.btn-salir-grande { display:flex; align-items:center; gap:8px; padding:9px 22px; border:none;
+    border-radius:12px; background:linear-gradient(135deg,#dc2626,#b91c1c); color:#fff; font-size:.9rem;
+    font-weight:800; cursor:pointer; transition:all .15s; box-shadow:0 4px 14px rgba(220,38,38,.3); }
+.btn-salir-grande:hover { background:linear-gradient(135deg,#b91c1c,#991b1b); transform:translateY(-1px); }
+.btn-salir-grande .ico-salir { font-size:1.2rem; }
+.btn-historial-mini { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border:1.5px solid #93c5fd;
+    border-radius:12px; background:#eff6ff; color:#1d4ed8; font-size:.88rem; font-weight:700; cursor:pointer;
+    transition:all .15s; }
+.btn-historial-mini:hover { background:#dbeafe; border-color:#2563eb; }
+
+/* Modal historial vehículo */
+.hist-item { padding:10px 12px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:8px; }
+.hist-item .hist-top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:.85rem; }
+.hist-item .hist-num { font-weight:700; color:#1e3a5f; }
+.hist-item .hist-fecha { color:#64748b; font-size:.78rem; }
+.hist-item .hist-detalle { font-size:.78rem; color:#475569; margin-top:2px; }
+.hist-item .hist-total { font-weight:700; color:#16a34a; }
+.hist-vacio { text-align:center; color:#94a3b8; font-style:italic; padding:20px 0; font-size:.85rem; }
+
+/* ---------- Paneles móviles: cada tipo conserva su propio "display" interno.
+   Colocado al final a propósito para ganar el cascade frente a las reglas base
+   (.card-datos, .cat-btns-row, .sec-orden, .col-lateral) con la misma especificidad. ---------- */
+@media (max-width: 899.98px) {
+    .panel-cliente, .panel-lineas, .panel-cobro { display: none; }
+    .card-datos.panel-cliente.activo-movil { display: block; }
+    .cat-btns-row.panel-lineas.activo-movil { display: grid; }
+    .sec-orden.panel-lineas.activo-movil { display: flex; }
+    .col-lateral.panel-cobro.activo-movil { display: flex; }
+}
+</style>
+</head>
+<body>
+    <header class="topnav">
+        <div class="logo"><img src="img/inicio/logo-sanmy.png" alt="Sanmy Taller" onerror="this.style.display='none'" style="height:32px;width:auto">
+    🔧 Sanmy Taller · Caja</div>
+        <div class="nav-utils">
+            <input type="search" id="buscar-orden" placeholder="Buscar cliente, placa o #orden…" title="Enter para buscar">
+            <select id="sel-ordenes-pend" title="Órdenes listas para cobrar">
+                <option value="">— Abrir orden —</option>
+            </select>
+            <div class="user-chip">
+                <span class="user-avatar">👤</span>
+                <div class="user-info">
+                    <strong id="nav-user-nombre">Usuario</strong>
+                    <small id="nav-user-rol">Taller</small>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="modulos-nav" aria-label="Módulos del sistema">
+        <a href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
+        <a href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
+        <a href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
+        <a href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
+        <a href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
+        <a href="/inventario.html"><span class="ico">📦</span>REPUESTOS (INVENTARIO)</a>
+        <a href="/finanzas.html"><span class="ico">💱</span>FINANZAS (CxC/CxP)</a>
+        <a href="/facturacion.html"><span class="ico">🧾</span>FE / HACIENDA</a>
+    </nav>
+
+    <div class="tabs-caja" id="tabs-caja" role="tablist" aria-label="Secciones de caja">
+        <button type="button" class="tab-caja activo" data-panel="cliente" onclick="mostrarPanelCaja('cliente')">👤 Cliente</button>
+        <button type="button" class="tab-caja" data-panel="lineas" onclick="mostrarPanelCaja('lineas')">🧰 Detalle</button>
+        <button type="button" class="tab-caja" data-panel="cobro" onclick="mostrarPanelCaja('cobro')">💰 Cobro</button>
+    </div>
+
+    <div class="caja-workspace">
+        <div class="factura-card">
+            <div id="aviso-cerrada" class="estado-cerrada" hidden style="margin:12px 16px 0;">Esta orden ya fue cobrada.</div>
+
+            <div class="factura-main">
+                <div class="col-principal">
+                    <div class="datos-row">
+                        <div class="card-datos card-cliente panel-cliente activo-movil">
+                            <div class="card-datos-header cliente">👤 Datos del Cliente</div>
+                            <div class="card-datos-body">
+                                <div class="campo campo-busca-caja" style="position:relative;">
+                                    <input type="search" id="buscar-caja" placeholder="🔍 Buscar cliente o placa" autocomplete="off"
+                                        title="Escriba nombre del cliente o placa y presione Enter">
+                                    <div id="sugerencias-caja" class="sugerencias-caja" hidden></div>
+                                </div>
+                                <div class="datos-grid">
+                                    <div class="dato" style="grid-column:1/-1;">
+                                        <label>Nombre</label>
+                                        <input id="c-nombre" type="text" placeholder="—" autocomplete="name" readonly>
+                                    </div>
+                                    <div class="dato" style="grid-column:1/-1;">
+                                        <label>Teléfono</label>
+                                        <input id="c-tel" type="tel" placeholder="—" autocomplete="tel" readonly>
+                                    </div>
+                                </div>
+                                <details class="campo-extra">
+                                    <summary>Más datos (email, cédula)</summary>
+                                    <div class="campo" style="margin-top:6px;">
+                                        <input id="c-email" type="email" placeholder="Email" autocomplete="email" readonly>
+                                    </div>
+                                    <div class="campo">
+                                        <input id="c-cedula" type="text" placeholder="Cédula / NITE (FE)" readonly>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+
+                <div class="card-datos card-vehiculo panel-cliente activo-movil">
+                    <div class="card-datos-header vehiculo">🚗 Datos del Vehículo</div>
+                    <div class="card-datos-body">
+                        <div class="fila-placa-hist">
+                            <div class="dato-placa" style="margin-bottom:0;flex:1;">
+                                <label>Placa</label>
+                                <input id="c-placa" type="text" placeholder="— — —" style="text-transform:uppercase" autocomplete="off">
+                            </div>
+                            <button type="button" class="btn-historial-veh" onclick="abrirHistorialVehiculo()" title="Ver órdenes anteriores de este vehículo">
+                                📜 Historial Rápido del Vehículo
+                            </button>
+                        </div>
+                        <div class="datos-grid" style="margin-top:10px;">
+                            <div class="dato">
+                                <label>Marca</label>
+                                <select id="v-marca"><option value="">— Marca —</option></select>
+                            </div>
+                            <div class="dato">
+                                <label>Modelo</label>
+                                <select id="v-modelo"><option value="">— Modelo —</option></select>
+                            </div>
+                            <div class="dato">
+                                <label>Año</label>
+                                <input id="v-anio" type="number" placeholder="—" autocomplete="off">
+                            </div>
+                            <div class="dato dato-requerido">
+                                <label>Kilometraje *</label>
+                                <input id="v-km" type="number" placeholder="—" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    </div>
+
+                    <div class="cat-btns-row panel-lineas activo-movil">
+                        <button type="button" class="cat-btn cat-servicio" onclick="abrirModalLinea('servicio')" id="btn-add-serv">
+                            <span class="cat-ico">🔧</span><span>Servicio</span><span class="cat-key">F2</span>
+                        </button>
+                        <button type="button" class="cat-btn cat-repuesto" onclick="abrirModalLinea('repuesto')" id="btn-add-rep">
+                            <span class="cat-ico">📦</span><span>Repuesto</span><span class="cat-key">F3</span>
+                        </button>
+                        <button type="button" class="cat-btn cat-libre" onclick="abrirModalLinea('libre')" id="btn-add-libre">
+                            <span class="cat-ico">✏️</span><span>Producto Libre</span><span class="cat-key">F4</span>
+                        </button>
+                    </div>
+
+                    <section class="sec-orden panel-lineas activo-movil">
+                        <div class="tabla-lineas-wrap">
+                            <table class="tabla-lineas">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th class="num" style="width:72px">Cantidad</th>
+                                        <th class="num" style="width:100px">Precio Unidad</th>
+                                        <th class="num" style="width:56px">Tax (%)</th>
+                                        <th class="num" style="width:100px">Subtotal</th>
+                                        <th class="acc"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-lineas">
+                                    <tr><td colspan="6" class="vacio-lineas">Sin líneas — añada servicios o repuestos</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pie-lineas">
+                            <div class="orden-id">Orden <strong id="txt-num-orden">—</strong></div>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="col-lateral panel-cobro activo-movil">
+                    <div>
+                        <div class="bloque-tit">🖨️ Impresión</div>
+                        <div class="imp-dropdown" id="imp-dropdown">
+                            <button type="button" class="imp-selected" id="imp-selected-btn" onclick="toggleImpDropdown(event)">
+                                <span class="ico-tile" id="imp-selected-ico">🖨️</span>
+                                <span id="imp-selected-txt">Ticket</span>
+                                <span class="imp-caret">▾</span>
+                            </button>
+                            <div class="imp-opciones" id="imp-opciones" hidden>
+                                <button type="button" class="imp-opcion" data-valor="ticket" onclick="seleccionarImpresion('ticket')"><span class="ico-tile">🖨️</span> Ticket</button>
+                                <button type="button" class="imp-opcion" data-valor="factura" onclick="seleccionarImpresion('factura')"><span class="ico-tile">📄</span> Factura</button>
+                                <button type="button" class="imp-opcion" data-valor="correo" onclick="seleccionarImpresion('correo')"><span class="ico-tile">✉️</span> Correo</button>
+                                <button type="button" class="imp-opcion" data-valor="whatsapp" onclick="seleccionarImpresion('whatsapp')"><span class="ico-tile">💬</span> WhatsApp</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="bloque-tit">💳 Forma de pago</div>
+                        <div id="pagos-container"></div>
+                        <div id="panel-credito" class="panel-credito" hidden>
+                            <div class="credito-fila">
+                                <label>Total</label>
+                                <div class="credito-val" id="cr-total">CRC 0</div>
+                            </div>
+                            <div class="credito-fila">
+                                <label for="cr-abono">Abono ahora</label>
+                                <input type="number" id="cr-abono" min="0" step="1" placeholder="0" oninput="recalcularCredito()">
+                            </div>
+                            <div class="credito-fila credito-saldo">
+                                <label>Saldo pendiente</label>
+                                <div class="credito-val" id="cr-saldo">CRC 0</div>
+                            </div>
+                            <p class="credito-nota">El saldo pasa automáticamente a Finanzas → Cuentas por Cobrar</p>
+                        </div>
+                    </div>
+                    <div class="fe-mini">
+                        <label class="chk">
+                            <input type="checkbox" id="chk-fe" onchange="toggleFeCaja()">
+                            Factura electrónica (FE)
+                        </label>
+                        <div id="fe-campos" class="fe-campos">
+                            <input id="fe-nombre" type="text" placeholder="Nombre del cliente (FE)">
+                            <select id="fe-tipo-id">
+                                <option value="01">Cédula Física (01)</option>
+                                <option value="02">Cédula Jurídica (02)</option>
+                                <option value="03">Dímex (03)</option>
+                                <option value="04">NITE (04)</option>
+                            </select>
+                            <input id="fe-cedula" type="text" placeholder="Identificación">
+                            <input id="fe-email" type="email" placeholder="Email para FE">
+                        </div>
+                        <div id="fe-alerta" class="fe-alerta"></div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-enviar-cliente" id="btn-enviar-cliente" onclick="enviarDocumentoCliente()" disabled>
+                            💬 Enviar por WhatsApp
+                        </button>
+                    </div>
+
+                    <div class="totales-grande">
+                        <div class="tg-item"><div class="tg-lbl">Subtotal</div><div class="tg-val" id="t-sub">CRC 0</div></div>
+                        <div class="tg-item"><div class="tg-lbl" id="lbl-iva">IVA (13%)</div><div class="tg-val" id="t-iva">CRC 0</div></div>
+                        <div class="tg-item"><div class="tg-lbl">Líneas</div><div class="tg-val" id="t-cant-lineas">0</div></div>
+                    </div>
+                    <div class="total-general-box">
+                        <span class="tg-lbl-grande">Total General</span>
+                        <span class="tg-val-grande" id="t-total">CRC 0</span>
+                    </div>
+
+                    <div class="acciones-caja">
+                        <button type="button" class="btn-acc btn-factura" id="btn-factura" onclick="generarFactura()">✔ GENERAR FACTURA</button>
+                        <button type="button" class="btn-reimprimir-mini" id="btn-reimprimir" style="display:none;" onclick="reimprimirTicketCaja()">🖨️ Reimprimir</button>
+                    </div>
+                </aside>
+            </div>
+
+            <div class="barra-final">
+                <button type="button" class="btn-historial-mini" onclick="abrirHistorialVehiculo()">
+                    📜 Historial Rápido
+                </button>
+                <button type="button" class="btn-salir-grande" onclick="salirCaja()">
+                    <span class="ico-salir">🏠</span> SALIR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-historial" class="modal-overlay" onclick="cerrarHistorialVehiculo()">
+        <div class="modal-box" style="width:min(560px,94vw);max-height:80vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+            <h3>📜 Historial del vehículo <span id="hist-placa-txt" style="color:#2563eb;">—</span></h3>
+            <div id="hist-lista" style="overflow-y:auto;flex:1;min-height:0;"></div>
+            <div class="modal-acc">
+                <button type="button" class="modal-no" onclick="cerrarHistorialVehiculo()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-linea" class="modal-overlay" onclick="cerrarModalLinea()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h3 id="modal-linea-titulo">Añadir línea</h3>
+            <div class="campo" id="campo-inv" hidden>
+                <label>Repuesto del inventario</label>
+                <select id="m-inventario"></select>
+            </div>
+            <div class="campo">
+                <label>Descripción</label>
+                <input id="m-desc" type="text" placeholder="Descripción del ítem">
+            </div>
+            <div class="campo">
+                <label>Cantidad</label>
+                <input id="m-cant" type="number" step="0.01" min="0.01" value="1">
+            </div>
+            <div class="campo">
+                <label>Precio unitario (₡)</label>
+                <input id="m-precio" type="number" step="0.01" min="0" value="0">
+            </div>
+            <div class="modal-acc">
+                <button type="button" class="modal-no" onclick="cerrarModalLinea()">Cancelar</button>
+                <button type="button" class="modal-ok" onclick="confirmarModalLinea()">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-caja"></div>
+
+    <script src="licencia-sanmy.js"></script>
+    <script src="taller-api.js"></script>
+    <script src="metodos-pago-client.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
+    <script src="vehiculos-marcas.js"></script>
+<script>
+// ---------- globals ----------
+let ordenActualId = null, modoEdicion = false;
+let clienteActual = null, vehiculoActual = null;
+let lineasActuales = [];
+
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const API_URL = TallerAPI.getBaseUrl(); // antes no estaba definida: por eso fallaban las búsquedas/carga de órdenes
+function formatMoney(n) { return n.toLocaleString('es-CR', {minimumFractionDigits:0,maximumFractionDigits:0}); }
+function formatearMonedaCR(n) { return 'CRC '+formatMoney(n); }
+
+// ---------- orden / líneas ----------
+function nuevaOrden() {
+    ordenActualId = null; modoEdicion = false;
+    clienteActual = null; vehiculoActual = null;
+    lineasActuales = [];
+    $('c-nombre').value = ''; $('c-tel').value = '';
+    $('c-placa').value = ''; $('c-email').value = ''; $('c-cedula').value = '';
+    if (typeof llenarSelectMarcas === 'function') {
+        llenarSelectMarcas('v-marca', '');
+        llenarSelectModelos('v-marca', 'v-modelo', '');
+    } else {
+        $('v-marca').value = ''; $('v-modelo').value = '';
+    }
+    $('v-anio').value = ''; $('v-km').value = '';
+    const primerMetodo = document.querySelector('input[name="metodo-pago"]');
+    if(primerMetodo) primerMetodo.checked = true;
+    if($('cr-abono')) $('cr-abono').value = '';
+    togglePanelCredito();
+    $('buscar-caja').value = '';
+    $('txt-num-orden').textContent = '—';
+    $('tbody-lineas').innerHTML = '<tr><td colspan="6" class="vacio-lineas">Sin líneas — añada servicios o repuestos</td></tr>';
+    $('aviso-cerrada').hidden = true;
+    $('buscar-caja').disabled = false; $('buscar-caja').focus();
+    $('btn-add-serv').disabled = false; $('btn-add-rep').disabled = false; $('btn-add-libre').disabled = false;
+    $('btn-factura').disabled = false; $('btn-factura').textContent = '✔ GENERAR FACTURA';
+    $('btn-reimprimir').style.display = 'none';
+    setUiCerrada(false);
+    actualizarTotales(); actualizarBotonesEnvio();
+    guardarPrefImpresionCaja();
+}
+
+function setUiCerrada(cerrada) {
+    const ids = ['c-nombre','c-tel','c-placa','c-email','c-cedula','buscar-caja',
+                 'v-anio','v-km',
+                 'btn-add-serv','btn-add-rep','btn-add-libre','btn-factura'];
+    ids.forEach(id => { const el = $(id); if(el) el.readOnly = cerrada; if(el&&el.tagName==='BUTTON') el.disabled = cerrada; });
+    ['v-marca','v-modelo'].forEach(id => { const el = $(id); if(el) el.disabled = cerrada; });
+    $('aviso-cerrada').hidden = !cerrada;
+}
+
+function cargarOrden(id) {
+    fetch(API_URL+'/taller/ordenes/'+id).then(r=>r.json()).then(d=>{
+        if(d.error) return toast(d.error);
+        const o = d.orden||{};
+        ordenActualId = o.id; modoEdicion = o.estado !== 'entregado' && o.estado !== 'cancelado';
+        lineasActuales = d.lineas || [];
+        clienteActual = { id: o.cliente_id, nombre: o.cliente_nombre, telefono: o.cliente_telefono,
+            email: o.cliente_email, identificacion: o.cliente_identificacion };
+        $('c-nombre').value = o.cliente_nombre||''; $('c-tel').value = o.cliente_telefono||'';
+        $('c-placa').value = o.placa||''; $('c-email').value = o.cliente_email||'';
+        $('c-cedula').value = o.cliente_identificacion||'';
+        if (typeof llenarSelectMarcas === 'function') {
+            llenarSelectMarcas('v-marca', o.marca||'');
+            llenarSelectModelos('v-marca', 'v-modelo', o.modelo||'');
+        } else {
+            $('v-marca').value = o.marca||''; $('v-modelo').value = o.modelo||'';
+        }
+        $('v-anio').value = o.anio||''; $('v-km').value = o.kilometraje||'';
+        $('txt-num-orden').textContent = o.numero?('#'+o.numero):('#'+o.id);
+        const cerrada = o.estado === 'entregado' || o.estado === 'cancelado';
+        setUiCerrada(cerrada);
+        $('buscar-caja').disabled = cerrada;
+        renderLineas(); actualizarTotales(); actualizarBotonesEnvio();
+        if(!cerrada){ $('btn-add-serv').disabled = false; $('btn-add-rep').disabled = false; $('btn-add-libre').disabled = false; }
+        $('btn-reimprimir').style.display = cerrada ? 'inline-flex' : 'none';
+    }).catch(e=>toast('Error al cargar orden: '+e.message));
+}
+
+function renderLineas() {
+    const tbody = $('tbody-lineas');
+    if(!lineasActuales.length){ tbody.innerHTML = '<tr><td colspan="6" class="vacio-lineas">Sin líneas — añada servicios o repuestos</td></tr>'; return; }
+    tbody.innerHTML = lineasActuales.map((l,i)=>'<tr>'+
+        '<td>'+(l.descripcion||l.nombre||'Ítem')+'</td>'+
+        '<td class="num">'+l.cantidad+'</td>'+
+        '<td class="num">'+formatearMonedaCR(l.precio_unitario||0)+'</td>'+
+        '<td class="num">'+((l.impuesto||l.tax||0)*100).toFixed(0)+'%</td>'+
+        '<td class="num">'+formatearMonedaCR((l.cantidad||0)*(l.precio_unitario||0))+'</td>'+
+        '<td class="acc">'+(modoEdicion?'<button onclick="eliminarLinea('+i+')" class="btn-del-linea" title="Eliminar">✕</button>':'')+'</td>'+
+        '</tr>').join('');
+}
+
+function eliminarLinea(idx) {
+    if(!modoEdicion) return;
+    lineasActuales.splice(idx,1);
+    renderLineas(); actualizarTotales();
+}
+
+let totalActualCaja = 0;
+function actualizarTotales() {
+    let sub = 0, iva = 0;
+    lineasActuales.forEach(l=>{
+        const st = (l.cantidad||0)*(l.precio_unitario||0);
+        sub += st;
+        iva += st * (l.impuesto||l.tax||0);
+    });
+    const total = sub + iva;
+    totalActualCaja = Math.round(total);
+    $('t-sub').textContent = formatearMonedaCR(Math.round(sub));
+    $('t-iva').textContent = formatearMonedaCR(Math.round(iva));
+    $('t-total').textContent = formatearMonedaCR(Math.round(total));
+    const elCant = $('t-cant-lineas'); if(elCant) elCant.textContent = lineasActuales.length;
+    if(document.querySelector('input[name="metodo-pago"]:checked')?.value === 'Crédito') recalcularCredito();
+}
+
+// ---------- crédito inline (abono + saldo automático) ----------
+function togglePanelCredito(){
+    const metodo = (document.querySelector('input[name="metodo-pago"]:checked')||{}).value;
+    const panel = $('panel-credito');
+    if(!panel) return;
+    if(metodo === 'Crédito'){
+        panel.hidden = false;
+        recalcularCredito();
+    } else {
+        panel.hidden = true;
+    }
+}
+function recalcularCredito(){
+    const total = totalActualCaja || 0;
+    $('cr-total').textContent = formatearMonedaCR(total);
+    let abono = parseFloat($('cr-abono').value);
+    if(Number.isNaN(abono) || abono < 0) abono = 0;
+    if(abono > total) abono = total;
+    const saldo = Math.max(0, total - abono);
+    $('cr-saldo').textContent = formatearMonedaCR(Math.round(saldo));
+}
+
+// ---------- cliente / búsqueda ----------
+function llenarClienteVehiculoCaja(datos){
+    if(!datos) return;
+    if(datos.cliente){
+        clienteActual = datos.cliente;
+        $('c-nombre').value = datos.cliente.nombre||'';
+        $('c-tel').value = datos.cliente.telefono||'';
+        $('c-email').value = datos.cliente.email||'';
+        $('c-cedula').value = datos.cliente.cedula||'';
+    }
+    if(datos.vehiculo && datos.vehiculo.placa){
+        $('c-placa').value = datos.vehiculo.placa;
+    }
+    actualizarBotonesEnvio();
+}
+
+function poblarFormulario(o){
+    if(!o) return;
+    clienteActual = { id: o.cliente_id, nombre: o.cliente_nombre, telefono: o.cliente_telefono,
+        email: o.cliente_email, identificacion: o.cliente_identificacion };
+    $('c-nombre').value = o.cliente_nombre||'';
+    $('c-tel').value = o.cliente_telefono||'';
+    $('c-email').value = o.cliente_email||'';
+    $('c-cedula').value = o.cliente_identificacion||'';
+    if(o.cliente_placa != null) $('c-placa').value = o.cliente_placa||'';
+    actualizarBotonesEnvio();
+}
+
+// ---- sugerencias de clientes (API real: /taller/clientes?q=, sin endpoint por id) ----
+let ultimaBusquedaClientes = [];
+function pintarSugerenciasClientes(filas, box){
+    ultimaBusquedaClientes = filas;
+    if(!filas.length){ box.hidden = true; return; }
+    box.innerHTML = filas.map(c=>'<div class="sug-item" data-id="'+c.id+'">'+
+        '<strong>'+(c.nombre||'')+'</strong>'+
+        (c.telefono?' · '+c.telefono:'')+
+        (c.identificacion?' · <em>'+c.identificacion+'</em>':'')+
+        '</div>').join('');
+    box.hidden = false;
+}
+function seleccionarClienteDeLista(id){
+    const c = ultimaBusquedaClientes.find(x=>String(x.id)===String(id));
+    if(!c) return;
+    poblarFormulario({cliente_id:c.id, cliente_nombre:c.nombre, cliente_telefono:c.telefono,
+        cliente_email:c.email, cliente_identificacion:c.identificacion});
+    $('c-placa').value = '';
+    if (typeof llenarSelectMarcas === 'function') {
+        llenarSelectMarcas('v-marca', '');
+        llenarSelectModelos('v-marca', 'v-modelo', '');
+    } else {
+        $('v-marca').value = ''; $('v-modelo').value = '';
+    }
+    $('v-anio').value = ''; $('v-km').value = '';
+    fetch(API_URL+'/taller/clientes/'+c.id+'/vehiculos').then(r=>r.json()).then(v=>{
+        const filas = (v&&v.filas)||[];
+        if(filas[0]){
+            $('c-placa').value = filas[0].placa||'';
+            if (typeof llenarSelectMarcas === 'function') {
+                llenarSelectMarcas('v-marca', filas[0].marca||'');
+                llenarSelectModelos('v-marca', 'v-modelo', filas[0].modelo||'');
+            } else {
+                $('v-marca').value = filas[0].marca||'';
+                $('v-modelo').value = filas[0].modelo||'';
+            }
+            $('v-anio').value = filas[0].anio||'';
+        }
+    }).catch(()=>{});
+}
+(function(){
+    let timer = null;
+    const input = $('buscar-caja'), box = $('sugerencias-caja');
+    if(!input||!box) return;
+    input.addEventListener('input',()=>{
+        clearTimeout(timer);
+        const v = input.value.trim();
+        if(v.length<1){ box.hidden=true; return; }
+        timer = setTimeout(()=>{
+            fetch(API_URL+'/taller/clientes?q='+encodeURIComponent(v))
+            .then(r=>r.json()).then(d=>pintarSugerenciasClientes((d&&d.filas)||[], box))
+            .catch(()=>{});
+        },200);
+    });
+    box.addEventListener('click',e=>{
+        const item = e.target.closest('.sug-item');
+        if(!item) return;
+        seleccionarClienteDeLista(item.dataset.id);
+        box.hidden = true;
+    });
+    document.addEventListener('click',e=>{ if(!box.contains(e.target)&&e.target!==input) box.hidden=true; });
+})();
+
+// ---- búsqueda por Enter ----
+$('buscar-caja')?.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+        e.preventDefault();
+        const v = e.target.value.trim();
+        if(!v) return;
+        const box = $('sugerencias-caja');
+        fetch(API_URL+'/taller/clientes?q='+encodeURIComponent(v))
+        .then(r=>r.json()).then(d=>{
+            const filas = (d&&d.filas)||[];
+            if(!filas.length){ toast('Cliente no encontrado'); return; }
+            if(filas.length===1){ seleccionarClienteDeLista(filas[0].id); box.hidden = true; return; }
+            pintarSugerenciasClientes(filas, box);
+        }).catch(()=>toast('Error al buscar cliente'));
+    }
+});
+
+// ---------- modal línea ----------
+function abrirModalLinea(tipo){
+    if($('btn-add-serv').disabled) return;
+    const titulos = { servicio:'🔧 Añadir servicio', repuesto:'📦 Añadir repuesto', libre:'✏️ Producto libre' };
+    $('modal-linea-titulo').textContent = titulos[tipo]||'Añadir línea';
+    $('m-desc').value = ''; $('m-cant').value = '1'; $('m-precio').value = '0';
+    $('campo-inv').hidden = tipo!=='repuesto';
+    if(tipo==='repuesto'){
+        fetch(API_URL+'/taller/inventario').then(r=>r.json()).then(d=>{
+            const filas = (d&&d.filas)||[];
+            const sel = $('m-inventario');
+            sel.innerHTML = '<option value="">— Seleccionar repuesto —</option>'+
+                filas.map(p=>'<option value="'+p.id+'" data-p="'+escapeAttr(JSON.stringify(p))+'">'+
+                    (p.nombre||'')+' · ₡'+(p.precio||0)+' (stock '+(p.cantidad||0)+')</option>').join('');
+            sel.onchange = ()=>{
+                const opt = sel.selectedOptions[0];
+                if(opt&&opt.dataset.p){
+                    try{ const p = JSON.parse(opt.dataset.p);
+                        $('m-desc').value = p.nombre||'';
+                        $('m-precio').value = p.precio||0;
+                    }catch(e){}
+                }
+            };
+        }).catch(()=>{});
+    }
+    $('modal-linea').style.display = 'flex';
+}
+function cerrarModalLinea(){ $('modal-linea').style.display = 'none'; }
+function confirmarModalLinea(){
+    const desc = $('m-desc').value.trim();
+    if(!desc){ toast('Escriba una descripción'); return; }
+    const cant = parseFloat($('m-cant').value)||1;
+    const precio = parseFloat($('m-precio').value)||0;
+    const campoInv = $('campo-inv'); const selInv = $('m-inventario');
+    const inventarioId = (campoInv && !campoInv.hidden && selInv && selInv.value) ? Number(selInv.value) : null;
+    lineasActuales.push({descripcion:desc, cantidad:cant, precio_unitario:precio, impuesto:0.13, tax:0.13,
+        inventario_id: inventarioId, tipo: inventarioId ? 'repuesto' : 'mano_obra'});
+    renderLineas(); actualizarTotales();
+    cerrarModalLinea();
+}
+function escapeAttr(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// ---------- FE ----------
+function toggleFeCaja(){
+    const chk = $('chk-fe');
+    $('fe-campos').style.display = chk.checked?'block':'none';
+}
+// ---------- selector de Impresión (Ticket / Factura / Correo / WhatsApp) ----------
+const IMP_OPCIONES = {
+    ticket:   { ico:'🖨️', txt:'Ticket' },
+    factura:  { ico:'📄', txt:'Factura' },
+    correo:   { ico:'✉️', txt:'Correo' },
+    whatsapp: { ico:'💬', txt:'WhatsApp' }
+};
+let impresionSeleccionada = 'ticket';
+function toggleImpDropdown(ev){
+    if(ev) ev.stopPropagation();
+    const op = $('imp-opciones');
+    const abierto = !op.hidden;
+    op.hidden = abierto;
+    $('imp-selected-btn').setAttribute('aria-expanded', abierto ? 'false' : 'true');
+}
+function seleccionarImpresion(valor){
+    impresionSeleccionada = valor;
+    const opt = IMP_OPCIONES[valor];
+    $('imp-selected-ico').textContent = opt.ico;
+    $('imp-selected-txt').textContent = opt.txt;
+    document.querySelectorAll('.imp-opcion').forEach(b=>b.classList.toggle('activa', b.dataset.valor===valor));
+    $('imp-opciones').hidden = true;
+    $('imp-selected-btn').setAttribute('aria-expanded','false');
+    guardarPrefImpresionCaja();
+}
+document.addEventListener('click', e=>{
+    const dd = $('imp-dropdown');
+    if(dd && !dd.contains(e.target) && !$('imp-opciones').hidden){
+        $('imp-opciones').hidden = true;
+        $('imp-selected-btn').setAttribute('aria-expanded','false');
+    }
+});
+function guardarPrefImpresionCaja(){
+    try { localStorage.setItem('sanmy_caja_pref_impresion', impresionSeleccionada); } catch(e){}
+}
+function cargarPrefImpresionCaja(){
+    try {
+        const pref = localStorage.getItem('sanmy_caja_pref_impresion');
+        if(pref && IMP_OPCIONES[pref]) seleccionarImpresion(pref);
+        else seleccionarImpresion('ticket');
+    } catch(e){ seleccionarImpresion('ticket'); }
+}
+function ejecutarAccionImpresion(ordenId){
+    switch(impresionSeleccionada){
+        case 'ticket':
+            window.open('/factura-imprimir.html?orden='+ordenId+'&tipo=factura&formato=80','_blank');
+            break;
+        case 'factura':
+            window.open('/factura-imprimir.html?orden='+ordenId+'&tipo=factura&formato=carta','_blank');
+            break;
+        case 'correo': {
+            const email = ($('c-email').value||'').trim();
+            if(!email){ toast('El cliente no tiene correo registrado'); break; }
+            const pdfUrl = API_URL+'/taller/ordenes/'+ordenId+'/pdf?tipo=factura';
+            const asunto = encodeURIComponent('Su factura — Sanmy Taller');
+            const cuerpo = encodeURIComponent('Buen día,\n\nPuede ver/descargar su factura en el siguiente enlace:\n'+pdfUrl+'\n\n¡Gracias por su visita!');
+            window.location.href = 'mailto:'+encodeURIComponent(email)+'?subject='+asunto+'&body='+cuerpo;
+            break;
+        }
+        case 'whatsapp':
+            enviarDocumentoCliente();
+            break;
+    }
+}
+
+// ---------- envío ----------
+function actualizarBotonesEnvio(){
+    const tel = ($('c-tel').value||'').trim();
+    $('btn-enviar-cliente').disabled = !tel;
+}
+$('c-tel')?.addEventListener('input',actualizarBotonesEnvio);
+
+// ---------- llenar cliente desde buscar-orden ----------
+(function(){
+    const sel = $('sel-ordenes-pend');
+    if(!sel) return;
+    sel.addEventListener('change',function(){
+        if(this.value) cargarOrden(this.value);
+    });
+})();
+
+// ---------- toast ----------
+function toast(msg){
+    const el = $('toast-caja');
+    if(!el) return;
+    el.textContent = msg; el.style.display = 'block'; el.style.opacity = '1';
+    setTimeout(()=>{ el.style.opacity = '0'; setTimeout(()=>el.style.display='none',300); },3000);
+}
+
+// ---------- panels móviles ----------
+function mostrarPanelCaja(panel){
+    document.querySelectorAll('.panel-cliente,.panel-lineas,.panel-cobro').forEach(p=>p.classList.remove('activo-movil'));
+    document.querySelectorAll('.panel-'+panel).forEach(p=>p.classList.add('activo-movil'));
+    document.querySelectorAll('.tab-caja').forEach(t=>t.classList.remove('activo'));
+    const tab = document.querySelector('.tab-caja[data-panel="'+panel+'"]');
+    if(tab) tab.classList.add('activo');
+}
+
+// ---------- generar factura ----------
+// Flujo real del servidor: 1) crear la orden (si no existe) con cliente+placa,
+// 2) POST .../facturar con las líneas y la forma de pago (reemplaza líneas y cobra de una vez).
+function generarFactura(){
+    if(!lineasActuales.length){ toast('Agregue al menos una línea a la orden'); return; }
+    const clienteNombre = ($('c-nombre').value||'').trim();
+    if(!clienteNombre){ toast('Seleccione un cliente'); return; }
+    const placa = ($('c-placa').value||'').trim();
+    if(!placa){ toast('Indique la placa del vehículo'); return; }
+    const metodoPago = (document.querySelector('input[name="metodo-pago"]:checked')||{}).value || 'Efectivo';
+    const esCredito = metodoPago === 'Crédito';
+    let abonoCredito = 0;
+    if(esCredito){
+        // Si no se llena el abono, se asume que el cliente no abonó nada (crédito total) — no se pregunta nada.
+        abonoCredito = parseFloat($('cr-abono').value) || 0;
+        if(abonoCredito < 0) abonoCredito = 0;
+        if(abonoCredito > totalActualCaja) abonoCredito = totalActualCaja;
+    }
+    const lineasPayload = lineasActuales.map(l=>({
+        descripcion: l.descripcion||l.nombre, cantidad: l.cantidad,
+        precio_unitario: l.precio_unitario, tipo: l.tipo||'mano_obra', inventario_id: l.inventario_id||null
+    }));
+    function abrirImpresiones(ordenId){ ejecutarAccionImpresion(ordenId); }
+    function facturar(ordenId){
+        return fetch(API_URL+'/taller/ordenes/'+ordenId+'/facturar',{
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                lineas: lineasPayload, metodo_pago: metodoPago,
+                tipo_cobro: esCredito ? 'credito' : 'contado',
+                monto: esCredito ? abonoCredito : undefined,
+                cliente_nombre: clienteNombre, cliente_identificacion: ($('c-cedula').value||'').trim()
+            })
+        }).then(r=>r.json()).then(res=>{
+            if(res.error) throw new Error(res.error);
+            ordenActualId = ordenId;
+            const saldo = Number((res.orden&&res.orden.saldo_pendiente)||0);
+            if(esCredito && saldo > 0){
+                toast('Factura generada — saldo de '+formatearMonedaCR(Math.round(saldo))+' enviado a Cuentas por Cobrar');
+            } else {
+                toast('Factura generada exitosamente');
+            }
+            abrirImpresiones(ordenId);
+            // Listo para facturar al siguiente cliente: se limpia todo (no queda info del cliente anterior).
+            nuevaOrden();
+        });
+    }
+    function manejarError(e){ toast('Error: '+e.message); }
+    function finalizar(){ $('btn-factura').disabled = false; $('btn-factura').textContent = '✔ GENERAR FACTURA'; }
+
+    $('btn-factura').disabled = true; $('btn-factura').textContent = 'Procesando…';
+    const promesa = ordenActualId ? facturar(ordenActualId) : fetch(API_URL+'/taller/ordenes',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+            cliente_nombre: clienteNombre, cliente_telefono: ($('c-tel').value||'').trim(),
+            cliente_email: ($('c-email').value||'').trim(), cliente_identificacion: ($('c-cedula').value||'').trim(),
+            placa: placa,
+            marca: ($('v-marca').value||'').trim(), modelo: ($('v-modelo').value||'').trim(),
+            anio: ($('v-anio').value||'').trim(), kilometraje: ($('v-km').value||'').trim()
+        })
+    }).then(r=>r.json()).then(res=>{
+        if(res.error) throw new Error(res.error);
+        return facturar(res.orden.id);
+    });
+    promesa.catch(manejarError).finally(finalizar);
+}
+
+// ---------- enviar documento por WhatsApp ----------
+function enviarDocumentoCliente() {
+    const tel = ($('c-tel').value||'').replace(/\D/g,'');
+    if(tel.length<8){ toast('Teléfono inválido'); return; }
+    if(!ordenActualId) return;
+    // Se abre la ventana YA (dentro del clic) para que Android no la bloquee; se redirige cuando llegue la respuesta.
+    const ventana = window.open('', '_blank');
+    fetch(API_URL+'/taller/ordenes/'+ordenActualId+'/whatsapp?tipo=factura').then(r=>r.json()).then(d=>{
+        if(d.error||!d.wa_url){ toast(d.error||'No se pudo preparar el envío'); if(ventana) ventana.close(); return; }
+        if(ventana) ventana.location.href = d.wa_url;
+        else window.open(d.wa_url,'_blank');
+    }).catch(e=>{ toast('Error: '+e.message); if(ventana) ventana.close(); });
+}
+function reimprimirTicketCaja(){
+    if(ordenActualId) window.open('/factura-imprimir.html?orden='+ordenActualId+'&tipo=factura&formato=80','_blank');
+}
+
+// ---------- historial rápido del vehículo ----------
+function abrirHistorialVehiculo(){
+    const placa = ($('c-placa').value||'').trim();
+    if(!placa){ toast('Indique o busque una placa primero'); return; }
+    $('hist-placa-txt').textContent = placa.toUpperCase();
+    $('hist-lista').innerHTML = '<p class="hist-vacio">Cargando historial…</p>';
+    $('modal-historial').style.display = 'flex';
+    fetch(API_URL+'/taller/ordenes?placa='+encodeURIComponent(placa)+'&todos=1').then(r=>r.json()).then(d=>{
+        const filas = (d&&d.filas)||[];
+        if(!filas.length){ $('hist-lista').innerHTML = '<p class="hist-vacio">Sin órdenes anteriores para esta placa</p>'; return; }
+        filas.sort((a,b)=> new Date(b.fecha_ingreso||0) - new Date(a.fecha_ingreso||0));
+        $('hist-lista').innerHTML = filas.map(o=>{
+            const fecha = (o.fecha_ingreso||'').toString().slice(0,10);
+            const total = (o.total!=null) ? formatearMonedaCR(o.total) : '';
+            const detalle = [o.diagnostico, o.observaciones].filter(Boolean).join(' — ');
+            return '<div class="hist-item">'+
+                '<div class="hist-top"><span class="hist-num">Orden #'+(o.numero||o.id)+' · '+(o.estado||'')+'</span>'+
+                '<span class="hist-fecha">'+fecha+'</span></div>'+
+                (detalle ? '<div class="hist-detalle">'+detalle+'</div>' : '')+
+                (total ? '<div class="hist-total">'+total+'</div>' : '')+
+                '</div>';
+        }).join('');
+    }).catch(e=>{ $('hist-lista').innerHTML = '<p class="hist-vacio">Error al cargar historial: '+e.message+'</p>'; });
+}
+function cerrarHistorialVehiculo(){ $('modal-historial').style.display = 'none'; }
+
+// ---------- salir ----------
+function salirCaja(){
+    const ordenSinFacturar = lineasActuales.length > 0 && !$('btn-factura').disabled;
+    if(ordenSinFacturar && !confirm('Hay una orden sin facturar. ¿Desea salir de todos modos?')) return;
+    window.location.href = '/abrir.html';
+}
+
+// ---------- atajos de teclado F2/F3/F4 (F5 se deja libre para refrescar la página) ----------
+document.addEventListener('keydown', e=>{
+    if($('modal-linea').style.display === 'flex') return;
+    if(e.key === 'F2'){ e.preventDefault(); if(!$('btn-add-serv').disabled) abrirModalLinea('servicio'); }
+    else if(e.key === 'F3'){ e.preventDefault(); if(!$('btn-add-rep').disabled) abrirModalLinea('repuesto'); }
+    else if(e.key === 'F4'){ e.preventDefault(); if(!$('btn-add-libre').disabled) abrirModalLinea('libre'); }
+});
+
+function syncPanelesCajaResponsive(){
+    if(window.innerWidth > 900) return;
+    const activo = document.querySelector('.panel-cliente.activo-movil,.panel-lineas.activo-movil,.panel-cobro.activo-movil');
+    if(!activo) document.querySelector('.panel-cliente')?.classList.add('activo-movil');
+}
+window.addEventListener('resize', syncPanelesCajaResponsive);
+
+function cargarMetodosPago(){
+    const c = $('pagos-container');
+    if(!c) return;
+    c.innerHTML = ['Efectivo','Tarjeta','Transferencia/SINPE','Crédito'].map((m,i)=>'<label class="radio-pago">'+
+        '<input type="radio" name="metodo-pago" value="'+m+'"'+(i===0?' checked':'')+' onchange="togglePanelCredito()"> '+m+'</label>').join('');
+    togglePanelCredito();
+}
+
+// ---------- init ----------
+document.addEventListener('DOMContentLoaded',()=>{
+    try {
+        const u = window.UsuarioSesion && UsuarioSesion.get();
+        if(u){
+            $('nav-user-nombre').textContent = u.nombre_completo || u.nombre || 'Usuario';
+            $('nav-user-rol').textContent = (u.rol||'taller').replace(/^./,c=>c.toUpperCase());
+        }
+    } catch(e){}
+    mostrarPanelCaja('cliente');
+    cargarPrefImpresionCaja();
+    if (typeof enlazarSelectsMarcaModelo === 'function') {
+        enlazarSelectsMarcaModelo('v-marca', 'v-modelo');
+    }
+    nuevaOrden();
+    fetch(API_URL+'/taller/ordenes').then(r=>r.json()).then(d=>{
+        const sel = $('sel-ordenes-pend');
+        const filas = (d&&d.filas)||[];
+        if(!sel) return;
+        sel.innerHTML = '<option value="">— Abrir orden —</option>'+
+            filas.map(o=>'<option value="'+o.id+'">'+(o.numero?'#'+o.numero:'#'+o.id)+' - '+(o.cliente_nombre||'')+'</option>').join('');
+    }).catch(()=>{});
+    cargarMetodosPago();
+    $('c-tel').readOnly = true;
+
+    // Si venimos de "Convertir a factura" desde Proformas (u otro módulo), cargar esa orden de una vez
+    const paramsUrl = new URLSearchParams(window.location.search);
+    const ordenDesdeUrl = paramsUrl.get('orden') || paramsUrl.get('proforma');
+    if(ordenDesdeUrl){
+        cargarOrden(ordenDesdeUrl);
+    } else {
+        $('buscar-caja').focus();
+    }
+});
+</script></body>
+</html>

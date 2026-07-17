@@ -97,7 +97,7 @@
             background: rgba(255,255,255,.75);
             border: 2px solid #5a8aaa;
             border-radius: 4px;
-            overflow: hidden;
+            overflow: visible;
         }
         .panel-head {
             background: linear-gradient(180deg, #ffff66, #e8e800);
@@ -138,14 +138,14 @@
             background: #fff;
         }
         .veh-mini th { background: #d4e8f4; font-weight: normal; color: #333; }
-        .veh-mini td input {
+        .veh-mini td input, .veh-mini td select {
             width: 100%;
             border: none;
             padding: 2px 4px;
             font-size: 12px;
             background: transparent;
         }
-        .veh-mini td input:focus { outline: 1px solid #2563eb; background: #fff; }
+        .veh-mini td input:focus, .veh-mini td select:focus { outline: 1px solid #2563eb; background: #fff; }
 
         .pres-tabs {
             display: flex;
@@ -328,6 +328,12 @@
         #estado-msg.error { color: #dc2626; }
         .badge-fact { font-size: 10px; background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 999px; margin-left: 8px; }
 
+        /* Sugerencias de cliente */
+        .cliente-sug { padding: 6px 10px; cursor: pointer; font-size: 12px; border-bottom: 1px solid #eee; }
+        .cliente-sug:hover, .cliente-sug.destacado { background: #e0edf7; }
+        .cliente-sug .nom { font-weight: bold; }
+        .cliente-sug .det { font-size: 10px; color: #666; }
+
         @media (max-width: 900px) {
             .pres-grid-top { grid-template-columns: 1fr; }
             body { overflow: auto; height: auto; min-height: 100dvh; }
@@ -343,9 +349,11 @@
         <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
         <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
         <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
-        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/caja.html"><span class="ico">💵</span>CAJA<br>(FACTURAR)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FE / HACIENDA</a>
         <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
         <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+        <a class="nav-item" href="/facturacion-responsive.html" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-color:#7c3aed;"><span class="ico">🆕</span>VISTA PREVIA<br>(NUEVO DISEÑO)</a>
     </nav>
 
     <div class="pf-barra">
@@ -353,6 +361,11 @@
         <select id="sel-proformas" onchange="seleccionarDesdeLista(this.value)">
             <option value="">— Seleccione o cree una nueva —</option>
         </select>
+        <div style="position:relative;display:inline-block;">
+            <input type="text" id="buscar-proforma" placeholder="Buscar por placa o cliente…" autocomplete="off" style="padding:4px 8px;border:1px solid #888;border-radius:3px;font-size:12px;min-width:200px;">
+            <div id="buscar-sugerencias" style="position:absolute;top:100%;left:0;right:0;z-index:1000;background:#fff;border:1px solid #888;border-top:none;max-height:220px;overflow-y:auto;display:none;font-size:12px;"></div>
+        </div>
+        <button type="button" class="btn-bar" onclick="buscarProforma()" style="background:linear-gradient(180deg,#e0e0e0,#b0b0b0);">🔍 Buscar proforma</button>
         <button type="button" class="btn-bar prim" onclick="nuevaProforma()">➕ Nueva proforma</button>
         <button type="button" class="btn-bar" onclick="cargarListaProformas()">↻ Actualizar lista</button>
         <button type="button" class="btn-bar fact" id="btn-fact-bar" onclick="convertirAFactura()" disabled>🧾 Convertir a factura</button>
@@ -386,8 +399,8 @@
                         <thead><tr><th>Matrícula *</th><th>Marca</th><th>Modelo</th></tr></thead>
                         <tbody><tr>
                             <td><input id="v-placa" type="text" placeholder="ABC-123"></td>
-                            <td><input id="v-marca" type="text" placeholder="Toyota"></td>
-                            <td><input id="v-modelo" type="text" placeholder="Corolla"></td>
+                            <td><select id="v-marca" style="width:100%;padding:3px 6px;border:1px solid #888;border-radius:2px;font-size:12px;background:#fff;"><option value="">— Marca —</option></select></td>
+                            <td><select id="v-modelo" style="width:100%;padding:3px 6px;border:1px solid #888;border-radius:2px;font-size:12px;background:#fff;"><option value="">— Modelo —</option></select></td>
                         </tr></tbody>
                     </table>
                     <div class="campo-fila"><label>Año / Color</label><input id="v-extra" type="text" placeholder="2020 · Blanco"></div>
@@ -396,9 +409,9 @@
         </div>
 
         <div class="pres-tabs">
-            <button type="button" class="pres-tab activo" data-tab="productos" onclick="selTab('productos', this)">⚙️ Productos <kbd>F5</kbd></button>
-            <button type="button" class="pres-tab" data-tab="servicios" onclick="selTab('servicios', this)">🎨 Servicios <kbd>F6</kbd></button>
-            <button type="button" class="pres-tab" data-tab="libre" onclick="selTab('libre', this)">💡 Producto Libre <kbd>F7</kbd></button>
+            <button type="button" class="pres-tab activo" data-tab="productos" onclick="selTab('productos', this)">⚙️ Productos <kbd>F2</kbd></button>
+            <button type="button" class="pres-tab" data-tab="servicios" onclick="selTab('servicios', this)">🎨 Servicios <kbd>F3</kbd></button>
+            <button type="button" class="pres-tab" data-tab="libre" onclick="selTab('libre', this)">💡 Producto Libre <kbd>F4</kbd></button>
         </div>
 
         <div class="pres-entrada" id="entrada-productos">
@@ -467,8 +480,13 @@
         </div>
     </div>
 
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
     <script src="enter-next.js"></script>
+    <script src="vehiculos-marcas.js"></script>
     <script>
         var ordenId = null;
         var ordenData = null;
@@ -478,6 +496,105 @@
         var lineasCache = [];
         var listaProformas = [];
         var bloqueado = false;
+
+        var camposFormulario = ['c-nombre','c-cedula','c-tel','c-email','c-obs','v-placa','v-marca','v-modelo','v-extra','pres-fecha'];
+        var camposSoloLectura = ['x-orden'];
+
+        var _clientesCache = [];
+        var _buscarTimer = null;
+        var _sugerenciaActiva = -1;
+
+        function buscarSugerencias(texto) {
+            var div = document.getElementById('buscar-sugerencias');
+            if (!texto || texto.length < 1) { div.style.display = 'none'; return; }
+            if (_buscarTimer) clearTimeout(_buscarTimer);
+            _buscarTimer = setTimeout(function () {
+                var q = texto.toLowerCase();
+                // Buscar en proformas
+                var proformas = listaProformas.filter(function (o) {
+                    return (o.placa || '').toLowerCase().indexOf(q) >= 0 ||
+                           (o.cliente_nombre || '').toLowerCase().indexOf(q) >= 0;
+                });
+                // Buscar en clientes
+                var clientes = _clientesCache.filter(function (c) {
+                    return (c.nombre || '').toLowerCase().indexOf(q) >= 0 ||
+                           (c.identificacion || '').toLowerCase().indexOf(q) >= 0 ||
+                           (c.telefono || '').indexOf(q) >= 0;
+                });
+                // Si no hay clientes en cache, cargar del servidor
+                if (!_clientesCache.length) {
+                    TallerAPI.getTallerClientes('').then(function (data) {
+                        _clientesCache = (data && data.filas) ? data.filas : [];
+                        buscarSugerencias(texto);
+                    }).catch(function () {});
+                    return;
+                }
+                mostrarSugerencias(proformas, clientes);
+            }, 200);
+        }
+
+        function mostrarSugerencias(proformas, clientes) {
+            var div = document.getElementById('buscar-sugerencias');
+            var html = '';
+            if (proformas.length) {
+                html += '<div style="padding:4px 8px;background:#e8e8e8;font-size:10px;font-weight:bold;color:#555;">PROFORMAS</div>';
+                html += proformas.slice(0, 8).map(function (o) {
+                    return '<div class="cliente-sug" data-tipo="proforma" data-id="' + o.id + '"><div class="nom">#' + o.numero + ' · ' + esc(o.placa) + '</div><div class="det">' + esc(o.cliente_nombre || 'Sin cliente') + '</div></div>';
+                }).join('');
+            }
+            if (clientes.length) {
+                html += '<div style="padding:4px 8px;background:#e8e8e8;font-size:10px;font-weight:bold;color:#555;">CLIENTES</div>';
+                html += clientes.slice(0, 8).map(function (c) {
+                    return '<div class="cliente-sug" data-tipo="cliente" data-nombre="' + esc(c.nombre) + '" data-identificacion="' + esc(c.identificacion || '') + '" data-telefono="' + esc(c.telefono || '') + '" data-email="' + esc(c.email || '') + '"><div class="nom">' + esc(c.nombre) + '</div><div class="det">' + (c.identificacion ? esc(c.identificacion) + ' · ' : '') + (c.telefono ? esc(c.telefono) : '') + '</div></div>';
+                }).join('');
+            }
+            if (!html) { div.style.display = 'none'; return; }
+            div.innerHTML = html;
+            div.style.display = 'block';
+            _sugerenciaActiva = -1;
+            // Click en sugerencias
+            div.querySelectorAll('.cliente-sug').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    if (this.dataset.tipo === 'proforma') {
+                        cargarOrden(parseInt(this.dataset.id)).catch(function (e) {
+                            setEstado('Error al cargar: ' + e.message, true);
+                        });
+                    } else {
+                        document.getElementById('c-nombre').value = this.dataset.nombre;
+                        document.getElementById('c-cedula').value = this.dataset.identificacion || '';
+                        document.getElementById('c-tel').value = this.dataset.telefono || '';
+                        document.getElementById('c-email').value = this.dataset.email || '';
+                        document.getElementById('buscar-proforma').value = '';
+                        // Si estamos en nueva proforma, habilitar los campos
+                        habilitarCamposFormulario();
+                    }
+                    div.style.display = 'none';
+                });
+            });
+        }
+
+        function bloquearCamposFormulario() {
+            camposFormulario.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.tagName === 'SELECT') el.disabled = true;
+                else if (el) el.readOnly = true;
+            });
+            // Deshabilitar pestañas y botones de agregar
+            document.querySelectorAll('.pres-tab').forEach(function (b) { b.disabled = true; });
+            document.getElementById('btn-add-p').disabled = true;
+            document.getElementById('btn-add-s').disabled = true;
+            document.getElementById('btn-add-l').disabled = true;
+            document.getElementById('btn-guardar').disabled = true;
+        }
+
+        function habilitarCamposFormulario() {
+            camposFormulario.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.tagName === 'SELECT') el.disabled = false;
+                else if (el) el.readOnly = false;
+            });
+            document.getElementById('btn-guardar').disabled = false;
+        }
 
         function fmt(v) {
             return '₡' + (Math.round(Number(v) || 0)).toLocaleString('es-CR');
@@ -525,9 +642,9 @@
 
         document.addEventListener('keydown', function (e) {
             if (!ordenId || bloqueado) return;
-            if (e.key === 'F5') { e.preventDefault(); selTab('productos', document.querySelector('[data-tab=productos]')); }
-            if (e.key === 'F6') { e.preventDefault(); selTab('servicios', document.querySelector('[data-tab=servicios]')); }
-            if (e.key === 'F7') { e.preventDefault(); selTab('libre', document.querySelector('[data-tab=libre]')); }
+            if (e.key === 'F2') { e.preventDefault(); selTab('productos', document.querySelector('[data-tab=productos]')); }
+            if (e.key === 'F3') { e.preventDefault(); selTab('servicios', document.querySelector('[data-tab=servicios]')); }
+            if (e.key === 'F4') { e.preventDefault(); selTab('libre', document.querySelector('[data-tab=libre]')); }
         });
 
         async function cargarInventario() {
@@ -540,6 +657,14 @@
                         return '<option value="' + it.id + '">' + esc(it.nombre) + (it.codigo ? ' (' + esc(it.codigo) + ')' : '') + ' — ' + fmt(it.precio) + '</option>';
                     }).join('');
             } catch (e) { inventario = []; }
+        }
+
+        function cargarMarcasVehiculo() {
+            llenarSelectMarcas('v-marca');
+        }
+
+        function cargarModelosVehiculo(modeloSeleccionado) {
+            llenarSelectModelos('v-marca', 'v-modelo', modeloSeleccionado);
         }
 
         function renderLineas() {
@@ -611,15 +736,19 @@
             var obs = String(o.observaciones || '');
             document.getElementById('c-obs').value = obs.replace(/^Proforma\s*—?\s*/i, '').trim();
             document.getElementById('v-placa').value = o.placa || '';
-            document.getElementById('v-marca').value = o.marca || '';
-            document.getElementById('v-modelo').value = o.modelo || '';
+            llenarSelectMarcas('v-marca', o.marca || '');
+            llenarSelectModelos('v-marca', 'v-modelo', o.modelo || '');
             document.getElementById('v-extra').value = [o.anio, o.color].filter(Boolean).join(' · ');
             document.getElementById('x-orden').value = '#' + o.numero + ' (id ' + o.id + ')';
             bloqueado = esFacturada(o);
             document.getElementById('badge-estado').innerHTML = bloqueado
                 ? '<span class="badge-fact">Facturada</span>' : '';
-            ['v-placa','v-marca','v-modelo','c-nombre','c-cedula','c-tel','c-email','c-obs','v-extra'].forEach(function (id) {
+            ['v-placa','c-nombre','c-cedula','c-tel','c-email','c-obs','v-extra'].forEach(function (id) {
                 document.getElementById(id).readOnly = bloqueado;
+            });
+            ['v-marca','v-modelo'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.disabled = bloqueado;
             });
             actualizarBotones();
         }
@@ -631,10 +760,17 @@
             bloqueado = false;
             document.getElementById('pres-titulo').textContent = 'Proformas — Sanmy Taller 🇨🇷';
             document.getElementById('pres-fecha').value = new Date().toISOString().slice(0, 10);
-            ['c-nombre','c-cedula','c-tel','c-email','c-obs','v-placa','v-marca','v-modelo','v-extra','x-orden'].forEach(function (id) {
+            ['c-nombre','c-cedula','c-tel','c-email','c-obs','v-placa','v-extra','x-orden'].forEach(function (id) {
                 var el = document.getElementById(id);
                 el.value = '';
                 el.readOnly = false;
+            });
+            // Restaurar selects de marca y modelo
+            llenarSelectMarcas('v-marca', '');
+            llenarSelectModelos('v-marca', 'v-modelo', '');
+            ['v-marca','v-modelo'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) { el.disabled = false; el.value = ''; }
             });
             document.getElementById('t-desc').value = '0';
             document.getElementById('badge-estado').innerHTML = '';
@@ -652,6 +788,19 @@
             lineasCache = data.lineas || [];
             poblarFormulario(data.orden);
             renderLineas();
+            // Habilitar todo al cargar una proforma existente
+            habilitarCamposFormulario();
+            document.querySelectorAll('.pres-tab').forEach(function (b) { b.disabled = false; });
+            document.getElementById('btn-add-p').disabled = false;
+            document.getElementById('btn-add-s').disabled = false;
+            document.getElementById('btn-add-l').disabled = false;
+            // Si está facturada, bloquear todo
+            if (bloqueado) {
+                document.querySelectorAll('.pres-tab').forEach(function (b) { b.disabled = true; });
+                document.getElementById('btn-add-p').disabled = true;
+                document.getElementById('btn-add-s').disabled = true;
+                document.getElementById('btn-add-l').disabled = true;
+            }
             if (actualizarUrl !== false) {
                 history.replaceState(null, '', '/proformas.html?proforma=' + id);
             }
@@ -673,14 +822,19 @@
                 if (!ordenId) {
                     var res = await TallerAPI.crearTallerOrden(datos);
                     ordenId = res.orden.id;
+                    // Si ya se agregaron líneas mediante agregarDesdeTab (que las creó en otra orden),
+                    // esto crea una nueva orden y las líneas se pierden. Pero normalmente se guarda
+                    // antes o después de agregar líneas.
                     await cargarOrden(ordenId);
-                    setEstado('✓ Proforma #' + res.orden.numero + ' creada. Agregue líneas con las pestañas.');
-                    await cargarListaProformas();
+                    setEstado('✓ Proforma #' + res.orden.numero + ' guardada.');
                 } else if (!bloqueado) {
+                    // Actualizar datos: observaciones y otros campos
                     await TallerAPI.actualizarTallerOrden(ordenId, { observaciones: datos.observaciones });
                     setEstado('✓ Datos guardados.');
                     await cargarOrden(ordenId, false);
+                    document.getElementById('c-cedula').value = datos.cliente_identificacion || '';
                 }
+                await cargarListaProformas();
             } catch (e) {
                 setEstado('Error: ' + e.message, true);
             } finally {
@@ -689,11 +843,24 @@
         }
 
         async function agregarDesdeTab() {
+            // Si no hay orden, crearla automáticamente con los datos del formulario
             if (!ordenId) {
-                var ok = confirm('Primero debe guardar la proforma (cliente y placa). ¿Guardar ahora?');
-                if (!ok) return;
-                await guardarProforma();
-                if (!ordenId) return;
+                var datos = leerFormulario();
+                if (!datos.placa) {
+                    setEstado('Primero escriba la matrícula del vehículo.', true);
+                    document.getElementById('v-placa').focus();
+                    return;
+                }
+                try {
+                    var res = await TallerAPI.crearTallerOrden(datos);
+                    ordenId = res.orden.id;
+                    document.getElementById('pres-titulo').textContent = 'Proforma #' + res.orden.numero + ' — ' + (datos.cliente_nombre || 'Cliente') + ' 🇨🇷';
+                    document.getElementById('x-orden').value = '#' + res.orden.numero + ' (id ' + res.orden.id + ')';
+                    await cargarListaProformas();
+                } catch (e) {
+                    alert('Error al crear proforma: ' + e.message);
+                    return;
+                }
             }
             if (bloqueado) return;
             var payload = {};
@@ -745,7 +912,7 @@
 
         function convertirAFactura() {
             if (!ordenId || bloqueado) return;
-            window.location.href = '/facturacion.html?proforma=' + encodeURIComponent(ordenId);
+            window.location.href = '/caja.html?orden=' + encodeURIComponent(ordenId);
         }
 
         function verPdf() {
@@ -762,6 +929,13 @@
 
         function nuevaProforma() {
             limpiarFormulario();
+            habilitarCamposFormulario();
+            // Habilitar pestañas y botones para agregar líneas directamente
+            document.querySelectorAll('.pres-tab').forEach(function (b) { b.disabled = false; });
+            document.getElementById('btn-add-p').disabled = false;
+            document.getElementById('btn-add-s').disabled = false;
+            document.getElementById('btn-add-l').disabled = false;
+            document.getElementById('btn-guardar').disabled = false;
             history.replaceState(null, '', '/proformas.html');
         }
 
@@ -795,16 +969,112 @@
             }
         }
 
+        function buscarProforma() {
+            var texto = document.getElementById('buscar-proforma').value.trim().toLowerCase();
+            if (!texto) {
+                cargarListaProformas();
+                document.getElementById('sel-proformas').value = '';
+                seleccionarDesdeLista('');
+                return;
+            }
+            // Refrescar lista desde el servidor
+            cargarListaProformas().then(function () {
+                var filtradas = listaProformas.filter(function (o) {
+                    var placa = (o.placa || '').toLowerCase();
+                    var cliente = (o.cliente_nombre || '').toLowerCase();
+                    var numero = String(o.numero || '');
+                    return placa.indexOf(texto) >= 0 || cliente.indexOf(texto) >= 0 || numero === texto;
+                });
+                if (filtradas.length === 0) {
+                    setEstado('No se encontraron proformas con: ' + texto, true);
+                    return;
+                }
+                if (filtradas.length === 1) {
+                    cargarOrden(filtradas[0].id).catch(function (e) {
+                        setEstado('Error al cargar: ' + e.message, true);
+                    });
+                    return;
+                }
+                var sel = document.getElementById('sel-proformas');
+                sel.innerHTML = '<option value="">— Resultados (' + filtradas.length + '): —</option>' +
+                    filtradas.map(function (o) {
+                        var st = esFacturada(o) ? ' [Facturada]' : '';
+                        return '<option value="' + o.id + '">#' + o.numero + ' · ' + esc(o.placa) + ' · ' + esc(o.cliente_nombre || 'Sin cliente') + st + '</option>';
+                    }).join('');
+                sel.value = '';
+                setEstado('Se encontraron ' + filtradas.length + ' proforma(s). Seleccione una.');
+            }).catch(function (e) {
+                setEstado('Error al buscar: ' + (e.message || 'servidor no responde'), true);
+            });
+        }
+
+        // Buscar al escribir en el campo de búsqueda (con retardo para no saturar)
+        var timeoutBusqueda = null;
+        document.addEventListener('keydown', function (e) {
+            var inputBuscar = document.getElementById('buscar-proforma');
+            if (!inputBuscar) return;
+            if (document.activeElement === inputBuscar) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    buscarProforma();
+                }
+                // Flechas para navegar sugerencias
+                var div = document.getElementById('buscar-sugerencias');
+                if (div && div.style.display === 'block') {
+                    var items = div.querySelectorAll('.cliente-sug');
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        _sugerenciaActiva = Math.min(_sugerenciaActiva + 1, items.length - 1);
+                        items.forEach(function (el, i) { el.classList.toggle('destacado', i === _sugerenciaActiva); });
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        _sugerenciaActiva = Math.max(_sugerenciaActiva - 1, 0);
+                        items.forEach(function (el, i) { el.classList.toggle('destacado', i === _sugerenciaActiva); });
+                    }
+                }
+            }
+        });
+        document.addEventListener('input', function (e) {
+            if (e.target && e.target.id === 'buscar-proforma') {
+                if (timeoutBusqueda) clearTimeout(timeoutBusqueda);
+                timeoutBusqueda = setTimeout(function () {
+                    buscarProforma();
+                }, 400);
+                // Sugerencias en vivo
+                buscarSugerencias(e.target.value);
+            }
+        });
+
+        // Ocultar sugerencias al hacer clic fuera
+        document.addEventListener('click', function (e) {
+            var div = document.getElementById('buscar-sugerencias');
+            if (div && !e.target.closest('#buscar-proforma') && !e.target.closest('#buscar-sugerencias')) {
+                div.style.display = 'none';
+            }
+        });
+
+        // Cargar clientes al inicio para tener el cache
+        async function cargarClientesCache() {
+            try {
+                var data = await TallerAPI.getTallerClientes('');
+                _clientesCache = (data && data.filas) ? data.filas : [];
+            } catch (e) { _clientesCache = []; }
+        }
+
         async function init() {
             try {
                 var cfg = await TallerAPI.getTallerConfig();
                 var r = parseFloat(cfg.impuesto_iva);
                 if (!isNaN(r)) ivaRate = r;
             } catch (e) { /* 13% */ }
+            cargarMarcasVehiculo();
+            enlazarSelectsMarcaModelo('v-marca', 'v-modelo');
+            cargarClientesCache();
             await cargarInventario();
             await cargarListaProformas();
             renderLineas();
             actualizarBotones();
+            bloquearCamposFormulario();
 
             var params = new URLSearchParams(window.location.search);
             var id = parseInt(params.get('proforma') || params.get('orden') || params.get('id') || '0', 10);

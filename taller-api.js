@@ -54,6 +54,10 @@ const TallerAPI = (function () {
         errMsg =
           'El servidor está desactualizado (falta módulo de empresas). Cierre y vuelva a abrir con INICIAR-SERVIDOR.bat.';
       }
+      if (res.status === 404 && path.indexOf('/respaldo/') >= 0) {
+        errMsg =
+          'El servidor debe reiniciarse para usar respaldos. Cierre Sanmy Taller y ejecute ABRIR-SISTEMA.bat o INICIAR-SERVIDOR.bat.';
+      }
       const err = new Error(errMsg);
       err.status = res.status;
       err.data = data;
@@ -165,8 +169,33 @@ const TallerAPI = (function () {
     getTallerConfig: function () {
       return request('/taller/config');
     },
+    getAccesoConfig: function () {
+      return request('/taller/config/acceso');
+    },
+    getAccesoConfigUrl: function () {
+      return getBaseUrl() + '/taller/config/acceso';
+    },
+    getLicenciaEstadoUrl: function () {
+      return getBaseUrl() + '/licencia/estado';
+    },
+    getLicenciaEstado: function () {
+      return request('/licencia/estado');
+    },
+    activarLicencia: function (datos) {
+      return request('/licencia/activar', { method: 'POST', body: JSON.stringify(datos || {}) });
+    },
     actualizarTallerConfig: function (datos) {
       return request('/taller/config', { method: 'PATCH', body: JSON.stringify(datos) });
+    },
+    getMetodosPago: function (todos) {
+      var qs = todos ? '?todos=1' : '';
+      return request('/taller/metodos-pago' + qs);
+    },
+    guardarMetodosPago: function (metodos) {
+      return request('/taller/metodos-pago', {
+        method: 'PUT',
+        body: JSON.stringify({ metodos: metodos })
+      });
     },
     getEmpresas: function () {
       return request('/taller/empresas');
@@ -188,6 +217,15 @@ const TallerAPI = (function () {
     },
     eliminarEmpresa: function (id) {
       return request('/taller/empresas/' + id, { method: 'DELETE' });
+    },
+    subirLogoEmpresa: function (id, imagenBase64, mime) {
+      return request('/taller/empresas/' + id + '/logo', {
+        method: 'POST',
+        body: JSON.stringify({ imagen: imagenBase64, mime: mime || '' })
+      });
+    },
+    eliminarLogoEmpresa: function (id) {
+      return request('/taller/empresas/' + id + '/logo', { method: 'DELETE' });
     },
     buscarTallerVehiculos: function (q) {
       return request('/taller/vehiculos' + (q ? '?q=' + encodeURIComponent(q) : ''));
@@ -269,12 +307,47 @@ const TallerAPI = (function () {
     getGuiaTicoFactura: function (ordenId) {
       return request('/fe/guia-tico/' + ordenId);
     },
-    getFeRecientes: function (limit, q) {
+    getFeRecientes: function (limit, filtros) {
       const params = new URLSearchParams();
       if (limit) params.set('limit', String(limit));
-      if (q) params.set('q', q);
+      filtros = filtros || {};
+      if (filtros.q) params.set('q', filtros.q);
+      if (filtros.estado) params.set('estado', filtros.estado);
+      if (filtros.desde) params.set('desde', filtros.desde);
+      if (filtros.hasta) params.set('hasta', filtros.hasta);
+      if (filtros.tipo) params.set('tipo', filtros.tipo);
       const qs = params.toString();
       return request('/fe/recientes' + (qs ? '?' + qs : ''));
+    },
+    getFeResumen: function (filtros) {
+      const params = new URLSearchParams();
+      filtros = filtros || {};
+      if (filtros.desde) params.set('desde', filtros.desde);
+      if (filtros.hasta) params.set('hasta', filtros.hasta);
+      if (filtros.estado) params.set('estado', filtros.estado);
+      if (filtros.tipo) params.set('tipo', filtros.tipo);
+      const qs = params.toString();
+      return request('/fe/resumen' + (qs ? '?' + qs : ''));
+    },
+    exportFeCsvUrl: function (filtros) {
+      filtros = filtros || {};
+      const params = new URLSearchParams();
+      if (filtros.desde) params.set('desde', filtros.desde);
+      if (filtros.hasta) params.set('hasta', filtros.hasta);
+      if (filtros.estado) params.set('estado', filtros.estado);
+      if (filtros.tipo) params.set('tipo', filtros.tipo);
+      if (filtros.q) params.set('q', filtros.q);
+      const qs = params.toString();
+      return baseUrl + '/fe/export' + (qs ? '?' + qs : '');
+    },
+    getFeDetalle: function (id) {
+      return request('/fe/detalle/' + id);
+    },
+    validarOrdenFe: function (ordenId) {
+      return request('/fe/validar-orden/' + ordenId);
+    },
+    registrarTicoFactura: function (datos) {
+      return request('/fe/tico-registrar', { method: 'POST', body: JSON.stringify(datos || {}) });
     },
     enviarFacturaHacienda: function (id) {
       return request('/fe/' + id + '/enviar', { method: 'POST', body: '{}' });
@@ -330,10 +403,58 @@ const TallerAPI = (function () {
     desactivarUsuario: function (id) {
       return request('/usuarios/' + id, { method: 'DELETE' });
     },
-    loginUsuario: function (usuario, password) {
+    loginUsuario: function (usuarioOrId, password) {
+      var body;
+      if (typeof usuarioOrId === 'object' && usuarioOrId !== null) {
+        body = usuarioOrId;
+      } else if (typeof usuarioOrId === 'number' || /^\d+$/.test(String(usuarioOrId || ''))) {
+        body = { id: Number(usuarioOrId), password: password || '' };
+      } else {
+        body = { usuario: usuarioOrId, password: password || '' };
+      }
       return request('/usuarios/login', {
         method: 'POST',
-        body: JSON.stringify({ usuario: usuario, password: password })
+        body: JSON.stringify(body)
+      });
+    },
+    listarRespaldos: function () {
+      return request('/respaldo/listar');
+    },
+    crearRespaldo: function () {
+      return request('/respaldo/crear', { method: 'POST', body: '{}' });
+    },
+    descargarRespaldo: function (nombre) {
+      window.location.href = getBaseUrl() + '/respaldo/descargar/' + encodeURIComponent(nombre);
+    },
+    eliminarRespaldo: function (nombre) {
+      return request('/respaldo/' + encodeURIComponent(nombre), { method: 'DELETE' });
+    },
+    restaurarRespaldo: function (nombre) {
+      return request('/respaldo/restaurar/' + encodeURIComponent(nombre), {
+        method: 'POST',
+        body: '{}'
+      });
+    },
+    restaurarRespaldoArchivo: function (file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) {
+          reject(new Error('Seleccione un archivo .db de respaldo.'));
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          request('/respaldo/restaurar-archivo', {
+            method: 'POST',
+            body: JSON.stringify({
+              nombre: file.name,
+              contenido_base64: reader.result
+            })
+          }).then(resolve).catch(reject);
+        };
+        reader.onerror = function () {
+          reject(new Error('No se pudo leer el archivo.'));
+        };
+        reader.readAsDataURL(file);
       });
     }
   };

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Importación de Datos — Sanmy Taller</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html, body { height: 100%; }
+        body {
+            min-height: 100dvh; display: flex; flex-direction: column;
+            background: linear-gradient(180deg, #bfdbfe 0%, #dbeafe 45%, #e0f2fe 100%);
+            color: #1e293b;
+        }
+        .imp-header {
+            background: linear-gradient(180deg, #93c5fd 0%, #bfdbfe 100%);
+            border-bottom: 1px solid #60a5fa;
+            padding: 12px 20px 10px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .imp-header h1 { font-size: 26px; color: #0f172a; font-weight: bold; }
+        .imp-body {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            padding: 24px 16px 12px; overflow-y: auto;
+        }
+        .imp-body h2 {
+            font-size: 22px; color: #0f172a; margin-bottom: 22px; font-weight: bold;
+        }
+        .imp-opciones {
+            width: min(520px, 100%); display: flex; flex-direction: column; gap: 10px;
+        }
+        .imp-btn {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; min-height: 52px; padding: 10px 16px;
+            background: #fff; border: 1px solid #64748b; border-radius: 4px;
+            font-size: 16px; font-weight: bold; color: #0f172a; cursor: pointer;
+            box-shadow: 0 1px 0 rgba(255,255,255,.9) inset;
+            transition: background .12s;
+        }
+        .imp-btn:hover { background: #f8fafc; }
+        .imp-btn.activa { background: #e2e8f0; border-color: #475569; }
+        .imp-btn .ico { font-size: 28px; width: 44px; text-align: center; flex-shrink: 0; }
+        .imp-btn .txt { flex: 1; text-align: center; }
+        .imp-casillas {
+            width: min(520px, 100%); margin-bottom: 16px;
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+        }
+        .imp-casilla {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 16px; background: #fff; border: 1px solid #64748b;
+            border-radius: 6px; font-size: 15px; font-weight: bold; color: #0f172a;
+            text-decoration: none; cursor: pointer;
+        }
+        .imp-casilla:hover { background: #f8fafc; }
+        .imp-casilla.activa {
+            background: #e2e8f0; border-color: #475569;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,.08);
+        }
+        .imp-casilla input { width: 18px; height: 18px; accent-color: #2563eb; pointer-events: none; }
+        .imp-info {
+            width: min(720px, 100%); margin-top: 22px;
+            background: rgba(255,255,255,.55); border: 1px solid #93c5fd;
+            border-radius: 6px; padding: 14px 18px;
+            font-size: 13px; line-height: 1.55; color: #334155;
+        }
+        .imp-info strong { display: block; font-size: 14px; color: #0f172a; margin-bottom: 8px; }
+        .imp-accion {
+            width: min(520px, 100%); margin-top: 16px;
+            display: none; flex-direction: column; gap: 10px; align-items: stretch;
+        }
+        .imp-accion.visible { display: flex; }
+        .imp-accion label {
+            font-size: 13px; font-weight: bold; color: #1e3a5f;
+        }
+        .imp-accion input[type="file"] {
+            padding: 8px; background: #fff; border: 1px solid #94a3b8; border-radius: 6px; font-size: 13px;
+        }
+        .btn-importar {
+            border: none; border-radius: 8px; padding: 12px 18px;
+            font-size: 15px; font-weight: bold; cursor: pointer;
+            background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff;
+        }
+        .btn-importar:disabled { opacity: .55; cursor: wait; }
+        .btn-plantilla {
+            border: 1px solid #64748b; border-radius: 8px; padding: 9px 14px;
+            font-size: 13px; font-weight: bold; cursor: pointer; background: #fff; color: #1e3a5f;
+        }
+        #imp-estado { font-size: 13px; min-height: 20px; margin-top: 4px; }
+        .imp-footer {
+            flex-shrink: 0; padding: 10px 16px 14px;
+            display: flex; justify-content: flex-end; align-items: center;
+        }
+        .btn-salir {
+            min-width: 110px; border: 1px solid #64748b; border-radius: 6px;
+            background: #fff; color: #1e3a5f; font-weight: bold; font-size: 14px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 4px; padding: 8px 16px; text-decoration: none;
+        }
+        .btn-salir:hover { background: #f1f5f9; }
+        .btn-salir .ico { font-size: 30px; line-height: 1; }
+    </style>
+</head>
+<body>
+    <header class="imp-header">
+        <h1>Importación de Datos</h1>
+    </header>
+
+    <main class="imp-body">
+        <h2>¿Qué Desea Importar?</h2>
+
+        <div class="imp-casillas">
+            <a class="imp-casilla" id="casilla-clientes" href="/importar-clientes.html"><input type="checkbox"> 👥 Clientes</a>
+            <a class="imp-casilla" id="casilla-productos" href="/importar-productos.html"><input type="checkbox"> 📦 Productos</a>
+            <span class="imp-casilla activa" id="casilla-servicios"><input type="checkbox" checked> 🎨 Servicios</span>
+        </div>
+
+        <div class="imp-opciones" hidden aria-hidden="true">
+            <button type="button" class="imp-btn" id="btn-clientes" onclick="irImportarClientes()">
+                <span class="ico">👥</span>
+                <span class="txt">Clientes</span>
+            </button>
+            <button type="button" class="imp-btn" id="btn-productos" onclick="irImportarProductos()">
+                <span class="ico">📦</span>
+                <span class="txt">Productos</span>
+            </button>
+            <button type="button" class="imp-btn activa" id="btn-servicios" onclick="elegirTipo('servicios')">
+                <span class="ico">🎨</span>
+                <span class="txt">Servicios</span>
+            </button>
+        </div>
+
+        <div class="imp-info" id="imp-info"></div>
+
+        <div class="imp-accion visible" id="imp-accion">
+            <label for="imp-archivo">Archivo Excel (.xlsx, .xls, .csv)</label>
+            <input type="file" id="imp-archivo" accept=".xlsx,.xls,.csv,.ods">
+            <button type="button" class="btn-plantilla" onclick="descargarPlantilla()">⬇ Descargar plantilla Excel</button>
+            <button type="button" class="btn-importar" id="btn-ejecutar" onclick="ejecutarImport()">📥 Importar datos</button>
+            <div id="imp-estado"></div>
+        </div>
+    </main>
+
+    <footer class="imp-footer">
+        <a class="btn-salir" href="/configuracion.html"><span class="ico">🏠</span>Salir</a>
+    </footer>
+
+    <script src="licencia-sanmy.js"></script>
+    <script src="taller-api.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script>
+        var tipoActual = 'clientes';
+
+        var INFO = {
+            clientes: {
+                titulo: 'Recuerde: el formato del archivo tiene que ser Excel.',
+                texto: 'Importe clientes desde Excel. Columnas: Nombre, Apellidos, Cédula, Teléfono, E-mail. Use la pantalla de mapeo en Importar → Clientes.'
+            },
+            productos: {
+                titulo: 'Recuerde: el formato del archivo tiene que ser Excel.',
+                texto: 'Importe repuestos y productos del inventario. Columnas: Código, Nombre, Categoría, Proveedor, Cantidad, Stock mínimo, Costo, Precio, CABYS, Unidad, IVA (%). La primera fila puede ser encabezado.'
+            },
+            servicios: {
+                titulo: 'Recuerde: el formato del archivo tiene que ser Excel.',
+                texto: 'Importe servicios del taller (mano de obra, diagnóstico, etc.). Columnas: Nombre, Descripción, Precio, CABYS (opcional). Se guardan como servicios en el catálogo para usar en órdenes y facturación.'
+            }
+        };
+
+        var PLANTILLAS = {
+            clientes: [['Nombre', 'Apellidos', 'Cédula', 'Teléfono', 'Móvil/Celular', 'E_mail', 'Dirección', 'Población', 'Provincia', 'País', 'Código Postal']],
+            productos: [['Código', 'Nombre', 'Categoría', 'Proveedor', 'Cantidad', 'Stock mínimo', 'Costo', 'Precio', 'CABYS', 'Unidad', 'IVA']],
+            servicios: [['Nombre', 'Descripción', 'Precio', 'CABYS']]
+        };
+
+        function normalizarClave(s) {
+            return String(s || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '');
+        }
+
+        function valorFila(row, aliases) {
+            var keys = Object.keys(row);
+            var i, k, nk;
+            for (i = 0; i < keys.length; i++) {
+                k = keys[i];
+                nk = normalizarClave(k);
+                for (var j = 0; j < aliases.length; j++) {
+                    if (nk === aliases[j] || nk.indexOf(aliases[j]) === 0) {
+                        var v = row[k];
+                        if (v != null && String(v).trim() !== '') return String(v).trim();
+                    }
+                }
+            }
+            return '';
+        }
+
+        function numeroFila(row, aliases, def) {
+            var v = valorFila(row, aliases);
+            if (!v) return def == null ? 0 : def;
+            var n = parseFloat(String(v).replace(/[^\d.,-]/g, '').replace(',', '.'));
+            return isNaN(n) ? (def == null ? 0 : def) : n;
+        }
+
+        function irImportarProductos() {
+            window.location.href = '/importar-productos.html';
+        }
+
+        function irImportarClientes() {
+            window.location.href = '/importar-clientes.html';
+        }
+
+        function marcarCasillas(tipo) {
+            var casCli = document.getElementById('casilla-clientes');
+            var casProd = document.getElementById('casilla-productos');
+            var casSer = document.getElementById('casilla-servicios');
+            if (!casSer) return;
+            if (tipo === 'clientes') {
+                window.location.href = '/importar-clientes.html';
+                return;
+            }
+            if (tipo === 'productos') {
+                window.location.href = '/importar-productos.html';
+                return;
+            }
+            casCli.classList.remove('activa');
+            casProd.classList.remove('activa');
+            casSer.classList.add('activa');
+            var chkCli = casCli.querySelector('input');
+            var chkProd = casProd.querySelector('input');
+            var chkSer = casSer.querySelector('input');
+            if (chkCli) chkCli.checked = false;
+            if (chkProd) chkProd.checked = false;
+            if (chkSer) chkSer.checked = true;
+        }
+
+        function elegirTipo(tipo) {
+            if (tipo === 'clientes') {
+                irImportarClientes();
+                return;
+            }
+            if (tipo === 'productos') {
+                irImportarProductos();
+                return;
+            }
+            tipoActual = tipo;
+            marcarCasillas(tipo);
+            ['clientes', 'productos', 'servicios'].forEach(function (t) {
+                var btn = document.getElementById('btn-' + t);
+                if (btn) btn.classList.toggle('activa', t === tipo);
+            });
+            var info = INFO[tipo];
+            document.getElementById('imp-info').innerHTML =
+                '<strong>' + info.titulo + '</strong>' + info.texto;
+            document.getElementById('imp-estado').textContent = '';
+            document.getElementById('imp-archivo').value = '';
+        }
+
+        function descargarPlantilla() {
+            if (typeof XLSX === 'undefined') {
+                alert('No se cargó la librería Excel. Revise su conexión a internet.');
+                return;
+            }
+            var ws = XLSX.utils.aoa_to_sheet(PLANTILLAS[tipoActual]);
+            var wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, tipoActual);
+            XLSX.writeFile(wb, 'plantilla_' + tipoActual + '_sanmy.xlsx');
+        }
+
+        function leerArchivo(file) {
+            return new Promise(function (resolve, reject) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    try {
+                        var data = new Uint8Array(e.target.result);
+                        var wb = XLSX.read(data, { type: 'array' });
+                        var sheet = wb.Sheets[wb.SheetNames[0]];
+                        var filas = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+                        resolve(filas);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function importarClientes(filas) {
+            var ok = 0, err = 0, msgs = [];
+            for (var i = 0; i < filas.length; i++) {
+                var r = filas[i];
+                var nombre = valorFila(r, ['nombre', 'nombres', 'primernombre']);
+                if (!nombre) continue;
+                var tel = valorFila(r, ['telefono', 'tel', 'movil', 'celular', 'movilcelular']);
+                var datos = {
+                    nombre: nombre,
+                    apellidos: valorFila(r, ['apellidos', 'apellido', 'apellido1']),
+                    identificacion: valorFila(r, ['cedula', 'cifnif', 'cif', 'nif', 'identificacion', 'nit']),
+                    telefono: tel,
+                    email: valorFila(r, ['email', 'correo', 'mail'])
+                };
+                try {
+                    await TallerAPI.crearCliente(datos);
+                    ok++;
+                } catch (e) {
+                    err++;
+                    if (msgs.length < 3) msgs.push('Fila ' + (i + 2) + ': ' + e.message);
+                }
+            }
+            return { ok: ok, err: err, msgs: msgs };
+        }
+
+        async function importarProductos(filas, esServicio) {
+            var ok = 0, err = 0, msgs = [];
+            for (var i = 0; i < filas.length; i++) {
+                var r = filas[i];
+                var nombre = valorFila(r, ['nombre', 'descripcion', 'servicio', 'producto']);
+                if (!nombre) continue;
+                var ivaVal = numeroFila(r, ['iva', 'impuesto'], 13);
+                if (ivaVal > 1) ivaVal = ivaVal / 100;
+                if (!ivaVal) ivaVal = 0.13;
+                var datos = {
+                    codigo: valorFila(r, ['codigo', 'code', 'sku']),
+                    nombre: nombre,
+                    categoria: esServicio ? 'Servicio' : (valorFila(r, ['categoria', 'familia', 'rubro']) || 'General'),
+                    proveedor: valorFila(r, ['proveedor', 'supplier']),
+                    cantidad: esServicio ? 0 : numeroFila(r, ['cantidad', 'stock', 'existencia'], 0),
+                    stock_minimo: esServicio ? 0 : numeroFila(r, ['stockminimo', 'minimo'], 0),
+                    costo: numeroFila(r, ['costo', 'cost'], 0),
+                    precio: numeroFila(r, ['precio', 'price', 'pvp'], 0),
+                    cabys: valorFila(r, ['cabys', 'codigocabys']),
+                    unidad_medida: valorFila(r, ['unidad', 'um']) || (esServicio ? 'Sp' : 'Unid'),
+                    iva: ivaVal
+                };
+                try {
+                    await TallerAPI.crearItemInventario(datos);
+                    ok++;
+                } catch (e) {
+                    err++;
+                    if (msgs.length < 3) msgs.push('Fila ' + (i + 2) + ': ' + e.message);
+                }
+            }
+            return { ok: ok, err: err, msgs: msgs };
+        }
+
+        async function ejecutarImport() {
+            var estado = document.getElementById('imp-estado');
+            var input = document.getElementById('imp-archivo');
+            var btn = document.getElementById('btn-ejecutar');
+            if (!input.files || !input.files[0]) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'Seleccione un archivo Excel primero.';
+                return;
+            }
+            if (typeof XLSX === 'undefined') {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'No se cargó la librería Excel. Revise su conexión.';
+                return;
+            }
+            btn.disabled = true;
+            estado.style.color = '#475569';
+            estado.textContent = 'Leyendo archivo…';
+            try {
+                var filas = await leerArchivo(input.files[0]);
+                if (!filas.length) {
+                    estado.style.color = '#b91c1c';
+                    estado.textContent = 'El archivo no tiene filas de datos.';
+                    return;
+                }
+                estado.textContent = 'Importando ' + filas.length + ' fila(s)…';
+                var res;
+                if (tipoActual === 'clientes') res = await importarClientes(filas);
+                else if (tipoActual === 'productos') res = await importarProductos(filas, false);
+                else res = await importarProductos(filas, true);
+                estado.style.color = res.err ? '#b45309' : '#15803d';
+                estado.textContent = '✓ Importados: ' + res.ok + (res.err ? ' · Errores: ' + res.err : '') +
+                    (res.msgs.length ? ' — ' + res.msgs.join(' | ') : '');
+            } catch (e) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'No se pudo importar: ' + (e.message || e);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        (function init() {
+            var params = new URLSearchParams(window.location.search);
+            var t = params.get('tipo');
+            if (t === 'productos') {
+                window.location.href = '/importar-productos.html';
+                return;
+            }
+            if (t === 'clientes') {
+                window.location.href = '/importar-clientes.html';
+                return;
+            }
+            if (t && INFO[t]) elegirTipo(t);
+            else window.location.href = '/importar-clientes.html';
+        })();
+    </script>
+</body>
+</html>

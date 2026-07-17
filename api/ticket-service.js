@@ -4,6 +4,8 @@
  */
 
 const { getConfig, setConfig } = require('../db/database');
+const empresaService = require('./empresa-service');
+const logoService = require('./logo-service');
 
 const TICKET_KEYS = [
   'ticket_cabecera',
@@ -58,8 +60,10 @@ function getTicketConfig(db) {
   TICKET_KEYS.forEach(function (key) {
     cfg[key] = getConfig(db, key, DEFAULTS[key] || '');
   });
+  const activaId = empresaService.getEmpresaActivaId(db);
   return {
     nombre_negocio: nombre,
+    logo_url: activaId ? logoService.urlLogo(activaId) : null,
     cabecera: cfg.ticket_cabecera || '',
     pie: cfg.ticket_pie || DEFAULTS.ticket_pie,
     caracteres_linea: parseInt(cfg.ticket_caracteres_linea, 10) || 48,

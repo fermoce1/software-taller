@@ -10,6 +10,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "jimp": "^1.6.1",
+    "jsqr": "^1.4.0",
     "pdfkit": "^0.19.1",
     "qrcode": "^1.5.4"
   }

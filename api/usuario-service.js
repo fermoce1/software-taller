@@ -34,6 +34,10 @@ function normalizarUsuario(login) {
     .replace(/\s+/g, '');
 }
 
+function tienePasswordHash(row) {
+  return !!(row && row.password_hash && String(row.password_hash).trim());
+}
+
 function mapUsuario(row, incluirInterno) {
   if (!row) return null;
   const u = {
@@ -47,6 +51,7 @@ function mapUsuario(row, incluirInterno) {
     email: row.email || '',
     telefono: row.telefono || '',
     activo: row.activo !== 0,
+    tiene_password: tienePasswordHash(row),
     fecha_creacion: row.fecha_creacion || null,
     fecha_actualizacion: row.fecha_actualizacion || null
   };
@@ -59,7 +64,7 @@ function mapUsuario(row, incluirInterno) {
 function listarUsuarios(db, opts) {
   opts = opts || {};
   let sql =
-    'SELECT id, nombre, apellido, usuario, rol, email, telefono, activo, fecha_creacion, fecha_actualizacion FROM usuarios';
+    'SELECT id, nombre, apellido, usuario, rol, email, telefono, activo, password_hash, fecha_creacion, fecha_actualizacion FROM usuarios';
   const params = [];
   if (!opts.todos) {
     sql += ' WHERE activo = 1';
@@ -105,7 +110,7 @@ function crearUsuario(db, datos) {
   if (!nombre) throw new Error('El nombre es obligatorio');
   if (!usuario) throw new Error('El usuario de acceso es obligatorio');
   if (usuario.length < 3) throw new Error('El usuario debe tener al menos 3 caracteres');
-  if (!password || password.length < 4) throw new Error('La contraseña debe tener al menos 4 caracteres');
+  if (password && password.length < 4) throw new Error('La contraseña debe tener al menos 4 caracteres');
   if (usuarioLoginExiste(db, usuario)) throw new Error('Ese usuario de acceso ya existe');
 
   const result = db
@@ -117,7 +122,7 @@ function crearUsuario(db, datos) {
       nombre,
       String(datos.apellido || '').trim(),
       usuario,
-      hashPassword(password),
+      password ? hashPassword(password) : null,
       rol,
       String(datos.email || '').trim() || null,
       String(datos.telefono || '').trim() || null,
@@ -168,11 +173,17 @@ function actualizarUsuario(db, id, datos) {
     campos.push('activo = ?');
     params.push(datos.activo === false || datos.activo === 0 ? 0 : 1);
   }
-  if (datos.password) {
+  if (datos.password != null) {
     const password = String(datos.password).trim();
-    if (password.length < 4) throw new Error('La contraseña debe tener al menos 4 caracteres');
-    campos.push('password_hash = ?');
-    params.push(hashPassword(password));
+    if (!password) {
+      campos.push('password_hash = ?');
+      params.push(null);
+    } else if (password.length < 4) {
+      throw new Error('La contraseña debe tener al menos 4 caracteres');
+    } else {
+      campos.push('password_hash = ?');
+      params.push(hashPassword(password));
+    }
   }
 
   if (!campos.length) return obtenerUsuario(db, id);
@@ -200,15 +211,32 @@ function desactivarUsuario(db, id) {
 }
 
 function loginUsuario(db, datos) {
-  const usuario = normalizarUsuario(datos.usuario);
+  datos = datos || {};
   const password = String(datos.password || '');
-  if (!usuario || !password) throw new Error('Usuario y contraseña son obligatorios');
+
+  if (datos.id) {
+    const row = db.prepare('SELECT * FROM usuarios WHERE id = ? AND activo = 1').get(Number(datos.id));
+    if (!row) throw new Error('Usuario no encontrado');
+    if (tienePasswordHash(row)) {
+      if (password && !verifyPassword(password, row.password_hash)) {
+        throw new Error('Contraseña incorrecta');
+      }
+    }
+    return mapUsuario(row);
+  }
+
+  const usuario = normalizarUsuario(datos.usuario);
+  if (!usuario) throw new Error('Usuario es obligatorio');
 
   const row = db
     .prepare('SELECT * FROM usuarios WHERE LOWER(usuario) = ? AND activo = 1')
     .get(usuario);
-  if (!row || !verifyPassword(password, row.password_hash)) {
-    throw new Error('Usuario o contraseña incorrectos');
+  if (!row) throw new Error('Usuario o contraseña incorrectos');
+
+  if (tienePasswordHash(row)) {
+    if (password && !verifyPassword(password, row.password_hash)) {
+      throw new Error('Usuario o contraseña incorrectos');
+    }
   }
 
   return mapUsuario(row);
@@ -248,20 +276,18 @@ function seedDefaults(db) {
     .all();
   const tieneAdmin = db.prepare("SELECT id FROM usuarios WHERE rol = 'admin' AND activo = 1 LIMIT 1").get();
 
-  sinHash.forEach(function (u, index) {
-    const login =
-      u.usuario ||
-      String(u.nombre || 'usuario')
+  sinHash.forEach(function (u) {
+    if (!u.usuario) {
+      const login = String(u.nombre || 'usuario')
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '');
-    const esPrimero = index === 0 && !tieneAdmin;
-    const rol = esPrimero ? 'admin' : u.rol || 'tecnico';
-    const pass = esPrimero ? 'admin' : '1234';
-    db.prepare(
-      'UPDATE usuarios SET usuario = ?, password_hash = ?, rol = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?'
-    ).run(login, hashPassword(pass), rol, u.id);
+      db.prepare('UPDATE usuarios SET usuario = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id = ?').run(
+        login || 'usuario' + u.id,
+        u.id
+      );
+    }
   });
 
   const admin = db.prepare("SELECT id FROM usuarios WHERE rol = 'admin' AND activo = 1 LIMIT 1").get();
@@ -269,7 +295,7 @@ function seedDefaults(db) {
     db.prepare(
       `INSERT INTO usuarios (nombre, apellido, usuario, password_hash, rol, activo)
        VALUES (?, ?, ?, ?, ?, 1)`
-    ).run('Administrador', '', 'admin', hashPassword('admin'), 'admin');
+    ).run('Administrador', '', 'admin', null, 'admin');
   }
 }
 

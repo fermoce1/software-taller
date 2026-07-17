@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sanmy Taller">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Sanmy Taller — App</title>
+    <link rel="manifest" href="/manifest-app.webmanifest">
+    <link rel="icon" href="/img/app/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/img/app/icon-192.png">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            min-height: 100%;
+            min-height: 100dvh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 45%, #2563eb 100%);
+            color: #fff;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+        }
+        .app {
+            width: 100%;
+            max-width: 420px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .logo-wrap {
+            margin: 12px 0 8px;
+            width: min(220px, 70vw);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-wrap img {
+            width: 100%;
+            max-height: 120px;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 16px rgba(0,0,0,.35));
+        }
+        .logo-fallback {
+            width: 88px;
+            height: 88px;
+            border-radius: 20px;
+            background: rgba(255,255,255,.12);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+        }
+        h1 {
+            font-size: 1.35rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .sub {
+            font-size: .9rem;
+            opacity: .85;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .card {
+            width: 100%;
+            background: rgba(255,255,255,.97);
+            color: #1e293b;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 12px 32px rgba(0,0,0,.25);
+        }
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform .08s ease, box-shadow .15s ease;
+        }
+        .btn:active { transform: scale(.98); }
+        .btn-prim {
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(37,99,235,.35);
+            margin-bottom: 10px;
+        }
+        .btn-sec {
+            background: #e2e8f0;
+            color: #1e3a5f;
+            margin-bottom: 10px;
+        }
+        .btn-foto {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(16,185,129,.35);
+            margin-bottom: 10px;
+        }
+        .btn-ghost {
+            background: transparent;
+            color: #64748b;
+            font-size: .9rem;
+            padding: 10px;
+            margin-top: 6px;
+        }
+        .btn-instalar {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(124,58,237,.35);
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+            padding: 16px 14px;
+        }
+        .btn-instalar[hidden] { display: none !important; }
+        .instalar-pasos {
+            font-size: .88rem;
+            color: #1e293b;
+            background: #faf5ff;
+            border: 2px solid #c4b5fd;
+            border-radius: 12px;
+            padding: 14px 14px 12px;
+            margin: 0 0 14px;
+            line-height: 1.5;
+        }
+        .instalar-pasos strong { color: #5b21b6; }
+        .instalar-pasos .titulo-inst {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #5b21b6;
+        }
+        .instalar-pasos ol { margin: 6px 0 0 18px; }
+        .instalar-pasos li { margin: 6px 0; }
+        .instalar-pasos .resaltado {
+            background: #ede9fe;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .aviso-instalar {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #1e3a5f;
+            color: #fff;
+            font-size: .9rem;
+            line-height: 1.45;
+        }
+        .aviso-instalar.visible { display: block; }
+        .aviso-instalar .grande {
+            font-size: 1.35rem;
+            font-weight: bold;
+            letter-spacing: .05em;
+            margin: 8px 0;
+            text-align: center;
+        }
+        .modo-app {
+            display: none;
+            font-size: .72rem;
+            background: rgba(255,255,255,.18);
+            padding: 3px 10px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+        }
+        .modo-app.visible { display: inline-block; }
+        .saved {
+            font-size: .82rem;
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+        .saved strong { color: #1e3a5f; }
+        .hint {
+            margin-top: 16px;
+            font-size: .78rem;
+            opacity: .75;
+            text-align: center;
+            line-height: 1.45;
+        }
+        .scanner-view {
+            display: none;
+            width: 100%;
+            flex: 1;
+            flex-direction: column;
+        }
+        .scanner-view.activo { display: flex; }
+        .home-view.oculto { display: none; }
+        #reader-wrap {
+            position: relative;
+            width: 100%;
+            min-height: min(52vh, 360px);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+        #reader {
+            width: 100%;
+            min-height: min(52vh, 360px);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+        #reader video { border-radius: 12px; width: 100% !important; height: auto !important; object-fit: cover; }
+        #reader img { display: none !important; }
+        .scanner-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+        .scanner-head h2 { font-size: 1.1rem; }
+        .aviso-http {
+            background: rgba(251,191,36,.15);
+            border: 1px solid rgba(251,191,36,.45);
+            color: #fef3c7;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: .82rem;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+        .manual {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .manual label {
+            display: block;
+            font-size: .82rem;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .manual input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: .9rem;
+            margin-bottom: 8px;
+        }
+        .msg {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: .85rem;
+            display: none;
+        }
+        .msg.error { display: block; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .msg.ok { display: block; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+        .msg.info { display: block; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            margin-right: 4px;
+        }
+        #input-foto-qr { display: none; }
+        .cargando-cam {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,.88);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: .9rem;
+            text-align: center;
+            padding: 16px;
+        }
+        .cargando-cam.oculto { display: none; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="logo-wrap">
+            <img src="/img/inicio/logo-sanmy.png" alt="Sanmy Taller" id="logo-img"
+                 onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex';">
+            <div class="logo-fallback" id="logo-fallback">🔧</div>
+        </div>
+
+        <div class="home-view" id="home-view">
+            <span class="modo-app" id="badge-modo-app">📱 App instalada</span>
+            <h1>Sanmy Taller</h1>
+            <p class="sub">Instale el icono en el celular y conéctelo al taller con el QR de la PC. Así no desaparece al cerrar el navegador.</p>
+
+            <div class="card">
+                <div class="saved" id="saved-info" hidden></div>
+                <button type="button" class="btn btn-instalar" id="btn-instalar">
+                    📲 Instalar icono en este celular
+                </button>
+                <div class="aviso-instalar" id="aviso-instalar">
+                    En Chrome toque el menú de tres puntos:
+                    <div class="grande">⋮</div>
+                    Luego elija<br>
+                    <strong>«Instalar aplicación»</strong><br>
+                    o<br>
+                    <strong>«Añadir a pantalla de inicio»</strong>
+                </div>
+                <div class="instalar-pasos" id="instalar-pasos">
+                    <strong class="titulo-inst">Paso a paso (Android / Chrome)</strong>
+                    <ol>
+                        <li>Toque el botón morado <strong>Instalar icono</strong> arriba (o el menú <span class="resaltado">⋮</span>).</li>
+                        <li>Elija <span class="resaltado">Instalar aplicación</span> o <span class="resaltado">Añadir a pantalla de inicio</span>.</li>
+                        <li>Confirme <strong>Instalar</strong> / <strong>Añadir</strong>.</li>
+                        <li>Ya verá el icono <strong>Sanmy Taller</strong> en el inicio del celular.</li>
+                    </ol>
+                </div>
+                <button type="button" class="btn btn-prim" id="btn-abrir" hidden>
+                    <span class="status-dot"></span> Abrir Sanmy Taller
+                </button>
+                <button type="button" class="btn btn-prim" id="btn-escanear">
+                    📷 Escanear QR del taller
+                </button>
+                <button type="button" class="btn btn-foto" id="btn-foto-home">
+                    📸 Fotografiar QR (si la cámara no abre)
+                </button>
+                <button type="button" class="btn btn-ghost" id="btn-cambiar" hidden>
+                    Cambiar taller / volver a escanear
+                </button>
+                <input type="file" id="input-foto-qr" accept="image/*" capture="environment">
+
+                <div class="manual">
+                    <label for="url-manual">O pegue la dirección del taller</label>
+                    <input type="url" id="url-manual" placeholder="http://192.168.1.3:3020/abrir.html" autocomplete="off">
+                    <button type="button" class="btn btn-sec" id="btn-manual" style="margin-bottom:0;">Conectar</button>
+                </div>
+                <div class="msg" id="msg-home"></div>
+            </div>
+
+            <p class="hint">
+                Use el QR <strong>«QR del taller»</strong> (izquierda en el PC) para conectar.<br>
+                El QR <strong>«App celular»</strong> (derecha) abre esta pantalla de instalación.
+            </p>
+        </div>
+
+        <div class="scanner-view" id="scanner-view">
+            <div class="scanner-head">
+                <h2>Escanear QR</h2>
+                <button type="button" class="btn btn-ghost" id="btn-cancelar" style="width:auto;padding:8px 12px;color:#fff;">✕ Cerrar</button>
+            </div>
+            <div id="aviso-http-scan" class="aviso-http" hidden>
+                En red local (http) la cámara en vivo puede estar bloqueada. Use <strong>Fotografiar QR</strong> abajo.
+            </div>
+            <div id="reader-wrap">
+                <div class="cargando-cam" id="cargando-cam">Activando cámara…</div>
+                <div id="reader"></div>
+            </div>
+            <button type="button" class="btn btn-foto" id="btn-foto-scan" style="margin-top:12px;">
+                📸 Fotografiar QR del taller
+            </button>
+            <p class="hint" style="margin-top:12px;">Apunte al QR de la pantalla de inicio del taller (PC).</p>
+            <div class="msg" id="msg-scan"></div>
+        </div>
+    </div>
+
+    <script src="/lib/jsQR.js"></script>
+    <script src="/lib/html5-qrcode.min.js"></script>
+    <script>
+    (function () {
+        var STORAGE_KEY = 'sanmy_taller_server_ip';
+        var STORAGE_URL = 'sanmy_taller_app_url';
+        var DEFAULT_PORT = 3020;
+        var scanner = null;
+        var escaneando = false;
+        var libLista = typeof Html5Qrcode !== 'undefined';
+        var intentoCamaraNativa = false;
+
+        var homeView = document.getElementById('home-view');
+        var scannerView = document.getElementById('scanner-view');
+        var savedInfo = document.getElementById('saved-info');
+        var btnAbrir = document.getElementById('btn-abrir');
+        var btnEscanear = document.getElementById('btn-escanear');
+        var btnCambiar = document.getElementById('btn-cambiar');
+        var btnCancelar = document.getElementById('btn-cancelar');
+        var btnManual = document.getElementById('btn-manual');
+        var btnFotoHome = document.getElementById('btn-foto-home');
+        var btnFotoScan = document.getElementById('btn-foto-scan');
+        var btnInstalar = document.getElementById('btn-instalar');
+        var instalarPasos = document.getElementById('instalar-pasos');
+        var avisoInstalar = document.getElementById('aviso-instalar');
+        var badgeModoApp = document.getElementById('badge-modo-app');
+        var inputFoto = document.getElementById('input-foto-qr');
+        var urlManual = document.getElementById('url-manual');
+        var msgHome = document.getElementById('msg-home');
+        var msgScan = document.getElementById('msg-scan');
+        var cargandoCam = document.getElementById('cargando-cam');
+        var avisoHttp = document.getElementById('aviso-http-scan');
+        var readerEl = document.getElementById('reader');
+        var deferredInstall = null;
+
+        var camaraPermitida = !!(navigator.mediaDevices &&
+            typeof navigator.mediaDevices.getUserMedia === 'function');
+
+        function esAppInstalada() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                window.navigator.standalone === true;
+        }
+        function abrioDesdeIcono() {
+            return esAppInstalada() || /fuente=icono/i.test(location.search);
+        }
+
+        function esRedLocalHttp() {
+            return location.protocol === 'http:' &&
+                location.hostname !== 'localhost' &&
+                location.hostname !== '127.0.0.1';
+        }
+
+        function mostrarCargando(texto) {
+            cargandoCam.textContent = texto || 'Activando cámara…';
+            cargandoCam.classList.remove('oculto');
+        }
+        function ocultarCargando() {
+            cargandoCam.classList.add('oculto');
+        }
+
+        function mostrarMsg(el, texto, tipo) {
+            el.textContent = texto;
+            el.className = 'msg ' + (tipo || 'error');
+        }
+        function limpiarMsg(el) {
+            el.className = 'msg';
+            el.textContent = '';
+        }
+
+        function guardarHost(hostPort) {
+            try { localStorage.setItem(STORAGE_KEY, hostPort); } catch (e) { /* ignore */ }
+        }
+        function guardarUrlAbrir(url) {
+            try { localStorage.setItem(STORAGE_URL, url); } catch (e) { /* ignore */ }
+        }
+        function getUrlGuardada() {
+            try { return (localStorage.getItem(STORAGE_URL) || '').trim(); } catch (e) { return ''; }
+        }
+
+        function parseSanmyUrl(texto) {
+            var raw = String(texto || '').trim();
+            if (!raw) return null;
+
+            var urlMatch = raw.match(/https?:\/\/[^\s"'<>]+/i);
+            if (urlMatch) raw = urlMatch[0].replace(/[.,;]+$/, '');
+
+            if (!/^https?:\/\//i.test(raw)) {
+                var hostMatch = raw.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\s*[:\s]\s*(\d{2,5})\b/);
+                if (hostMatch) {
+                    raw = 'http://' + hostMatch[1] + ':' + hostMatch[2] + '/abrir.html';
+                }
+            }
+
+            try {
+                var u = new URL(raw);
+                if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+
+                var portNum = u.port ? parseInt(u.port, 10) : (u.protocol === 'https:' ? 443 : 80);
+                var esSanmy = portNum === DEFAULT_PORT ||
+                    /abrir|index|app|taller/i.test(u.pathname || '') ||
+                    u.pathname === '/' ||
+                    u.pathname === '';
+
+                if (!esSanmy && portNum !== DEFAULT_PORT) return null;
+
+                var hostPort = u.hostname + ':' + (u.port || DEFAULT_PORT);
+                if (!u.port && (portNum === 80 || portNum === 443)) {
+                    hostPort = u.hostname + ':' + DEFAULT_PORT;
+                }
+
+                var base = u.protocol + '//' + u.hostname + ':' + (u.port || DEFAULT_PORT);
+                var openUrl = base.replace(/\/$/, '') + '/abrir.html';
+                return { hostPort: hostPort, openUrl: openUrl, textoOriginal: raw };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function procesarTextoQr(texto, msgEl) {
+            var limpio = String(texto || '').trim();
+            if (!limpio) return false;
+            var parsed = parseSanmyUrl(limpio);
+            if (parsed) {
+                return conectar(parsed.openUrl, msgEl);
+            }
+            if (/^https?:\/\//i.test(limpio)) {
+                return conectar(limpio, msgEl);
+            }
+            mostrarMsg(msgEl, 'QR leído pero no es de Sanmy Taller. Use el QR «del taller» (izquierda en el PC), no el de la app.', 'error');
+            return false;
+        }
+
+        function conectar(texto, msgEl) {
+            limpiarMsg(msgEl || msgHome);
+            var parsed = parseSanmyUrl(texto);
+            if (!parsed) {
+                mostrarMsg(msgEl || msgHome, 'QR o dirección no válida. Use el QR del taller (columna izquierda del PC).');
+                return false;
+            }
+            guardarHost(parsed.hostPort);
+            guardarUrlAbrir(parsed.openUrl);
+            mostrarMsg(msgEl || msgHome, 'Conectando al taller…', 'ok');
+            setTimeout(function () {
+                window.location.href = parsed.openUrl;
+            }, 300);
+            return true;
+        }
+
+        function actualizarHome() {
+            var url = getUrlGuardada();
+            var instalada = esAppInstalada();
+            if (badgeModoApp) {
+                badgeModoApp.classList.toggle('visible', instalada);
+            }
+            if (url) {
+                savedInfo.hidden = false;
+                savedInfo.innerHTML = 'Taller guardado: <strong>' + url.replace(/^https?:\/\//, '') + '</strong>';
+                btnAbrir.hidden = false;
+                btnCambiar.hidden = false;
+                urlManual.value = url;
+            } else {
+                savedInfo.hidden = true;
+                btnAbrir.hidden = true;
+                btnCambiar.hidden = true;
+            }
+            if (instalada) {
+                if (btnInstalar) btnInstalar.hidden = true;
+                if (instalarPasos) instalarPasos.hidden = true;
+                if (avisoInstalar) avisoInstalar.classList.remove('visible');
+            } else if (btnInstalar) {
+                btnInstalar.hidden = false;
+            }
+            if (!camaraPermitida) {
+                btnEscanear.textContent = '📷 Escanear QR del taller';
+            } else if (esRedLocalHttp()) {
+                btnEscanear.textContent = '📷 Escanear QR (cámara del celular)';
+            }
+        }
+
+        function elegirCamaraTrasera(cameras) {
+            if (!cameras || !cameras.length) return null;
+            var back = null;
+            for (var i = 0; i < cameras.length; i++) {
+                var label = (cameras[i].label || '').toLowerCase();
+                if (/back|rear|environment|trás|trasera|posterior/.test(label)) {
+                    back = cameras[i];
+                    break;
+                }
+            }
+            if (back) return back.id;
+            return cameras.length > 1 ? cameras[cameras.length - 1].id : cameras[0].id;
+        }
+
+        async function pedirPermisoCamara() {
+            if (!camaraPermitida) return false;
+            try {
+                var stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' } },
+                    audio: false
+                });
+                stream.getTracks().forEach(function (t) { t.stop(); });
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function detenerScanner() {
+            if (!scanner || !escaneando) {
+                ocultarCargando();
+                return;
+            }
+            try {
+                await scanner.stop();
+                scanner.clear();
+            } catch (e) { /* ignore */ }
+            escaneando = false;
+            ocultarCargando();
+        }
+
+        function abrirCamaraNativa(msgEl) {
+            intentoCamaraNativa = true;
+            mostrarMsg(msgEl, 'Abriendo cámara del celular… Apunte al QR del PC.', 'info');
+            abrirFoto(msgEl);
+        }
+
+        function mostrarScanner(opciones) {
+            opciones = opciones || {};
+            intentoCamaraNativa = false;
+            homeView.classList.add('oculto');
+            scannerView.classList.add('activo');
+            limpiarMsg(msgScan);
+            avisoHttp.hidden = !esRedLocalHttp();
+
+            if (!libLista) {
+                mostrarMsg(msgScan, 'No se cargó el lector QR. Use Fotografiar QR o escriba la dirección.', 'error');
+                ocultarCargando();
+                readerEl.style.display = 'none';
+                return;
+            }
+
+            readerEl.style.display = 'block';
+            readerEl.innerHTML = '';
+
+            if (esRedLocalHttp() && !opciones.forzarVivo) {
+                ocultarCargando();
+                mostrarMsg(msgScan, 'En WiFi local la cámara en vivo suele estar bloqueada. Abriendo la cámara del celular…', 'info');
+                setTimeout(function () { abrirCamaraNativa(msgScan); }, 400);
+                return;
+            }
+
+            if (!camaraPermitida) {
+                ocultarCargando();
+                mostrarMsg(msgScan, 'Use el botón verde para fotografiar el QR del taller.', 'info');
+                setTimeout(function () { abrirCamaraNativa(msgScan); }, 400);
+                return;
+            }
+
+            mostrarCargando('Pidiendo permiso de cámara…');
+            setTimeout(function () { iniciarScanner(); }, 200);
+        }
+
+        function mostrarHome() {
+            detenerScanner();
+            scannerView.classList.remove('activo');
+            homeView.classList.remove('oculto');
+        }
+
+        function onScanOk(decoded) {
+            if (!decoded) return;
+            detenerScanner();
+            procesarTextoQr(decoded, msgScan);
+        }
+
+        function leerQrConJsQrEnCanvas(file) {
+            return new Promise(function (resolve, reject) {
+                if (typeof jsQR === 'undefined') {
+                    resolve(null);
+                    return;
+                }
+                var objUrl = URL.createObjectURL(file);
+                var img = new Image();
+                img.onload = function () {
+                    URL.revokeObjectURL(objUrl);
+                    var scales = [1, 1.25, 1.5, 2, 0.75, 0.5];
+                    for (var si = 0; si < scales.length; si++) {
+                        var scale = scales[si];
+                        var w = Math.max(1, Math.floor(img.width * scale));
+                        var h = Math.max(1, Math.floor(img.height * scale));
+                        var canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        var ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.drawImage(img, 0, 0, w, h);
+                        var id = ctx.getImageData(0, 0, w, h);
+                        var code = jsQR(id.data, w, h, { inversionAttempts: 'attemptBoth' });
+                        if (code && code.data) {
+                            resolve(String(code.data).trim());
+                            return;
+                        }
+                    }
+                    resolve(null);
+                };
+                img.onerror = function () {
+                    URL.revokeObjectURL(objUrl);
+                    reject(new Error('No se pudo cargar la imagen'));
+                };
+                img.src = objUrl;
+            });
+        }
+
+        function leerQrConHtml5(file) {
+            return new Promise(function (resolve) {
+                if (!libLista) {
+                    resolve(null);
+                    return;
+                }
+                var tempId = 'qr-file-reader';
+                var temp = document.getElementById(tempId);
+                if (!temp) {
+                    temp = document.createElement('div');
+                    temp.id = tempId;
+                    temp.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;';
+                    document.body.appendChild(temp);
+                }
+                var fileScanner = new Html5Qrcode(tempId);
+                fileScanner.scanFile(file, false).then(function (texto) {
+                    fileScanner.clear().catch(function () { /* ignore */ });
+                    resolve(String(texto || '').trim());
+                }).catch(function () {
+                    fileScanner.clear().catch(function () { /* ignore */ });
+                    resolve(null);
+                });
+            });
+        }
+
+        function leerQrEnServidor(file) {
+            return new Promise(function (resolve) {
+                var reader = new FileReader();
+                reader.onload = function () {
+                    var baseUrl = location.protocol + '//' + location.hostname + ':' + (location.port || DEFAULT_PORT);
+                    fetch(baseUrl + '/api/red/decodificar-qr', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imagen: reader.result })
+                    }).then(function (r) { return r.json(); }).then(function (data) {
+                        resolve(data && data.ok && data.texto ? String(data.texto).trim() : null);
+                    }).catch(function () { resolve(null); });
+                };
+                reader.onerror = function () { resolve(null); };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function escanearDesdeFoto(file, msgEl) {
+            if (!file) return;
+            limpiarMsg(msgEl);
+            mostrarMsg(msgEl, 'Leyendo QR de la foto…', 'info');
+
+            var texto = null;
+            try {
+                texto = await leerQrConJsQrEnCanvas(file);
+            } catch (e) { /* siguiente método */ }
+
+            if (!texto) {
+                texto = await leerQrConHtml5(file);
+            }
+            if (!texto) {
+                texto = await leerQrEnServidor(file);
+            }
+
+            if (texto) {
+                if (procesarTextoQr(texto, msgEl)) return;
+            }
+
+            mostrarMsg(msgEl,
+                'No se pudo leer el QR. Acérquese al código «QR del taller» (izquierda en el PC), buena luz, sin reflejos. O escriba la dirección abajo.',
+                'error');
+        }
+
+        async function iniciarScanner() {
+            if (!libLista) return;
+            await detenerScanner();
+            readerEl.innerHTML = '';
+            mostrarCargando('Activando cámara…');
+
+            var permiso = await pedirPermisoCamara();
+            if (!permiso) {
+                ocultarCargando();
+                mostrarMsg(msgScan, 'No se pudo usar la cámara en vivo. Abriendo cámara del celular…', 'info');
+                setTimeout(function () { abrirCamaraNativa(msgScan); }, 500);
+                return;
+            }
+
+            scanner = new Html5Qrcode('reader');
+            escaneando = true;
+
+            var cameraConfig = { facingMode: 'environment' };
+            try {
+                var cameras = await Html5Qrcode.getCameras();
+                var camId = elegirCamaraTrasera(cameras);
+                if (camId) cameraConfig = camId;
+            } catch (e) { /* usar facingMode */ }
+
+            try {
+                await scanner.start(
+                    cameraConfig,
+                    {
+                        fps: 12,
+                        qrbox: function (w, h) {
+                            var s = Math.min(w, h) * 0.75;
+                            return { width: Math.floor(s), height: Math.floor(s) };
+                        },
+                        aspectRatio: 1.0
+                    },
+                    onScanOk,
+                    function () { /* sin QR en frame */ }
+                );
+                ocultarCargando();
+                return;
+            } catch (err) {
+                try { await scanner.stop(); scanner.clear(); } catch (e2) { /* ignore */ }
+                escaneando = false;
+            }
+
+            var configs = [
+                { facingMode: { exact: 'environment' } },
+                { facingMode: 'environment' },
+                { facingMode: 'user' },
+                true
+            ];
+            var ultimoError = null;
+            for (var i = 0; i < configs.length; i++) {
+                try {
+                    scanner = new Html5Qrcode('reader');
+                    escaneando = true;
+                    await scanner.start(
+                        configs[i],
+                        {
+                            fps: 12,
+                            qrbox: function (w, h) {
+                                var s = Math.min(w, h) * 0.75;
+                                return { width: Math.floor(s), height: Math.floor(s) };
+                            }
+                        },
+                        onScanOk,
+                        function () { /* sin QR */ }
+                    );
+                    ocultarCargando();
+                    return;
+                } catch (err2) {
+                    ultimoError = err2;
+                    try { await scanner.stop(); scanner.clear(); } catch (e3) { /* ignore */ }
+                    escaneando = false;
+                }
+            }
+
+            ocultarCargando();
+            mostrarMsg(msgScan,
+                'Cámara en vivo no disponible' +
+                (ultimoError && ultimoError.message ? ': ' + ultimoError.message : '') +
+                '. Abriendo cámara del celular…',
+                'info');
+            setTimeout(function () { abrirCamaraNativa(msgScan); }, 600);
+        }
+
+        function abrirFoto(msgEl) {
+            inputFoto.onchange = function () {
+                var f = inputFoto.files && inputFoto.files[0];
+                inputFoto.value = '';
+                if (f) escanearDesdeFoto(f, msgEl);
+            };
+            try {
+                inputFoto.click();
+            } catch (e) {
+                mostrarMsg(msgEl, 'No se pudo abrir la cámara. Escriba la dirección del taller abajo.', 'error');
+            }
+        }
+
+        btnAbrir.addEventListener('click', function () {
+            var url = getUrlGuardada();
+            if (url) window.location.href = url;
+            else mostrarScanner();
+        });
+        btnEscanear.addEventListener('click', function () {
+            if (esRedLocalHttp()) {
+                abrirCamaraNativa(msgHome);
+            } else {
+                mostrarScanner({ forzarVivo: true });
+            }
+        });
+        btnCambiar.addEventListener('click', function () {
+            mostrarHome();
+            setTimeout(function () { mostrarScanner(); }, 150);
+        });
+        btnCancelar.addEventListener('click', mostrarHome);
+        btnManual.addEventListener('click', function () {
+            conectar(urlManual.value.trim(), msgHome);
+        });
+        btnFotoHome.addEventListener('click', function () { abrirFoto(msgHome); });
+        btnFotoScan.addEventListener('click', function () { abrirFoto(msgScan); });
+        urlManual.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') btnManual.click();
+        });
+
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            deferredInstall = e;
+            if (btnInstalar && !esAppInstalada()) {
+                btnInstalar.hidden = false;
+            }
+        });
+        window.addEventListener('appinstalled', function () {
+            deferredInstall = null;
+            if (btnInstalar) btnInstalar.hidden = true;
+            if (instalarPasos) instalarPasos.hidden = true;
+            if (badgeModoApp) badgeModoApp.classList.add('visible');
+            mostrarMsg(msgHome, 'Icono instalado. Ya puede abrirlo desde la pantalla de inicio.', 'ok');
+        });
+        if (btnInstalar) {
+            btnInstalar.addEventListener('click', function () {
+                if (deferredInstall) {
+                    deferredInstall.prompt();
+                    deferredInstall.userChoice.then(function () {
+                        deferredInstall = null;
+                    }).catch(function () { /* ignore */ });
+                    return;
+                }
+                if (avisoInstalar) {
+                    avisoInstalar.classList.add('visible');
+                    avisoInstalar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                mostrarMsg(msgHome,
+                    'En esta red el menú de Chrome es el que instala: toque ⋮ arriba a la derecha → «Añadir a pantalla de inicio» o «Instalar aplicación».',
+                    'info');
+            });
+        }
+
+        actualizarHome();
+
+        // Si abrió desde el icono y ya tiene taller guardado, probar y entrar
+        if (abrioDesdeIcono() && getUrlGuardada()) {
+            var urlIcono = getUrlGuardada();
+            mostrarMsg(msgHome, 'Comprobando conexión con el taller…', 'info');
+            var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var to = setTimeout(function () { if (ctrl) ctrl.abort(); }, 4000);
+            fetch(urlIcono, { method: 'GET', mode: 'no-cors', cache: 'no-store', signal: ctrl && ctrl.signal })
+                .then(function () {
+                    clearTimeout(to);
+                    mostrarMsg(msgHome, 'Abriendo el taller guardado…', 'ok');
+                    setTimeout(function () { window.location.href = urlIcono; }, 250);
+                })
+                .catch(function () {
+                    clearTimeout(to);
+                    mostrarMsg(msgHome,
+                        'No se pudo conectar con el taller guardado. Escanee de nuevo el QR del taller (mismo WiFi que la PC) o escriba la dirección que aparece bajo el QR en la PC.',
+                        'error');
+                });
+        } else if (!libLista) {
+            mostrarMsg(msgHome, 'No se cargó el lector QR del servidor. Reinicie Sanmy Taller o use la dirección manual.', 'error');
+        } else if (esRedLocalHttp()) {
+            mostrarMsg(msgHome, 'En la red del taller: toque «Escanear QR» y se abrirá la cámara del celular para fotografiar el código del PC.', 'info');
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw-app.js').catch(function () { /* ignore */ });
+        }
+    })();
+    </script>
+</body>
+</html>

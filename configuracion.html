@@ -58,6 +58,16 @@
         .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; align-items: center; }
         .msg { font-size: 13px; margin-top: 10px; min-height: 18px; }
 
+        .tabla-pagos { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+        .tabla-pagos th, .tabla-pagos td { border: 1px solid #e2e8f0; padding: 8px 6px; text-align: left; vertical-align: middle; }
+        .tabla-pagos th { background: #f1f5f9; color: #475569; font-size: 12px; }
+        .tabla-pagos input[type=text], .tabla-pagos select {
+            width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px;
+        }
+        .tabla-pagos .inp-icono { width: 52px; text-align: center; }
+        .tabla-pagos .inp-codigo { font-family: Consolas, monospace; font-size: 12px; }
+        .btn-del-pago { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-weight: bold; }
+
         .nota { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #475569; line-height: 1.55; margin-bottom: 14px; }
         .nota.azul { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
         .nota.verde { background: #f0fdf4; border-color: #86efac; color: #166534; }
@@ -117,13 +127,79 @@
             font-size: 10px; font-weight: bold; background: #0ea5e9; color: #fff;
             padding: 2px 8px; border-radius: 999px;
         }
+        .logo-empresa-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+        .logo-preview-wrap {
+            width: 120px; height: 72px; border: 1px dashed #cbd5e1; border-radius: 10px;
+            background: #f8fafc; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .logo-preview-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .logo-preview-wrap #logo-preview-placeholder { font-size: 11px; color: #94a3b8; text-align: center; padding: 8px; }
+        .logo-acciones { display: flex; flex-direction: column; gap: 8px; }
 
         @media (max-width: 720px) {
             .layout { flex-direction: column; }
             .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #cbd5e1; max-height: 42vh; }
             .menu-cfg { flex-direction: row; flex-wrap: wrap; }
             .menu-cfg button { flex: 1 1 auto; font-size: 12px; padding: 8px 10px; }
+            .cfg-menu-grid { grid-template-columns: 1fr; }
         }
+
+        /* ===== Menú principal estilo Sanmy clásico ===== */
+        .cfg-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; background: #dbeafe; }
+        .cfg-header {
+            background: linear-gradient(180deg, #bfdbfe 0%, #dbeafe 100%);
+            border-bottom: 1px solid #93c5fd; padding: 14px 20px 10px; text-align: center; flex-shrink: 0;
+        }
+        .cfg-header h1 { font-size: 28px; color: #1e3a5f; font-weight: bold; letter-spacing: .5px; }
+        .cfg-header .subtitulo { font-size: 15px; color: #334155; margin-top: 4px; }
+        .cfg-header .volver {
+            position: absolute; left: 16px; top: 16px;
+            border: 1px solid #93c5fd; background: #fff; border-radius: 8px;
+            padding: 6px 12px; font-size: 12px; font-weight: bold; color: #1e3a5f; cursor: pointer;
+        }
+        .cfg-header { position: relative; }
+        .cfg-body { flex: 1; overflow-y: auto; padding: 16px 18px 8px; }
+        .cfg-menu-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px;
+            max-width: 980px; margin: 0 auto;
+        }
+        .cfg-col { display: flex; flex-direction: column; gap: 8px; }
+        .cfg-opcion {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            width: 100%; min-height: 46px; padding: 8px 12px;
+            background: #fff; border: 1px solid #94a3b8; border-radius: 4px;
+            font-size: 13px; font-weight: 600; color: #1e293b; text-align: left; cursor: pointer;
+            box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
+        }
+        .cfg-opcion:hover { background: #f8fafc; border-color: #64748b; }
+        .cfg-opcion.activa { background: #e2e8f0; border-color: #475569; box-shadow: inset 0 1px 3px rgba(0,0,0,.08); }
+        .cfg-opcion .txt { flex: 1; line-height: 1.25; }
+        .cfg-opcion .ico-op { font-size: 22px; width: 36px; text-align: center; flex-shrink: 0; }
+        .cfg-opcion.proximo { opacity: .72; }
+        .cfg-footer {
+            flex-shrink: 0; background: #bfdbfe; border-top: 1px solid #93c5fd;
+            padding: 10px 16px 14px; display: flex; align-items: stretch; gap: 12px;
+        }
+        .cfg-info-bar {
+            flex: 1; background: #fef08a; border: 1px solid #eab308; border-radius: 4px;
+            padding: 10px 14px; font-size: 13px; color: #713f12; line-height: 1.45;
+            display: flex; align-items: center;
+        }
+        .btn-salir-cfg {
+            min-width: 120px; border: 1px solid #64748b; border-radius: 6px;
+            background: #fff; color: #1e3a5f; font-weight: bold; font-size: 14px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+            padding: 8px 14px; text-decoration: none;
+        }
+        .btn-salir-cfg:hover { background: #f1f5f9; }
+        .btn-salir-cfg .ico { font-size: 28px; line-height: 1; }
+        .panel-detalle .btn-volver-menu {
+            margin-bottom: 12px; border: 1px solid #cbd5e1; background: #fff;
+            border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: #1e3a5f;
+        }
+        #sec-menu.panel-sec.activo { display: block; max-width: none; }
+        .panel-detalle { max-width: 920px; margin: 0 auto; }
     </style>
 </head>
 <body>
@@ -135,28 +211,34 @@
         <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
         <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS</a>
         <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS</a>
-        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/caja.html"><span class="ico">💵</span>CAJA<br>(FACTURAR)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FE / HACIENDA</a>
         <a class="nav-item activo" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
         <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+        <a class="nav-item" href="/facturacion-responsive.html" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-color:#7c3aed;"><span class="ico">🆕</span>VISTA PREVIA<br>(NUEVO DISEÑO)</a>
     </nav>
 
-    <div class="layout">
-        <aside class="sidebar">
-            <h2>⚙️ Configuración</h2>
-            <ul class="menu-cfg">
-                <li><button type="button" class="activo" data-sec="general" onclick="verSec('general', this)"><span class="ico">🏢</span> Empresas</button></li>
-                <li><button type="button" data-sec="fe" onclick="verSec('fe', this)"><span class="ico">🧾</span> Factura electrónica</button></li>
-                <li><button type="button" data-sec="impresion" onclick="verSec('impresion', this)"><span class="ico">🖨️</span> Tickets e impresión</button></li>
-                <li><button type="button" data-sec="usuarios" onclick="verSec('usuarios', this)"><span class="ico">👤</span> Usuarios</button></li>
-                <li><button type="button" data-sec="red" onclick="verSec('red', this)"><span class="ico">📡</span> Red y acceso</button></li>
-                <li><button type="button" data-sec="modulos" onclick="verSec('modulos', this)"><span class="ico">📦</span> Más módulos</button></li>
-            </ul>
-        </aside>
+    <div class="cfg-shell">
+        <header class="cfg-header">
+            <button type="button" class="volver" id="btn-volver-menu" hidden onclick="verMenu()">← Menú</button>
+            <h1>Configuración</h1>
+            <p class="subtitulo">Seleccione una Opción</p>
+        </header>
 
-        <main class="contenido">
+        <div class="cfg-body">
+            <!-- MENÚ PRINCIPAL -->
+            <section id="sec-menu" class="panel-sec activo">
+                <div class="cfg-menu-grid">
+                    <div class="cfg-col" id="cfg-col-izq"></div>
+                    <div class="cfg-col" id="cfg-col-der"></div>
+                </div>
+            </section>
+
+            <div id="panel-detalle-wrap" class="panel-detalle" hidden>
+                <button type="button" class="btn-volver-menu" onclick="verMenu()">← Volver al menú de configuración</button>
             <!-- GENERAL -->
-            <section id="sec-general" class="panel-sec activo">
-                <h3>🏢 Empresas del taller</h3>
+            <section id="sec-general" class="panel-sec">
+                <h3>📝 Configuración General</h3>
                 <p class="sub">Registre varias empresas o razones sociales. La <strong>empresa activa</strong> define facturación, tickets y órdenes. Puede elegir si cada empresa <strong>comparte</strong> clientes e inventario con las demás o trabaja <strong>totalmente aparte</strong>.</p>
 
                 <div class="card">
@@ -192,6 +274,21 @@
                         <div class="campo full">
                             <label for="cfg-direccion">Dirección</label>
                             <input id="cfg-direccion" type="text" placeholder="San José, Costa Rica">
+                        </div>
+                        <div class="campo full">
+                            <label>Logo del taller</label>
+                            <div class="logo-empresa-row">
+                                <div class="logo-preview-wrap">
+                                    <img id="logo-preview" alt="" hidden>
+                                    <span id="logo-preview-placeholder">Sin logo</span>
+                                </div>
+                                <div class="logo-acciones">
+                                    <input type="file" id="logo-file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
+                                    <button type="button" class="btn btn-sec" onclick="document.getElementById('logo-file').click()">📷 Subir logo</button>
+                                    <button type="button" class="btn btn-sec" id="btn-quitar-logo" onclick="quitarLogoEmpresa()" hidden>✕ Quitar logo</button>
+                                </div>
+                            </div>
+                            <p style="font-size:12px;color:#64748b;margin-top:6px;">PNG, JPG, GIF, WebP o SVG. Máximo 2 MB. Aparece en caja, facturas e inicio.</p>
                         </div>
                         <div class="campo">
                             <label for="cfg-iva">IVA (%)</label>
@@ -233,6 +330,36 @@
                         <button type="button" class="btn btn-sec" id="btn-borrar-empresa" onclick="eliminarEmpresaForm()">🗑️ Eliminar</button>
                     </div>
                     <div class="msg" id="msg-general"></div>
+                </div>
+            </section>
+
+            <!-- FORMAS DE PAGO -->
+            <section id="sec-pagos" class="panel-sec">
+                <h3>💳 Formas de pago</h3>
+                <p class="sub">Configure los métodos que aparecen en <strong>Caja</strong>, cobros de órdenes y facturación. Debe haber al menos uno activo.</p>
+                <div class="card">
+                    <table class="tabla-pagos" id="tabla-metodos-pago">
+                        <thead>
+                            <tr>
+                                <th>Activo</th>
+                                <th>Icono</th>
+                                <th>Nombre</th>
+                                <th>Código</th>
+                                <th>Medio FE</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-metodos-pago"></tbody>
+                    </table>
+                    <div class="acciones" style="margin-top:12px;">
+                        <button type="button" class="btn btn-sec" onclick="agregarFilaMetodoPago()">➕ Agregar forma de pago</button>
+                        <button type="button" class="btn btn-verde" onclick="guardarMetodosPagoCfg()">💾 Guardar formas de pago</button>
+                    </div>
+                    <div class="msg" id="msg-pagos"></div>
+                    <div class="nota azul" style="margin-top:12px;">
+                        <strong>Medio FE:</strong> código Hacienda para factura electrónica (01 efectivo, 02 tarjeta, 04 transferencia, 99 otros).
+                        El <strong>código</strong> no debe cambiarse si ya se usó en cobros anteriores.
+                    </div>
                 </div>
             </section>
 
@@ -347,8 +474,8 @@
 
             <!-- USUARIOS -->
             <section id="sec-usuarios" class="panel-sec">
-                <h3>👤 Usuarios y acceso</h3>
-                <p class="sub">Empleados, técnicos y permisos de inicio de sesión.</p>
+                <h3>👤 Permisos a usuarios</h3>
+                <p class="sub">Empleados, técnicos y cuentas de acceso del taller.</p>
                 <div class="modulos-grid">
                     <a class="mod-card" href="/usuarios.html">
                         <div class="ico">👥</div>
@@ -360,6 +487,62 @@
                         <h4>Inicio de sesión</h4>
                         <p>Pantalla de acceso para empleados.</p>
                     </a>
+                </div>
+            </section>
+
+            <!-- PEDIR CONTRASEÑA -->
+            <section id="sec-acceso" class="panel-sec">
+                <h3>🔐 Pedir contraseña al entrar</h3>
+                <p class="sub">Control de acceso al abrir Sanmy Taller.</p>
+                <div class="card">
+                    <label style="display:flex;align-items:flex-start;gap:10px;font-size:14px;cursor:pointer;">
+                        <input type="checkbox" id="cfg-pedir-login" style="margin-top:3px;" onchange="syncPedirLoginUi()">
+                        <span><strong>Activar pedir contraseña al ingresar al sistema</strong><br>
+                        <span style="font-size:12px;color:#64748b;">Si está activo, cada vez que se abra el programa deberá registrar el usuario que entra. Los usuarios se crean en «Permisos a usuarios».</span></span>
+                    </label>
+                    <div class="acciones" style="margin-top:14px;">
+                        <button type="button" class="btn btn-verde" onclick="guardarAcceso()">💾 Guardar</button>
+                    </div>
+                    <div class="msg" id="msg-acceso"></div>
+                </div>
+            </section>
+
+            <!-- COPIA DE SEGURIDAD -->
+            <section id="sec-backup" class="panel-sec">
+                <h3>💾 Copia de seguridad</h3>
+                <p class="sub">Respalde toda la información del taller: usuarios, clientes, órdenes, ventas, inventario, finanzas, facturación y configuración.</p>
+                <div class="card">
+                    <p style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:14px;">
+                        El respaldo guarda la base de datos completa del sistema (<strong>sanmy-taller.db</strong>).
+                        Guarde el archivo en un USB, disco externo o nube para recuperar sus datos si el equipo falla.
+                    </p>
+                    <div class="acciones">
+                        <button type="button" class="btn btn-verde" id="btn-crear-respaldo" onclick="crearRespaldoCfg()">💾 Crear respaldo ahora</button>
+                        <button type="button" class="btn btn-sec" onclick="cargarRespaldosCfg()">🔄 Actualizar lista</button>
+                    </div>
+                    <div class="msg" id="msg-backup"></div>
+                </div>
+                <div class="card" style="margin-top:14px;">
+                    <h4 style="font-size:15px;color:#1e3a5f;margin-bottom:10px;">Respaldos guardados en este equipo</h4>
+                    <div id="lista-respaldos" style="font-size:13px;color:#64748b;">Cargando…</div>
+                </div>
+                <div class="card" style="margin-top:14px;border-color:#fecaca;background:#fff7f7;">
+                    <h4 style="font-size:15px;color:#b91c1c;margin-bottom:8px;">♻ Restaurar copia de seguridad</h4>
+                    <p style="font-size:13px;color:#475569;line-height:1.55;margin-bottom:12px;">
+                        Restaura usuarios, ventas, clientes e inventario desde un respaldo <strong>.db</strong>.
+                        Antes de restaurar se crea un respaldo automático de la base actual por seguridad.
+                    </p>
+                    <div class="campo full" style="margin-bottom:12px;">
+                        <label for="archivo-respaldo">Restaurar desde archivo en su PC (USB, descargas, etc.)</label>
+                        <input id="archivo-respaldo" type="file" accept=".db,application/octet-stream">
+                    </div>
+                    <div class="acciones">
+                        <button type="button" class="btn btn-prim" id="btn-restaurar-archivo" onclick="restaurarArchivoCfg()">♻ Restaurar archivo seleccionado</button>
+                    </div>
+                    <p style="font-size:11px;color:#64748b;margin-top:10px;line-height:1.45;">
+                        También puede usar el botón <strong>Restaurar</strong> en la tabla de arriba para un respaldo guardado en este equipo.
+                        Después de restaurar se recargará el sistema.
+                    </p>
                 </div>
             </section>
 
@@ -398,10 +581,19 @@
                     <strong>Próximamente en configuración:</strong> respaldos automáticos, WhatsApp plantillas, horarios del taller, numeración de órdenes y más.
                 </div>
             </section>
-        </main>
+            </div>
+        </div>
+
+        <footer class="cfg-footer">
+            <div class="cfg-info-bar" id="cfg-info-bar">Seleccione una opción del menú para ver su descripción.</div>
+            <a class="btn-salir-cfg" href="/abrir.html"><span class="ico">🏠</span>Salir</a>
+        </footer>
     </div>
 
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
     <script>
         function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v == null ? '' : v; }
         function getVal(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
@@ -412,16 +604,124 @@
             el.textContent = txt;
         }
 
-        function verSec(sec, btn) {
-            document.querySelectorAll('.panel-sec').forEach(function (p) {
+        var MENU_IZQ = [
+            { id: 'general', txt: 'Configuración General', ico: '📝', hint: 'Datos del taller, empresas, razón social, IVA y modo compartido o aparte entre empresas.', sec: 'general' },
+            { id: 'pagos', txt: 'Formas de pago', ico: '💳', hint: 'Agregue, edite o elimine métodos de pago para caja y cobros (efectivo, tarjeta, SINPE, etc.).', sec: 'pagos' },
+            { id: 'fe', txt: 'Configuración Facturas / Presupuestos', ico: '✏️', hint: 'Factura electrónica Hacienda CR, Almendro, proformas y presupuestos del taller.', sec: 'fe' },
+            { id: 'ticket', txt: 'Diseño de Ticket', ico: '🎨', hint: 'Formato del ticket 80 mm: cabecera, pie y campos visibles al imprimir.', sec: 'impresion' },
+            { id: 'ticket-email', txt: 'Diseño Cabecera Ticket Email', ico: '🎨', hint: 'Próximamente: plantilla de correo al enviar factura por email.', proximo: true },
+            { id: 'impresoras', txt: 'Alta de Impresoras', ico: '🖨️', hint: 'Configure impresoras Windows o por red para tickets y facturas.', sec: 'impresion' },
+            { id: 'cajon', txt: 'Configuración de Apertura de Cajón de Monedas', ico: '🔧', hint: 'Próximamente: comando para abrir cajón conectado a la impresora.', proximo: true },
+            { id: 'email-fe', txt: 'Configuración de Email para envío de Facturas', ico: '📧', hint: 'Próximamente: SMTP y plantillas para enviar facturas por correo.', proximo: true },
+            { id: 'licencia', txt: 'Licencia del sistema', ico: '🔑', hint: 'Activar o renovar la licencia Sanmy Taller vinculada a este equipo.', url: '/activar-licencia.html' },
+            { id: 'importar', txt: 'Importar datos', ico: '📥', hint: 'Importar clientes, productos (repuestos) o servicios desde una hoja de Excel.', url: '/importar-clientes.html' },
+            { id: 'qr', txt: 'Código QR', ico: '📱', hint: 'IP del servidor y enlace QR para conectar celular en la misma red WiFi.', sec: 'red' },
+            { id: 'backup', txt: 'Copia de Seguridad', ico: '💾', hint: 'Crear y descargar respaldo de la base de datos: usuarios, ventas, clientes, inventario y más.', sec: 'backup' },
+            { id: 'idioma', txt: 'Cambiar idioma / Change Language', ico: '🌐', hint: 'Próximamente: español e inglés en pantallas del sistema.', proximo: true },
+            { id: 'utilidades', txt: 'Otras Utilidades', ico: '🛠️', hint: 'Accesos rápidos a repuestos, clientes, finanzas y proformas.', sec: 'modulos' }
+        ];
+
+        var MENU_DER = [
+            { id: 'pwd-dir', txt: 'Cambiar contraseña de dirección', ico: '🔒', hint: 'Próximamente: contraseña extra para cambios sensibles de configuración.', proximo: true },
+            { id: 'permisos', txt: 'Permisos a Usuarios', ico: '👤', hint: 'Crear usuarios del taller, roles (admin, técnico, recepción) y desactivar cuentas.', sec: 'usuarios' },
+            { id: 'pedir-login', txt: 'Pedir contraseña al entrar', ico: '🔐', hint: 'Si activamos esta opción cada vez que accedamos al programa deberemos registrar el usuario que entra.', sec: 'acceso' },
+            { id: 'bloquear-stock', txt: 'Bloquear uso de Repuestos cuando se acabe el Stock', ico: '⛔', hint: 'Próximamente: no permitir agregar repuestos sin existencias al cobrar una orden.', proximo: true },
+            { id: 'terminales', txt: 'Compartir datos entre Terminales', ico: '🔗', hint: 'Varios equipos en la red acceden al mismo servidor Sanmy (puerto 3020).', sec: 'red' },
+            { id: 'precios-iva', txt: 'Aumento de Precios y Cambio de Valor de Impuestos', ico: '⬆️', hint: 'IVA por empresa y actualización masiva de precios en inventario.', sec: 'general' },
+            { id: 'confidencial', txt: 'Contrato de confidencialidad', ico: '📄', hint: 'Próximamente: texto legal para empleados sobre datos de clientes.', proximo: true },
+            { id: 'proteccion', txt: 'Protección de datos', ico: '✅', hint: 'Próximamente: política de privacidad y manejo de datos personales.', proximo: true },
+            { id: 'eliminar-prueba', txt: 'Eliminar Datos de Prueba', ico: '🗑️', hint: 'Próximamente: borrar órdenes, clientes o facturas de prueba.', proximo: true },
+            { id: 'incidencias', txt: 'Gestor Incidencias', ico: '📋', hint: 'Próximamente: registro de reclamos o garantías de trabajos.', proximo: true }
+        ];
+
+        var opcionActivaId = null;
+
+        function pintarMenuCfg() {
+            function htmlItem(op) {
+                var cls = 'cfg-opcion' + (op.proximo ? ' proximo' : '') + (opcionActivaId === op.id ? ' activa' : '');
+                return '<button type="button" class="' + cls + '" data-id="' + op.id + '" onclick="elegirOpcion(\'' + op.id + '\')">' +
+                    '<span class="txt">' + escHtml(op.txt) + '</span>' +
+                    '<span class="ico-op">' + op.ico + '</span></button>';
+            }
+            document.getElementById('cfg-col-izq').innerHTML = MENU_IZQ.map(htmlItem).join('');
+            document.getElementById('cfg-col-der').innerHTML = MENU_DER.map(htmlItem).join('');
+        }
+
+        function buscarOpcion(id) {
+            var i, op;
+            for (i = 0; i < MENU_IZQ.length; i++) {
+                if (MENU_IZQ[i].id === id) return MENU_IZQ[i];
+            }
+            for (i = 0; i < MENU_DER.length; i++) {
+                if (MENU_DER[i].id === id) return MENU_DER[i];
+            }
+            return null;
+        }
+
+        function pintarInfoBar(texto) {
+            var bar = document.getElementById('cfg-info-bar');
+            if (bar) bar.textContent = texto || 'Seleccione una opción del menú para ver su descripción.';
+        }
+
+        function syncPedirLoginUi() {
+            var op = buscarOpcion('pedir-login');
+            if (op && document.getElementById('sec-acceso').classList.contains('activo')) {
+                pintarInfoBar(op.hint);
+            }
+        }
+
+        function elegirOpcion(id) {
+            var op = buscarOpcion(id);
+            if (!op) return;
+            opcionActivaId = id;
+            pintarMenuCfg();
+            pintarInfoBar(op.hint);
+            if (op.proximo) {
+                verMenu(false);
+                alert('«' + op.txt + '» estará disponible próximamente.');
+                return;
+            }
+            if (op.url) {
+                window.location.href = op.url;
+                return;
+            }
+            if (op.sec) verSec(op.sec, id);
+        }
+
+        function verMenu(actualizarUrl) {
+            if (actualizarUrl !== false) {
+                history.replaceState(null, '', '/configuracion.html');
+            }
+            opcionActivaId = null;
+            document.getElementById('sec-menu').classList.add('activo');
+            document.getElementById('panel-detalle-wrap').hidden = true;
+            document.getElementById('btn-volver-menu').hidden = true;
+            document.querySelectorAll('#panel-detalle-wrap .panel-sec').forEach(function (p) {
+                p.classList.remove('activo');
+            });
+            pintarMenuCfg();
+            pintarInfoBar('Seleccione una opción del menú para ver su descripción.');
+        }
+
+        function verSec(sec, opcionId) {
+            document.getElementById('sec-menu').classList.remove('activo');
+            document.getElementById('panel-detalle-wrap').hidden = false;
+            document.getElementById('btn-volver-menu').hidden = false;
+            document.querySelectorAll('#panel-detalle-wrap .panel-sec').forEach(function (p) {
                 p.classList.toggle('activo', p.id === 'sec-' + sec);
             });
-            document.querySelectorAll('.menu-cfg button').forEach(function (b) {
-                b.classList.toggle('activo', b === btn);
-            });
+            if (opcionId) {
+                opcionActivaId = opcionId;
+                var op = buscarOpcion(opcionId);
+                if (op) pintarInfoBar(op.hint);
+                pintarMenuCfg();
+            }
             if (sec === 'fe') cargarFe();
             if (sec === 'general') cargarGeneral();
+            if (sec === 'pagos') cargarMetodosPagoCfg();
             if (sec === 'red') cargarRed();
+            if (sec === 'acceso') cargarAcceso();
+            if (sec === 'backup') cargarRespaldosCfg();
             history.replaceState(null, '', '/configuracion.html?sec=' + sec);
         }
 
@@ -577,12 +877,69 @@
             setVal('cfg-email', e ? e.email : '');
             setVal('cfg-direccion', e ? e.direccion : '');
             setIvaSelect(e ? e.impuesto_iva : '0.13');
+            actualizarPreviewLogo(e);
             var tit = document.getElementById('empresa-form-titulo');
             if (tit) tit.textContent = e ? 'Editar: ' + e.nombre : 'Nueva empresa';
             var btnAct = document.getElementById('btn-activar-empresa');
             if (btnAct) btnAct.style.display = e && e.es_activa ? 'none' : '';
             setModoDatosEmpresa(e);
             actualizarModoNuevaEmpresaUi();
+        }
+
+        function actualizarPreviewLogo(e) {
+            var img = document.getElementById('logo-preview');
+            var ph = document.getElementById('logo-preview-placeholder');
+            var btnQ = document.getElementById('btn-quitar-logo');
+            var inputFile = document.getElementById('logo-file');
+            if (inputFile) inputFile.value = '';
+            if (e && e.tiene_logo && e.logo_url) {
+                img.src = e.logo_url + (e.logo_url.indexOf('?') >= 0 ? '&' : '?') + 'r=' + Date.now();
+                img.hidden = false;
+                if (ph) ph.hidden = true;
+                if (btnQ) btnQ.hidden = !empresaEditId;
+            } else {
+                img.hidden = true;
+                img.removeAttribute('src');
+                if (ph) ph.hidden = false;
+                if (btnQ) btnQ.hidden = true;
+            }
+        }
+
+        async function subirLogoEmpresa(file) {
+            if (!file) return;
+            if (!empresaEditId) {
+                msg('msg-general', 'Guarde la empresa antes de subir el logo.', false);
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                msg('msg-general', 'La imagen no puede superar 2 MB.', false);
+                return;
+            }
+            try {
+                var dataUrl = await new Promise(function (resolve, reject) {
+                    var r = new FileReader();
+                    r.onload = function () { resolve(r.result); };
+                    r.onerror = function () { reject(new Error('No se pudo leer la imagen')); };
+                    r.readAsDataURL(file);
+                });
+                await TallerAPI.subirLogoEmpresa(empresaEditId, dataUrl, file.type);
+                msg('msg-general', '✓ Logo guardado.', true);
+                await cargarGeneral(empresaEditId);
+            } catch (err) {
+                msg('msg-general', err.message || 'Error al subir logo', false);
+            }
+        }
+
+        async function quitarLogoEmpresa() {
+            if (!empresaEditId) return;
+            if (!confirm('¿Quitar el logo de esta empresa?')) return;
+            try {
+                await TallerAPI.eliminarLogoEmpresa(empresaEditId);
+                msg('msg-general', '✓ Logo eliminado.', true);
+                await cargarGeneral(empresaEditId);
+            } catch (err) {
+                msg('msg-general', err.message || 'Error al quitar logo', false);
+            }
         }
 
         function mensajeErrorEmpresas(err) {
@@ -822,6 +1179,34 @@
             }
         }
 
+        async function cargarAcceso() {
+            try {
+                var data = await TallerAPI.getAccesoConfig();
+                var chk = document.getElementById('cfg-pedir-login');
+                if (chk) chk.checked = !!(data && data.pedir_login_ingreso);
+                syncPedirLoginUi();
+            } catch (e) {
+                msg('msg-acceso', 'No se pudo cargar la opción de acceso.', false);
+            }
+        }
+
+        async function guardarAcceso() {
+            var chk = document.getElementById('cfg-pedir-login');
+            try {
+                await TallerAPI.actualizarTallerConfig({
+                    pedir_login_ingreso: !!(chk && chk.checked)
+                });
+                msg('msg-acceso', chk && chk.checked
+                    ? '✓ Al ingresar se pedirá usuario y contraseña.'
+                    : '✓ Acceso libre: no se pedirá contraseña al abrir el sistema.', true);
+                pintarInfoBar(chk && chk.checked
+                    ? 'Si activamos esta opción cada vez que accedamos al programa deberemos registrar el usuario que entra.'
+                    : 'Acceso libre activado: el sistema abre directo sin pedir contraseña.');
+            } catch (e) {
+                msg('msg-acceso', e.message || 'No se pudo guardar.', false);
+            }
+        }
+
         function cargarRed() {
             var ip = TallerAPI.getStoredServerIp ? TallerAPI.getStoredServerIp() : '';
             setVal('cfg-ip', ip);
@@ -853,14 +1238,277 @@
             }
         }
 
+        var metodosPagoCfg = [];
+
+        function opcionesFeMedio(sel) {
+            var opts = [
+                { v: '01', t: '01 — Efectivo' },
+                { v: '02', t: '02 — Tarjeta' },
+                { v: '03', t: '03 — Cheque' },
+                { v: '04', t: '04 — Transferencia' },
+                { v: '05', t: '05 — Recaudado terceros' },
+                { v: '99', t: '99 — Otros' }
+            ];
+            return opts.map(function (o) {
+                return '<option value="' + o.v + '"' + (sel === o.v ? ' selected' : '') + '>' + o.t + '</option>';
+            }).join('');
+        }
+
+        function slugMetodoPago(txt) {
+            return String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 32);
+        }
+
+        function pintarTablaMetodosPago() {
+            var tbody = document.getElementById('tbody-metodos-pago');
+            if (!tbody) return;
+            if (!metodosPagoCfg.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="color:#94a3b8;">Sin formas de pago — agregue una.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = metodosPagoCfg.map(function (m, idx) {
+                return '<tr data-idx="' + idx + '">' +
+                    '<td style="text-align:center;"><input type="checkbox" class="mp-activo"' + (m.activo !== false ? ' checked' : '') + '></td>' +
+                    '<td><input type="text" class="inp-icono mp-icono" maxlength="4" value="' + escHtml(m.icono || '💳') + '"></td>' +
+                    '<td><input type="text" class="mp-nombre" value="' + escHtml(m.nombre || '') + '"></td>' +
+                    '<td><input type="text" class="inp-codigo mp-codigo" value="' + escHtml(m.codigo || '') + '"' +
+                    (m._usado ? ' readonly title="Ya usado en cobros"' : '') + '></td>' +
+                    '<td><select class="mp-fe">' + opcionesFeMedio(m.fe_medio || '01') + '</select></td>' +
+                    '<td><button type="button" class="btn-del-pago" onclick="eliminarFilaMetodoPago(' + idx + ')">🗑</button></td></tr>';
+            }).join('');
+        }
+
+        function leerMetodosPagoDesdeTabla() {
+            var filas = [];
+            document.querySelectorAll('#tbody-metodos-pago tr[data-idx]').forEach(function (tr, idx) {
+                var nombre = tr.querySelector('.mp-nombre').value.trim();
+                var codigo = tr.querySelector('.mp-codigo').value.trim() || slugMetodoPago(nombre);
+                filas.push({
+                    activo: tr.querySelector('.mp-activo').checked,
+                    icono: tr.querySelector('.mp-icono').value.trim() || '💳',
+                    nombre: nombre,
+                    codigo: codigo,
+                    fe_medio: tr.querySelector('.mp-fe').value
+                });
+            });
+            return filas;
+        }
+
+        async function cargarMetodosPagoCfg() {
+            try {
+                var data = await TallerAPI.getMetodosPago(true);
+                metodosPagoCfg = (data.todos || data.metodos || []).map(function (m) {
+                    return Object.assign({}, m);
+                });
+                pintarTablaMetodosPago();
+            } catch (e) {
+                msg('msg-pagos', e.message, false);
+            }
+        }
+
+        function agregarFilaMetodoPago() {
+            metodosPagoCfg = leerMetodosPagoDesdeTabla();
+            metodosPagoCfg.push({
+                activo: true,
+                icono: '💳',
+                nombre: '',
+                codigo: '',
+                fe_medio: '01'
+            });
+            pintarTablaMetodosPago();
+        }
+
+        function eliminarFilaMetodoPago(idx) {
+            metodosPagoCfg = leerMetodosPagoDesdeTabla();
+            if (metodosPagoCfg.length <= 1) {
+                alert('Debe quedar al menos una forma de pago.');
+                return;
+            }
+            if (!confirm('¿Eliminar esta forma de pago?')) return;
+            metodosPagoCfg.splice(idx, 1);
+            pintarTablaMetodosPago();
+        }
+
+        async function guardarMetodosPagoCfg() {
+            var lista = leerMetodosPagoDesdeTabla();
+            for (var i = 0; i < lista.length; i++) {
+                if (!lista[i].nombre) {
+                    msg('msg-pagos', 'Indique el nombre en la fila ' + (i + 1) + '.', false);
+                    return;
+                }
+                if (!lista[i].codigo) lista[i].codigo = slugMetodoPago(lista[i].nombre);
+            }
+            try {
+                var res = await TallerAPI.guardarMetodosPago(lista);
+                metodosPagoCfg = res.metodos || lista;
+                pintarTablaMetodosPago();
+                msg('msg-pagos', '✓ Formas de pago guardadas.', true);
+            } catch (e) {
+                msg('msg-pagos', e.message, false);
+            }
+        }
+
+        async function cargarRespaldosCfg() {
+            var cont = document.getElementById('lista-respaldos');
+            if (!cont) return;
+            cont.textContent = 'Cargando…';
+            try {
+                var data = await TallerAPI.listarRespaldos();
+                var filas = data.filas || [];
+                if (!filas.length) {
+                    cont.innerHTML = '<p style="color:#64748b;">Aún no hay respaldos. Pulse «Crear respaldo ahora».</p>';
+                    return;
+                }
+                cont.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+                    '<thead><tr style="background:#f1f5f9;text-align:left;">' +
+                    '<th style="padding:8px;">Archivo</th><th style="padding:8px;">Fecha</th><th style="padding:8px;">Tamaño</th><th style="padding:8px;">Acciones</th></tr></thead><tbody>' +
+                    filas.map(function (r) {
+                        var fecha = r.fecha ? new Date(r.fecha).toLocaleString('es-CR') : '—';
+                        var nom = String(r.nombre || '').replace(/'/g, "\\'");
+                        return '<tr style="border-top:1px solid #e2e8f0;">' +
+                            '<td style="padding:8px;word-break:break-all;">' + escCfg(r.nombre) + '</td>' +
+                            '<td style="padding:8px;white-space:nowrap;">' + escCfg(fecha) + '</td>' +
+                            '<td style="padding:8px;">' + escCfg(r.tamano_legible || '') + '</td>' +
+                            '<td style="padding:8px;white-space:nowrap;">' +
+                            '<button type="button" class="btn btn-sec" style="padding:5px 10px;font-size:12px;" onclick="descargarRespaldoCfg(\'' + nom + '\')">⬇ Descargar</button> ' +
+                            '<button type="button" class="btn btn-prim" style="padding:5px 10px;font-size:12px;" onclick="restaurarRespaldoCfg(\'' + nom + '\')">♻ Restaurar</button> ' +
+                            '<button type="button" class="btn btn-sec" style="padding:5px 10px;font-size:12px;color:#b91c1c;" onclick="eliminarRespaldoCfg(\'' + nom + '\')">🗑</button>' +
+                            '</td></tr>';
+                    }).join('') +
+                    '</tbody></table>';
+            } catch (e) {
+                cont.innerHTML = '<p style="color:#b91c1c;">No se pudo cargar la lista: ' + escCfg(e.message) + '</p>';
+            }
+        }
+
+        function escCfg(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        async function crearRespaldoCfg() {
+            if (!TallerAPI.crearRespaldo) {
+                alert('Actualice la página con Ctrl+F5. Si persiste, reinicie Sanmy Taller con ABRIR-SISTEMA.bat.');
+                return;
+            }
+            var btn = document.getElementById('btn-crear-respaldo');
+            msg('msg-backup', 'Creando respaldo…', true);
+            if (btn) btn.disabled = true;
+            try {
+                var data = await TallerAPI.crearRespaldo();
+                var r = data.respaldo || {};
+                msg('msg-backup', '✓ Respaldo creado: ' + (r.nombre || '') + ' (' + (r.tamano_legible || '') + ')', true);
+                await cargarRespaldosCfg();
+                if (r.nombre) {
+                    setTimeout(function () {
+                        TallerAPI.descargarRespaldo(r.nombre);
+                    }, 400);
+                }
+            } catch (e) {
+                var txt = e.message || 'No se pudo crear el respaldo.';
+                msg('msg-backup', txt, false);
+                if (e.status === 404 || txt.indexOf('reinici') >= 0) {
+                    alert(txt);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function descargarRespaldoCfg(nombre) {
+            TallerAPI.descargarRespaldo(nombre);
+        }
+
+        function confirmarRestauracion(nombre) {
+            return confirm(
+                '¿Restaurar «' + nombre + '»?\n\n' +
+                'Se reemplazarán TODOS los datos actuales (usuarios, ventas, clientes, inventario, etc.).\n' +
+                'Antes se guardará un respaldo automático de la base actual.\n\n' +
+                '¿Desea continuar?'
+            );
+        }
+
+        async function restaurarRespaldoCfg(nombre) {
+            if (!TallerAPI.restaurarRespaldo) {
+                alert('Actualice la página con Ctrl+F5 y reinicie Sanmy Taller con ABRIR-SISTEMA.bat.');
+                return;
+            }
+            if (!confirmarRestauracion(nombre)) return;
+            msg('msg-backup', 'Restaurando… no cierre esta ventana.', true);
+            try {
+                var data = await TallerAPI.restaurarRespaldo(nombre);
+                var prev = data.respaldo_previo ? data.respaldo_previo.nombre : '';
+                msg('msg-backup', '✓ Restaurado. Respaldo previo: ' + (prev || '—'), true);
+                alert('Base de datos restaurada correctamente.\n\nSe recargará el sistema.');
+                window.location.href = '/abrir.html';
+            } catch (e) {
+                msg('msg-backup', e.message || 'No se pudo restaurar.', false);
+                alert(e.message || 'No se pudo restaurar el respaldo.');
+            }
+        }
+
+        async function restaurarArchivoCfg() {
+            if (!TallerAPI.restaurarRespaldoArchivo) {
+                alert('Actualice la página con Ctrl+F5 y reinicie Sanmy Taller con ABRIR-SISTEMA.bat.');
+                return;
+            }
+            var input = document.getElementById('archivo-respaldo');
+            var file = input && input.files && input.files[0];
+            if (!file) {
+                msg('msg-backup', 'Seleccione un archivo .db de respaldo.', false);
+                return;
+            }
+            if (!confirmarRestauracion(file.name)) return;
+            var btn = document.getElementById('btn-restaurar-archivo');
+            msg('msg-backup', 'Restaurando… no cierre esta ventana.', true);
+            if (btn) btn.disabled = true;
+            try {
+                var data = await TallerAPI.restaurarRespaldoArchivo(file);
+                var prev = data.respaldo_previo ? data.respaldo_previo.nombre : '';
+                msg('msg-backup', '✓ Restaurado. Respaldo previo: ' + (prev || '—'), true);
+                alert('Base de datos restaurada correctamente.\n\nSe recargará el sistema.');
+                window.location.href = '/abrir.html';
+            } catch (e) {
+                msg('msg-backup', e.message || 'No se pudo restaurar.', false);
+                alert(e.message || 'No se pudo restaurar el respaldo.');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function eliminarRespaldoCfg(nombre) {
+            if (!confirm('¿Eliminar el respaldo «' + nombre + '» de este equipo?')) return;
+            try {
+                await TallerAPI.eliminarRespaldo(nombre);
+                msg('msg-backup', '✓ Respaldo eliminado.', true);
+                cargarRespaldosCfg();
+            } catch (e) {
+                msg('msg-backup', e.message || 'No se pudo eliminar.', false);
+            }
+        }
+
         (function init() {
+            pintarMenuCfg();
+            var logoInput = document.getElementById('logo-file');
+            if (logoInput) {
+                logoInput.addEventListener('change', function (ev) {
+                    var file = ev.target.files && ev.target.files[0];
+                    if (file) subirLogoEmpresa(file);
+                });
+            }
             var params = new URLSearchParams(window.location.search);
-            var sec = params.get('sec') || 'general';
-            var btn = document.querySelector('.menu-cfg button[data-sec="' + sec + '"]');
-            if (btn) verSec(sec, btn);
-            else {
-                cargarGeneral();
-                cargarRed();
+            var sec = params.get('sec');
+            var mapSecOpcion = {
+                general: 'general', pagos: 'pagos', fe: 'fe', impresion: 'ticket', usuarios: 'permisos',
+                acceso: 'pedir-login', red: 'qr', modulos: 'utilidades', importar: 'importar', backup: 'backup'
+            };
+            if (sec === 'importar') {
+                window.location.href = '/importar-clientes.html';
+                return;
+            }
+            if (sec && document.getElementById('sec-' + sec)) {
+                verSec(sec, mapSecOpcion[sec] || null);
+            } else {
+                verMenu(false);
             }
         })();
     </script>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup — Facturación Sanmy Taller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #eef2f7;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100dvh;
+        }
+        .screen {
+            max-width: 1440px;
+            margin: 0 auto;
+            width: 100%;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: calc(100dvh - 40px);
+        }
+
+        .topnav {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+            padding: 10px clamp(12px,2vw,24px);
+            display: flex;
+            gap: 6px;
+            align-items: stretch;
+            overflow-x: auto;
+            flex-shrink: 0;
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 10px;
+            padding: 0 16px 0 8px;
+            border-right: 1px solid rgba(255,255,255,0.15);
+            margin-right: 8px;
+        }
+        .nav-brand .logo { font-size: 24px; }
+        .nav-brand .brand-text { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; white-space: nowrap; }
+        .nav-brand .brand-text small { display: block; font-size: 9px; font-weight: 400; opacity: 0.7; }
+        .nav-item {
+            flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 5px 12px; color: rgba(255,255,255,0.8);
+            font-weight: 500; font-size: clamp(9px,0.7vw,11px); text-align: center; text-decoration: none; min-width: 64px;
+        }
+        .nav-item .ico { font-size: clamp(15px,1.3vw,18px); line-height: 1; }
+        .nav-item.activo { background: linear-gradient(135deg,#f97316,#c2410c); border-color: #ea580c; color: #fff; box-shadow: 0 4px 14px rgba(249,115,22,0.35); }
+
+        .cuerpo {
+            flex: 1; min-height: 0; display: flex;
+            padding: 0; background: #f8fafc;
+        }
+
+        /* ========= LEFT PANEL — Cliente + Datos ========= */
+        .panel-left {
+            flex: 1; min-width: 0; display: flex; flex-direction: column;
+            padding: 16px clamp(12px,1.6vw,24px); gap: 12px; overflow: auto;
+        }
+
+        .sec-cliente {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+            padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .sec-cliente .titulo {
+            font-size: 13px; font-weight: 700; color: #0f172a;
+            margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+        }
+        .grid-cliente {
+            display: grid;
+            grid-template-columns: 120px 1fr 120px 1fr;
+            gap: 8px 12px;
+        }
+        .grid-cliente .lbl {
+            font-size: 11px; color: #64748b; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.3px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .grid-cliente .val {
+            font-size: 14px; font-weight: 600; color: #0f172a;
+            padding: 6px 8px; background: #f8fafc;
+            border-radius: 6px; border: 1px solid #e2e8f0;
+        }
+        .grid-cliente .full { grid-column: 1 / -1; }
+        .grid-cliente input[type=search] {
+            width: 100%; padding: 9px 12px; border: 2px solid #1e3a5f;
+            border-radius: 10px; font-size: 14px; font-weight: 500;
+            font-family: inherit; background: #fff;
+        }
+        .grid-cliente input[type=search]:focus { outline: none; box-shadow: 0 0 0 3px rgba(30,58,95,0.15); }
+
+        /* ========= LÍNEAS ========= */
+        .sec-items {
+            flex: 1; min-height: 0; display: flex; flex-direction: column;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04); overflow: hidden;
+        }
+        .sec-items .titulo {
+            font-size: 13px; font-weight: 700; color: #0f172a;
+            padding: 14px 18px 10px; display: flex; align-items: center; gap: 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .items-table-wrap { flex: 1; overflow: auto; padding: 0 18px; }
+        .items-table-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .items-table-wrap thead th {
+            position: sticky; top: 0; background: #f8fafc;
+            color: #64748b; font-weight: 600; text-align: left;
+            padding: 10px 8px; font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.3px; border-bottom: 2px solid #e2e8f0;
+        }
+        .items-table-wrap tbody td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
+        .items-table-wrap tbody tr:hover { background: #f8fafc; }
+        .items-table-wrap .num { text-align: right; }
+        .items-table-wrap .vacio { text-align: center; color: #94a3b8; padding: 30px; }
+        .items-table-wrap input[type=text], .items-table-wrap input[type=number] {
+            width: 100%; padding: 5px 6px; border: 1px solid #e2e8f0;
+            border-radius: 6px; font-size: 12px; font-family: inherit; background: #fff;
+        }
+
+        .items-acciones {
+            display: flex; gap: 8px; padding: 10px 18px 14px;
+            border-top: 1px solid #f1f5f9; flex-wrap: wrap;
+        }
+        .btn-item {
+            padding: 8px 16px; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 12px; cursor: pointer;
+            font-family: inherit; display: flex; align-items: center; gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-item:active { transform: scale(0.97); }
+        .btn-servicio { background: linear-gradient(135deg,#dbeafe,#bfdbfe); color: #1d4ed8; }
+        .btn-repuesto { background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; }
+
+        /* ========= RIGHT PANEL — Resumen ========= */
+        .panel-right {
+            width: min(340px, 32vw); flex-shrink: 0;
+            background: #fff; border-left: 1px solid #e2e8f0;
+            display: flex; flex-direction: column; padding: 16px; gap: 12px;
+            overflow: auto;
+        }
+
+        .sec-totales {
+            background: linear-gradient(135deg, #0f172a, #1e3a5f);
+            border-radius: 16px; padding: 20px; color: #fff;
+        }
+        .sec-totales .linea { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
+        .sec-totales .linea .lbl { color: rgba(255,255,255,0.65); }
+        .sec-totales .linea .val { font-weight: 700; }
+        .sec-totales .divider { border-top: 1px solid rgba(255,255,255,0.15); margin: 10px 0; }
+        .sec-totales .total-grande {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .sec-totales .total-grande .lbl { font-size: 15px; font-weight: 700; }
+        .sec-totales .total-grande .val {
+            font-size: clamp(24px,2.6vw,34px); font-weight: 800; color: #fbbf24;
+        }
+
+        .sec-pago .titulo { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .grid-pago { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .btn-pago {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 12px 6px; border: 1px solid #e2e8f0; border-radius: 12px;
+            background: #fff; cursor: pointer; font-size: 10px; font-weight: 600;
+            color: #475569; transition: all 0.2s; font-family: inherit;
+        }
+        .btn-pago .ico-big { font-size: 22px; line-height: 1; }
+        .btn-pago:hover { border-color: #1e3a5f; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .btn-pago.activo { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }
+
+        .sec-cobro .titulo { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .grid-cobro { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .btn-cobro {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 10px 6px; border: 1px solid #e2e8f0; border-radius: 10px;
+            background: #fff; cursor: pointer; font-size: 10px; font-weight: 600;
+            color: #475569; transition: all 0.2s; font-family: inherit;
+        }
+        .btn-cobro .ico-big { font-size: 18px; line-height: 1; }
+        .btn-cobro:hover { border-color: #1e3a5f; }
+        .btn-cobro.contado.activo { border-color: #16a34a; background: #f0fdf4; color: #16a34a; }
+        .btn-cobro.credito.activo { border-color: #7c3aed; background: #ede9fe; color: #6d28d9; }
+
+        .sec-acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+        .btn-accion {
+            flex: 1; padding: 14px 10px; border: none; border-radius: 12px;
+            font-weight: 700; font-size: 14px; cursor: pointer;
+            font-family: inherit; display: flex; align-items: center;
+            justify-content: center; gap: 8px; transition: all 0.2s; min-width: 0;
+        }
+        .btn-accion:active { transform: scale(0.97); }
+        .btn-generar { background: linear-gradient(135deg,#16a34a,#22c55e); color: #fff; }
+        .btn-generar:hover { box-shadow: 0 6px 20px rgba(22,163,74,0.3); }
+        .btn-regresar { background: #f1f5f9; color: #475569; }
+        .btn-cancelar { background: #fef2f2; color: #dc2626; }
+
+        /* ========= FE checkbox ========= */
+        .sec-fe {
+            background: #f8fafc; border-radius: 12px; padding: 12px 14px;
+        }
+        .sec-fe label.chk {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer;
+        }
+        .sec-fe input[type=checkbox] { accent-color: #1e3a5f; width: 18px; height: 18px; }
+        .sec-fe .fe-hint { font-size: 11px; color: #94a3b8; margin: 4px 0 0 26px; }
+
+        /* ========= BOTTOM FOOTER ========= */
+        .footer-bar {
+            flex-shrink: 0; border-top: 1px solid #e2e8f0;
+            padding: 8px clamp(12px,1.6vw,24px);
+            display: flex; justify-content: space-between;
+            align-items: center; font-size: 11px; color: #94a3b8;
+            background: #fff;
+        }
+
+        @media (max-width: 1024px) {
+            .cuerpo { flex-direction: column; overflow: auto; }
+            .panel-right { width: 100%; border-left: none; border-top: 1px solid #e2e8f0; }
+            .screen { height: auto; min-height: 100dvh; border-radius: 12px; }
+        }
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .grid-cliente { grid-template-columns: 1fr 1fr; }
+            .grid-pago, .grid-cobro { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .grid-cliente { grid-template-columns: 1fr; }
+            .grid-pago, .grid-cobro { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="screen">
+
+    <!-- TOP NAV -->
+    <nav class="topnav">
+        <div class="nav-brand">
+            <span class="logo">🔧</span>
+            <span class="brand-text">SANMY TALLER<small>Mecánico</small></span>
+        </div>
+        <a class="nav-item" href="#">🏠 INICIO</a>
+        <a class="nav-item" href="#">📄 PROFORMAS</a>
+        <a class="nav-item" href="#">🔧 ORDEN</a>
+        <a class="nav-item" href="#">🔍 DIAG.</a>
+        <a class="nav-item" href="#">👥 CLIENTES</a>
+        <a class="nav-item" href="#">📦 REPUESTOS</a>
+        <a class="nav-item" href="#">💱 FINANZAS</a>
+        <a class="nav-item activo" href="#">💵 FACTURACIÓN</a>
+        <a class="nav-item" href="#">🧾 FE</a>
+        <a class="nav-item" href="#">⚙️ CONFIG.</a>
+        <a class="nav-item" href="#">👤 USUARIOS</a>
+    </nav>
+
+    <!-- CUERPO -->
+    <div class="cuerpo">
+
+        <!-- LEFT -->
+        <div class="panel-left">
+
+            <!-- Cliente -->
+            <div class="sec-cliente">
+                <div class="titulo">👤 Datos del cliente</div>
+                <div class="grid-cliente">
+                    <div class="full">
+                        <input type="search" placeholder="Buscar cliente o placa…" value="Familia Hunco">
+                    </div>
+                    <span class="lbl">📛 Nombre</span>
+                    <span class="val">Familia Hunco</span>
+                    <span class="lbl">📞 Teléfono</span>
+                    <span class="val">8888-7777</span>
+                    <span class="lbl">🪪 Cédula</span>
+                    <span class="val">1-1234-5678</span>
+                    <span class="lbl">✉️ Email</span>
+                    <span class="val">cliente@ejemplo.com</span>
+                </div>
+            </div>
+
+            <!-- Líneas -->
+            <div class="sec-items">
+                <div class="titulo">🔧 Detalles · <span style="color:#64748b;font-weight:500;font-size:12px;">Orden #0045</span></div>
+                <div class="items-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:46%;">Item</th>
+                                <th style="width:12%;" class="num">Cant.</th>
+                                <th style="width:16%;" class="num">Precio</th>
+                                <th style="width:10%;" class="num">IVA</th>
+                                <th style="width:16%;" class="num">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" value="Cambio de aceite 5W-30"></td>
+                                <td class="num"><input type="number" value="1" style="width:56px;text-align:center;"></td>
+                                <td class="num"><input type="number" value="35000" style="width:80px;text-align:right;"></td>
+                                <td class="num"><input type="number" value="13" style="width:44px;text-align:center;"></td>
+                                <td class="num"><strong>₡39,550</strong></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Filtro de aceite"></td>
+                                <td class="num"><input type="number" value="1" style="width:56px;text-align:center;"></td>
+                                <td class="num"><input type="number" value="8500" style="width:80px;text-align:right;"></td>
+                                <td class="num"><input type="number" value="13" style="width:44px;text-align:center;"></td>
+                                <td class="num"><strong>₡9,605</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="items-acciones">
+                    <button class="btn-item btn-servicio">➕ Servicio</button>
+                    <button class="btn-item btn-repuesto">➕ Repuesto</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="panel-right">
+
+            <!-- Totales -->
+            <div class="sec-totales">
+                <div class="linea">
+                    <span class="lbl">Subtotal:</span>
+                    <span class="val">₡43,500</span>
+                </div>
+                <div class="linea">
+                    <span class="lbl">IVA (13%):</span>
+                    <span class="val">₡5,655</span>
+                </div>
+                <div class="divider"></div>
+                <div class="total-grande">
+                    <span class="lbl">Total a Pagar:</span>
+                    <span class="val">₡49,155</span>
+                </div>
+            </div>
+
+            <!-- Método de pago -->
+            <div class="sec-pago">
+                <div class="titulo">💳 Método de pago</div>
+                <div class="grid-pago">
+                    <button class="btn-pago activo">
+                        <span class="ico-big">💵</span>
+                        Efectivo
+                    </button>
+                    <button class="btn-pago">
+                        <span class="ico-big">💳</span>
+                        Tarjeta
+                    </button>
+                    <button class="btn-pago">
+                        <span class="ico-big">📱</span>
+                        SINPE
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tipo de cobro -->
+            <div class="sec-cobro">
+                <div class="titulo">📋 Tipo de cobro</div>
+                <div class="grid-cobro">
+                    <button class="btn-cobro contado activo">
+                        <span class="ico-big">💵</span>
+                        Contado
+                    </button>
+                    <button class="btn-cobro credito">
+                        <span class="ico-big">📝</span>
+                        Crédito
+                    </button>
+                </div>
+            </div>
+
+            <!-- Factura electrónica -->
+            <div class="sec-fe">
+                <label class="chk">
+                    <input type="checkbox" checked>
+                    Factura electrónica Hacienda
+                </label>
+                <p class="fe-hint">Sin marcar: tiquete imprimible. Con marcar: requiere cédula y nombre.</p>
+            </div>
+
+            <!-- Botones -->
+            <div class="sec-acciones">
+                <button class="btn-accion btn-generar">✔ GENERAR FACTURA</button>
+                <button class="btn-accion btn-cancelar">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-bar">
+        <span>🔧 Sanmy Taller Mecánico · Facturación</span>
+        <span>Diseño propuesto · Mockup v1</span>
+    </div>
+</div>
+</body>
+</html>

@@ -25,6 +25,9 @@
         body.t80 .hoja { width: 80mm; padding: 4mm; font-size: 11px; }
 
         .doc-titulo { text-align: center; }
+        .doc-logo { text-align: center; margin-bottom: 8px; }
+        .doc-logo img { max-height: 64px; max-width: 200px; object-fit: contain; }
+        body.t80 .doc-logo img { max-height: 48px; max-width: 72mm; }
         .doc-titulo .negocio { font-size: 1.5em; font-weight: bold; }
         body.t80 .doc-titulo .negocio { font-size: 1.25em; }
         .doc-titulo .tipo { font-weight: bold; margin-top: 2px; }
@@ -76,7 +79,11 @@
 
     <style id="page-style"></style>
 
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
     <script>
         var params = new URLSearchParams(location.search);
         var ordenId = params.get('orden');
@@ -103,7 +110,7 @@
             return 'FACTURA';
         }
 
-        function render(data, cfgTaller, cfgFe, fe, tk) {
+        function render(data, cfgTaller, cfgFe, fe, tk, logoUrl) {
             tk = tk || {};
             var o = data.orden || {};
             var lineas = data.lineas || [];
@@ -111,6 +118,9 @@
             var vehiculo = [o.marca, o.modelo, o.anio].filter(Boolean).join(' ');
 
             var html = '';
+            if (logoUrl) {
+                html += '<div class="doc-logo"><img src="' + esc(logoUrl) + '" alt=""></div>';
+            }
             html += '<div class="doc-titulo">' +
                 '<div class="negocio">' + esc(negocio) + '</div>';
             if (tk.cabecera) {
@@ -219,7 +229,7 @@
                     formato = tk.formato_defecto === 'carta' ? 'carta' : '80';
                     setFormato(formato, true);
                 }
-                render(data, cfgTaller, cfgFe, fe, tk);
+                render(data, cfgTaller, cfgFe, fe, tk, cfgTaller.logo_url || null);
                 if (params.get('auto') !== '0') {
                     setTimeout(function () { window.print(); }, 400);
                 }

@@ -57,13 +57,16 @@
             <input id="f-password" type="password" autocomplete="current-password" placeholder="••••">
         </div>
         <button type="button" class="btn" id="btn-login" onclick="entrar()">Entrar</button>
-        <button type="button" class="btn btn-sec" onclick="irInicio()">🏠 Volver al inicio</button>
+        <button type="button" class="btn btn-sec" id="btn-inicio" onclick="irInicio()" hidden>🏠 Volver al inicio</button>
+        <button type="button" class="btn btn-sec" id="btn-salir" onclick="cerrarSesion()" hidden>Cerrar sesión</button>
         <div id="estado"></div>
-        <p class="hint">Primera vez: usuario <strong>admin</strong> / contraseña <strong>admin</strong></p>
+        <p class="hint">Seleccione su usuario y pulse Enter para entrar (sin contraseña).</p>
     </div>
 
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
     <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
     <script src="enter-next.js"></script>
     <script>
         function returnUrl() {
@@ -74,13 +77,44 @@
 
         function irInicio() { window.location.href = '/abrir.html'; }
 
+        async function aplicarBotonesLogin() {
+            var btnInicio = document.getElementById('btn-inicio');
+            if (!btnInicio) return;
+            if (UsuarioSesion.get()) {
+                btnInicio.hidden = false;
+                return;
+            }
+            try {
+                var data = await TallerAPI.getAccesoConfig();
+                btnInicio.hidden = !!(data && data.pedir_login_ingreso);
+            } catch (e) {
+                btnInicio.hidden = false;
+            }
+        }
+
+        function cerrarSesion() {
+            UsuarioSesion.clear();
+            document.getElementById('f-usuario').value = '';
+            document.getElementById('f-password').value = '';
+            mostrarSesionActiva();
+        }
+
         function mostrarSesionActiva() {
             var u = UsuarioSesion.get();
             var box = document.getElementById('sesion-activa');
-            if (!u) { box.classList.remove('visible'); return; }
+            var btnInicio = document.getElementById('btn-inicio');
+            var btnSalir = document.getElementById('btn-salir');
+            if (!u) {
+                box.classList.remove('visible');
+                if (btnSalir) btnSalir.hidden = true;
+                aplicarBotonesLogin();
+                return;
+            }
             box.classList.add('visible');
             box.innerHTML = 'Sesión activa: <strong>' + esc(u.nombre_completo || u.nombre) + '</strong> (' + esc(u.rol) + '). ' +
                 '<a href="' + returnUrl() + '" style="color:#15803d;font-weight:bold;">Continuar →</a>';
+            if (btnInicio) btnInicio.hidden = false;
+            if (btnSalir) btnSalir.hidden = false;
         }
 
         function esc(s) {
@@ -91,8 +125,8 @@
             var estado = document.getElementById('estado');
             var usuario = document.getElementById('f-usuario').value.trim();
             var password = document.getElementById('f-password').value;
-            if (!usuario || !password) {
-                estado.textContent = 'Ingrese usuario y contraseña.';
+            if (!usuario) {
+                estado.textContent = 'Ingrese el usuario.';
                 return;
             }
             var btn = document.getElementById('btn-login');
@@ -114,6 +148,7 @@
         });
 
         mostrarSesionActiva();
+        aplicarBotonesLogin();
     </script>
 </body>
 </html>

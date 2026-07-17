@@ -85,9 +85,83 @@ function resolverMarcaVehiculo(marca) {
   return '';
 }
 
+/**
+ * Llena un <select> de marcas. Conserva el valor actual si existe.
+ * @param {HTMLSelectElement|string} selectEl
+ * @param {string} [valorSeleccionado]
+ */
+function llenarSelectMarcas(selectEl, valorSeleccionado) {
+  var sel = typeof selectEl === 'string' ? document.getElementById(selectEl) : selectEl;
+  if (!sel) return;
+  var actual = valorSeleccionado != null ? String(valorSeleccionado) : String(sel.value || '');
+  var canon = resolverMarcaVehiculo(actual) || actual;
+  var marcas = listarMarcasVehiculo();
+  var html = '<option value="">— Marca —</option>';
+  for (var i = 0; i < marcas.length; i++) {
+    var m = marcas[i];
+    html += '<option value="' + m.replace(/"/g, '&quot;') + '"' +
+      (m === canon ? ' selected' : '') + '>' + m + '</option>';
+  }
+  if (canon && !resolverMarcaVehiculo(canon) && marcas.indexOf(canon) < 0) {
+    html += '<option value="' + canon.replace(/"/g, '&quot;') + '" selected>' + canon + '</option>';
+  }
+  sel.innerHTML = html;
+  if (canon) sel.value = canon;
+}
+
+/**
+ * Llena un <select> de modelos según la marca elegida.
+ * @param {HTMLSelectElement|string} selectMarcaEl
+ * @param {HTMLSelectElement|string} selectModeloEl
+ * @param {string} [modeloSeleccionado]
+ */
+function llenarSelectModelos(selectMarcaEl, selectModeloEl, modeloSeleccionado) {
+  var selMarca = typeof selectMarcaEl === 'string' ? document.getElementById(selectMarcaEl) : selectMarcaEl;
+  var selModelo = typeof selectModeloEl === 'string' ? document.getElementById(selectModeloEl) : selectModeloEl;
+  if (!selModelo) return;
+  var marca = selMarca ? String(selMarca.value || '').trim() : '';
+  var actual = modeloSeleccionado != null ? String(modeloSeleccionado) : String(selModelo.value || '');
+  var html = '<option value="">— Modelo —</option>';
+  if (!marca) {
+    selModelo.innerHTML = html;
+    return;
+  }
+  var modelos = listarModelosVehiculo(marca);
+  for (var i = 0; i < modelos.length; i++) {
+    var mod = modelos[i];
+    html += '<option value="' + mod.replace(/"/g, '&quot;') + '"' +
+      (mod === actual ? ' selected' : '') + '>' + mod + '</option>';
+  }
+  if (actual && modelos.indexOf(actual) < 0) {
+    html += '<option value="' + actual.replace(/"/g, '&quot;') + '" selected>' + actual + '</option>';
+  }
+  selModelo.innerHTML = html;
+  if (actual) selModelo.value = actual;
+}
+
+/**
+ * Conecta marca → modelos (onchange) en un par de selects.
+ * @param {string} idMarca
+ * @param {string} idModelo
+ */
+function enlazarSelectsMarcaModelo(idMarca, idModelo) {
+  var selMarca = document.getElementById(idMarca);
+  var selModelo = document.getElementById(idModelo);
+  if (!selMarca || !selModelo || selMarca._marcaModeloBound) return;
+  selMarca._marcaModeloBound = true;
+  llenarSelectMarcas(selMarca);
+  llenarSelectModelos(selMarca, selModelo);
+  selMarca.addEventListener('change', function () {
+    llenarSelectModelos(selMarca, selModelo, '');
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.VEHICULOS_MARCAS = VEHICULOS_MARCAS;
   window.listarMarcasVehiculo = listarMarcasVehiculo;
   window.listarModelosVehiculo = listarModelosVehiculo;
   window.resolverMarcaVehiculo = resolverMarcaVehiculo;
+  window.llenarSelectMarcas = llenarSelectMarcas;
+  window.llenarSelectModelos = llenarSelectModelos;
+  window.enlazarSelectsMarcaModelo = enlazarSelectsMarcaModelo;
 }

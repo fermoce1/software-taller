@@ -12,8 +12,9 @@
         body { height: 100dvh; overflow: hidden; background: #eef2f7; color: #1e293b; display: flex; flex-direction: column; }
 
         .topnav { background: #f1f5f9; border-bottom: 1px solid #cbd5e1; padding: 6px clamp(8px,1.5vw,18px);
-            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0; overflow: hidden; }
-        .nav-item { flex: 1 1 0; min-width: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+            display: flex; gap: clamp(4px,0.7vw,9px); align-items: stretch; flex-wrap: nowrap; flex-shrink: 0;
+            overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .nav-item { flex: 0 0 auto; min-width: clamp(64px, 11vw, 88px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
             background: #fff; border: 1px solid #d8e0ea; border-radius: 9px; padding: clamp(5px,0.7vw,8px) 6px;
             color: #1e3a5f; font-weight: bold; font-size: clamp(9px,0.85vw,11px); text-align: center; text-decoration: none; cursor: pointer; }
         .nav-item .ico { font-size: clamp(15px,1.6vw,20px); line-height: 1; }
@@ -34,7 +35,8 @@
         .barra { display: flex; gap: 10px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
         .barra input[type=search] { flex: 1; min-width: 180px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 9px; font-size: 14px; }
 
-        .tabla-wrap { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .tabla-wrap { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; -webkit-overflow-scrolling: touch; }
+        .tabla-wrap table { min-width: 640px; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         thead th { position: sticky; top: 0; background: #1e3a5f; color: #fff; text-align: left; padding: 10px 12px; font-size: 13px; white-space: nowrap; }
         tbody td { padding: 9px 12px; border-bottom: 1px solid #eef2f7; }
@@ -75,6 +77,8 @@
         .ticket-form { overflow: auto; padding-right: 4px; }
         .ticket-preview-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; min-height: 0; }
         .ticket-preview-wrap h4 { font-size: 13px; color: #475569; margin-bottom: 8px; }
+        .ticket-logo-preview { text-align: center; margin-bottom: 8px; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; }
+        .ticket-logo-preview img { max-height: 56px; max-width: 100%; object-fit: contain; }
         .ticket-preview { flex: 1; overflow: auto; background: #fff; border: 1px dashed #cbd5e1; padding: 10px; font-family: Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.35; white-space: pre-wrap; word-break: break-word; }
         .chk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 12px; margin-top: 8px; }
         .chk-grid label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: normal; color: #334155; cursor: pointer; }
@@ -120,6 +124,63 @@
         .pf-lista { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; max-width: 640px; }
         .pf-pick { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
         .pf-pick .meta { font-size: 12px; color: #64748b; }
+
+        .fe-alerta { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 10px; padding: 10px 14px; font-size: 13px; flex-shrink: 0; }
+        .fe-alerta.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+        .filtros-fe { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .filtros-fe input, .filtros-fe select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; }
+        .btn-export { background: #ecfdf5; color: #047857; padding: 9px 14px; font-size: 13px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .modal-detalle { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
+        .modal-detalle.activo { display: flex; }
+        .modal-detalle-box { background: #fff; border-radius: 12px; max-width: 720px; width: 100%; max-height: 90vh; overflow: auto; padding: 20px; border: 1px solid #e2e8f0; }
+        .cfg-redirect { text-align: center; padding: 40px 20px; max-width: 520px; margin: 0 auto; }
+        .cfg-redirect p { color: #64748b; font-size: 14px; line-height: 1.6; margin: 12px 0 20px; }
+
+        @media (max-width: 1024px) {
+            body { height: auto; min-height: 100dvh; overflow: auto; padding-bottom: env(safe-area-inset-bottom, 0); }
+            .cuerpo { min-height: auto; overflow: visible; flex: none; }
+            .ticket-layout { grid-template-columns: 1fr; }
+            .ticket-preview-wrap { min-height: 180px; max-height: 280px; }
+            #vista-emitidas, #vista-ticket, #vista-proforma, #vista-tico, #vista-config {
+                min-height: auto !important; flex: none !important;
+            }
+            .tabla-wrap { min-height: 260px; max-height: none; flex: none; }
+            .panel-cfg, .panel-tico, .panel-proforma { max-width: none; }
+        }
+
+        @media (max-width: 768px) {
+            .cuerpo { padding: 8px 10px; gap: 10px; }
+            .tabs {
+                flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+                padding-bottom: 4px; scrollbar-width: thin;
+            }
+            .tab { flex: 0 0 auto; font-size: 12px; padding: 8px 14px; white-space: nowrap; }
+            .tarjetas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .tarjeta { min-width: 0; padding: 10px 12px; flex: none; }
+            .tarjeta .val { font-size: clamp(16px, 4.5vw, 22px); }
+            .barra.filtros-fe { flex-direction: column; align-items: stretch; }
+            .barra.filtros-fe input,
+            .barra.filtros-fe select,
+            .barra.filtros-fe button { width: 100%; min-width: 0; flex: none; }
+            .barra input[type=search] { min-width: 0; width: 100%; }
+            thead th { font-size: 11px; padding: 8px 6px; }
+            tbody td { padding: 8px 6px; font-size: 13px; }
+            .acc-wrap { flex-direction: column; align-items: stretch; }
+            .acc-wrap .btn, .acc-wrap a.btn { width: 100%; text-align: center; box-sizing: border-box; }
+            .tico-acciones { flex-direction: column; align-items: stretch; }
+            .tico-acciones .btn-tico { width: 100%; text-align: center; }
+            .acciones-cfg { flex-direction: column; }
+            .acciones-cfg .btn-fact, .acciones-cfg .btn-sec-fact, .acciones-cfg .btn-guardar, .acciones-cfg .btn-probar { width: 100%; text-align: center; }
+            .pf-totales { max-width: none; margin-left: 0; }
+            .pf-lineas { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .modal-detalle-box { padding: 16px; max-height: 92dvh; }
+        }
+
+        @media (max-width: 480px) {
+            .tarjetas { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .chk-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -127,13 +188,17 @@
         <a class="nav-item" href="/abrir.html"><span class="ico">🏠</span>INICIO</a>
         <a class="nav-item" href="/proformas.html"><span class="ico">📄</span>PROFORMAS</a>
         <a class="nav-item" href="/index.html"><span class="ico">🔧</span>ORDEN DE TRABAJO</a>
-        <a class="nav-item" href="/index.html?filtro=diagnostico"><span class="ico">🔍</span>DIAGNÓSTICO</a>
         <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
         <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
         <a class="nav-item" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
-        <a class="nav-item activo" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/caja.html"><span class="ico">💵</span>CAJA<br>(FACTURAR)</a>
+        <a class="nav-item activo" href="/facturacion.html"><span class="ico">🧾</span>FE / HACIENDA</a>
         <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
         <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+        <a class="nav-item" href="/facturacion-responsive.html" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-color:#7c3aed;"><span class="ico">🆕</span>VISTA PREVIA<br>(NUEVO DISEÑO)</a>
+        <a class="nav-item btn-salir" href="/abrir.html" style="background:#dc2626;color:#fff;border-color:#b91c1c;">
+            <span class="ico">🚪</span>SALIR
+        </a>
     </nav>
 
     <div class="cuerpo">
@@ -142,19 +207,40 @@
             <button type="button" class="tab" id="tab-proforma" onclick="verTab('proforma')">📄 Desde proforma</button>
             <button type="button" class="tab" id="tab-ticket" onclick="verTab('ticket')">🎫 Diseño de Ticket</button>
             <button type="button" class="tab" id="tab-tico" onclick="verTab('tico')">🏛️ TicoFactura (gratis)</button>
-            <button type="button" class="tab" id="tab-config" onclick="verTab('config')">⚙️ Configuración FE</button>
+            <button type="button" class="tab" id="tab-config" onclick="verTab('config')">⚙️ Config FE (Configuración)</button>
         </div>
 
         <!-- EMITIDAS -->
         <div id="vista-emitidas" style="display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;">
+            <div id="fe-banner-alertas" class="fe-alerta" style="display:none;"></div>
             <div class="tarjetas">
-                <div class="tarjeta verde"><div class="lbl">Total facturado (últimas)</div><div class="val" id="card-total">₡0</div></div>
-                <div class="tarjeta"><div class="lbl">Facturas emitidas</div><div class="val" id="card-cant">0</div></div>
+                <div class="tarjeta verde"><div class="lbl">Total facturado (filtro)</div><div class="val" id="card-total">₡0</div></div>
+                <div class="tarjeta"><div class="lbl">Facturas</div><div class="val" id="card-cant">0</div></div>
+                <div class="tarjeta"><div class="lbl">IVA estimado</div><div class="val" id="card-iva" style="font-size:18px;">₡0</div></div>
                 <div class="tarjeta"><div class="lbl">Modo actual</div><div class="val" id="card-modo" style="font-size:18px;">—</div></div>
+                <div class="tarjeta"><div class="lbl">Pendientes envío</div><div class="val" id="card-pend" style="font-size:18px;color:#b45309;">0</div></div>
+                <div class="tarjeta"><div class="lbl">Rechazadas</div><div class="val" id="card-rech" style="font-size:18px;color:#b91c1c;">0</div></div>
             </div>
-            <div class="barra">
-                <input type="search" id="buscar" placeholder="Buscar cliente, consecutivo, clave, código o nombre de producto…" oninput="programarBuscarEmitidas()">
+            <div class="barra filtros-fe">
+                <input type="search" id="buscar" placeholder="Buscar cliente, consecutivo, clave…" oninput="programarBuscarEmitidas()" style="flex:1;min-width:160px;">
+                <select id="filtro-estado" onchange="cargarEmitidas()">
+                    <option value="">Todos los estados</option>
+                    <option value="aceptada">Aceptadas Hacienda</option>
+                    <option value="pendiente">Pendientes envío</option>
+                    <option value="rechazada">Rechazadas</option>
+                    <option value="tiquete">Tiquete interno</option>
+                    <option value="simulada">Simuladas</option>
+                    <option value="tico">TicoFactura manual</option>
+                </select>
+                <select id="filtro-tipo" onchange="cargarEmitidas()">
+                    <option value="">FE + tiquete</option>
+                    <option value="fe">Solo electrónicas</option>
+                    <option value="tiquete">Solo tiquete</option>
+                </select>
+                <input type="date" id="filtro-desde" onchange="cargarEmitidas()" title="Desde">
+                <input type="date" id="filtro-hasta" onchange="cargarEmitidas()" title="Hasta">
                 <button type="button" class="btn btn-azul" style="padding:9px 14px;font-size:13px;" onclick="cargarEmitidas()">↻ Actualizar</button>
+                <button type="button" class="btn-export" onclick="exportarFacturasCsv()">📥 Exportar CSV</button>
             </div>
             <div class="tabla-wrap">
                 <table>
@@ -184,7 +270,7 @@
                         <div class="campo"><label for="pf-nombre">Cliente</label><input id="pf-nombre" type="text"></div>
                         <div class="campo"><label for="pf-cedula">Identificación (FE)</label><input id="pf-cedula" type="text" placeholder="1-2345-6789"></div>
                         <div class="campo"><label for="pf-metodo">Método de pago</label>
-                            <select id="pf-metodo"><option value="efectivo">Efectivo</option><option value="tarjeta">Tarjeta</option><option value="sinpe">SINPE</option><option value="otro">Otro</option></select>
+                            <select id="pf-metodo"></select>
                         </div>
                     </div>
                     <p style="font-size:12px;font-weight:bold;color:#475569;margin-bottom:4px;">Detalle — puede modificar antes de facturar</p>
@@ -292,6 +378,9 @@
                 </div>
                 <div class="ticket-preview-wrap">
                     <h4>Vista previa (datos de ejemplo)</h4>
+                    <div class="ticket-logo-preview" id="tk-logo-preview" hidden>
+                        <img id="tk-logo-img" alt="Logo">
+                    </div>
                     <div class="ticket-preview" id="tk-preview">Cargando…</div>
                 </div>
             </div>
@@ -332,112 +421,48 @@
                         <button type="button" class="btn-tico sec" onclick="window.open('https://ovitribucr.hacienda.go.cr','_blank')">🏛️ Ir a facturar</button>
                     </div>
                     <textarea id="tico-texto" readonly></textarea>
+                    <div style="margin-top:18px;padding-top:16px;border-top:1px dashed #cbd5e1;">
+                        <h4 style="color:#1e3a5f;margin-bottom:8px;">✅ Registrar factura hecha en TRIBU-CR</h4>
+                        <p style="font-size:12px;color:#64748b;margin-bottom:10px;">Después de facturar en TicoFactura, guarde aquí la clave para que quede en el historial de Sanmy.</p>
+                        <div class="form-grid" style="max-width:640px;">
+                            <div class="campo"><label>Clave Hacienda *</label><input id="tico-clave-reg" type="text" placeholder="50 dígitos"></div>
+                            <div class="campo"><label>Consecutivo</label><input id="tico-cons-reg" type="text" placeholder="Opcional"></div>
+                            <div class="campo"><label>PDF oficial (URL)</label><input id="tico-pdf-reg" type="url" placeholder="https://…"></div>
+                        </div>
+                        <button type="button" class="btn-tico" style="margin-top:10px;" onclick="registrarTicoManual()">💾 Guardar en historial</button>
+                        <div id="tico-reg-msg" class="cfg-msg"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- CONFIG FE -->
+        <!-- CONFIG FE → enlace único a Configuración -->
         <div id="vista-config" style="display:none;flex:1;min-height:0;">
-            <div class="panel-cfg">
+            <div class="panel-cfg cfg-redirect">
                 <h3>⚙️ Configuración de factura electrónica</h3>
-                <p class="sub">Datos del emisor y modo de operación. En modo simulación se generan facturas de prueba sin enviarlas a Hacienda.</p>
+                <p>Para evitar datos duplicados o contradictorios, la configuración FE (emisor, proveedor, token, modo simulación/API) se administra en un solo lugar:</p>
+                <a class="btn-fact" href="/configuracion.html?sec=fe" style="display:inline-block;text-decoration:none;">Ir a Configuración → Factura electrónica</a>
+                <p style="margin-top:16px;font-size:12px;">Modo actual: <strong id="cfg-modo-resumen">—</strong></p>
+            </div>
+        </div>
 
-                <div class="nota-fe" id="fe-almendro-auto" style="background:#eff6ff;border-color:#93c5fd;color:#1e40af;display:none;">
-                    <strong>⚡ Envío automático con Almendro (~$36/año)</strong><br>
-                    Con modo <strong>API / Hacienda</strong> + token de Almendro, al cobrar una orden Sanmy envía la factura a Hacienda sin pasos extra.
-                    Solo confirme el cobro con nombre y cédula del cliente.
+        <div id="modal-detalle-fe" class="modal-detalle" onclick="cerrarDetalleFe()">
+            <div class="modal-detalle-box" onclick="event.stopPropagation()">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <h3 style="color:#1e3a5f;margin:0;">Detalle de factura</h3>
+                    <button type="button" class="btn-sec-fact" onclick="cerrarDetalleFe()">Cerrar</button>
                 </div>
-
-                <div class="nota-fe">
-                    <strong>Modo simulación:</strong> ideal para pruebas; genera clave local (no va a Hacienda).<br>
-                    <strong>Modo API (Hacienda):</strong> envío automático al cobrar — recomendado con Almendro.<br>
-                    <strong>Sin proveedor aún:</strong> deje modo Simulación y complete los datos del emisor.
-                </div>
-
-                <div class="nota-fe" id="fe-checklist" style="background:#f0fdf4;border-color:#86efac;color:#166534;">
-                    <strong>Lista para cuando tenga proveedor:</strong>
-                    <ul style="margin:8px 0 0 18px;font-size:12px;line-height:1.5;">
-                        <li id="chk-emisor">Datos del emisor (cédula, nombre)</li>
-                        <li id="chk-proveedor">Proveedor seleccionado</li>
-                        <li id="chk-url">URL de API configurada</li>
-                        <li id="chk-token">Token de API</li>
-                        <li id="chk-atv">Llave criptográfica activa en TRIBU-CR</li>
-                    </ul>
-                </div>
-
-                <div class="form-grid">
-                    <div class="campo">
-                        <label for="fe-modo">Modo de operación</label>
-                        <select id="fe-modo" onchange="aplicarModo()">
-                            <option value="simulacion">Simulación (pruebas)</option>
-                            <option value="api">API / Hacienda (real)</option>
-                        </select>
-                    </div>
-                    <div class="campo">
-                        <label for="fe-proveedor">Proveedor de facturación</label>
-                        <select id="fe-proveedor" onchange="aplicarProveedorFe()">
-                            <option value="pendiente">Sin proveedor (solo simulación)</option>
-                            <option value="generico">API genérica (JSON Sanmy)</option>
-                            <option value="almendro">Almendro — API desde ~$36/año</option>
-                            <option value="factun">Factun — API (consultar planes)</option>
-                        </select>
-                    </div>
-                    <div class="campo">
-                        <label for="fe-actividad">Actividad económica</label>
-                        <input id="fe-actividad" type="text" placeholder="Ej. 452000">
-                    </div>
-
-                    <div class="campo">
-                        <label for="fe-cedula">Cédula / identificación del emisor *</label>
-                        <input id="fe-cedula" type="text" placeholder="Ej. 3-101-123456">
-                    </div>
-                    <div class="campo">
-                        <label for="fe-nombre">Nombre o razón social *</label>
-                        <input id="fe-nombre" type="text" placeholder="Sanmy Taller Mecánico">
-                    </div>
-                    <div class="campo">
-                        <label for="fe-email">Correo del emisor</label>
-                        <input id="fe-email" type="email" placeholder="taller@correo.com">
-                    </div>
-
-                    <div class="campo">
-                        <label for="fe-sucursal">Sucursal</label>
-                        <input id="fe-sucursal" type="text" placeholder="001">
-                    </div>
-                    <div class="campo">
-                        <label for="fe-terminal">Terminal</label>
-                        <input id="fe-terminal" type="text" placeholder="001">
-                    </div>
-
-                    <div class="campo full solo-api">
-                        <label for="fe-url">URL de la API del proveedor (modo API)</label>
-                        <input id="fe-url" type="text" placeholder="https://api.miproveedor.com/facturas">
-                    </div>
-                    <div class="campo full solo-api">
-                        <label for="fe-url-sandbox">URL sandbox / pruebas (opcional)</label>
-                        <input id="fe-url-sandbox" type="text" placeholder="https://sandbox.../vouchers">
-                    </div>
-                    <div class="campo full solo-api">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                            <input type="checkbox" id="fe-sandbox"> Usar ambiente de pruebas (sandbox)
-                        </label>
-                    </div>
-                    <div class="campo full solo-api">
-                        <label for="fe-token">Token de autenticación (Bearer)</label>
-                        <input id="fe-token" type="text" placeholder="Token del proveedor">
-                    </div>
-                </div>
-
-                <div class="acciones-cfg">
-                    <button type="button" class="btn btn-guardar" onclick="guardarConfig()">💾 Guardar configuración</button>
-                    <button type="button" class="btn btn-probar" onclick="probarConexion()">🔌 Probar conexión</button>
-                </div>
-                <div class="cfg-msg" id="cfg-msg"></div>
+                <div id="detalle-fe-contenido" style="font-size:13px;"></div>
             </div>
         </div>
     </div>
 
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
+    <script src="metodos-pago-client.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
     <script src="enter-next.js"></script>
     <script>
         function fmt(v) { var n = Number(v) || 0; return '₡' + n.toLocaleString('es-CR', { maximumFractionDigits: 0 }); }
@@ -475,9 +500,48 @@
             document.getElementById('vista-ticket').style.display = t === 'ticket' ? 'flex' : 'none';
             document.getElementById('vista-tico').style.display = t === 'tico' ? 'flex' : 'none';
             document.getElementById('vista-config').style.display = t === 'config' ? 'flex' : 'none';
-            if (t === 'config') cargarConfig();
+            if (t === 'config') cargarModoFeResumen();
             if (t === 'ticket') cargarTicketDesign();
             if (t === 'proforma' && !proformaOrdenId) cargarListaProformasPendientes();
+        }
+
+        function leerFiltrosFe() {
+            return {
+                q: (document.getElementById('buscar').value || '').trim(),
+                estado: (document.getElementById('filtro-estado').value || '').trim(),
+                tipo: (document.getElementById('filtro-tipo').value || '').trim(),
+                desde: (document.getElementById('filtro-desde').value || '').trim(),
+                hasta: (document.getElementById('filtro-hasta').value || '').trim()
+            };
+        }
+
+        function actualizarBannerAlertas(alertas) {
+            var banner = document.getElementById('fe-banner-alertas');
+            if (!banner) return;
+            var pend = (alertas && alertas.pendientes) || 0;
+            var rech = (alertas && alertas.rechazadas) || 0;
+            if (!pend && !rech) {
+                banner.style.display = 'none';
+                return;
+            }
+            var partes = [];
+            if (pend) partes.push('<strong>' + pend + '</strong> factura(s) pendientes de envío a Hacienda');
+            if (rech) partes.push('<strong>' + rech + '</strong> rechazada(s)');
+            banner.innerHTML = '⚠ Atención: ' + partes.join(' · ') + '. Use el filtro «Pendientes» o «Rechazadas» y el botón Reenviar.';
+            banner.className = 'fe-alerta';
+            banner.style.display = 'block';
+        }
+
+        async function cargarModoFeResumen() {
+            try {
+                var data = await TallerAPI.getFeConfig();
+                var cfg = data.config || data || {};
+                var txt = (cfg.fe_modo === 'api') ? 'API / Hacienda' : 'Simulación';
+                var el = document.getElementById('cfg-modo-resumen');
+                if (el) el.textContent = txt;
+                var card = document.getElementById('card-modo');
+                if (card) card.textContent = txt;
+            } catch (e) { /* ignore */ }
         }
 
         function estadoPill(estado) {
@@ -485,6 +549,7 @@
             if (e === 'aceptado' || e === 'aceptada') return '<span class="estado-pill acept">Aceptada</span>';
             if (e === 'simulado' || e === 'simulada') return '<span class="estado-pill sim">Simulada</span>';
             if (e === 'tiquete') return '<span class="estado-pill pend">Tiquete</span>';
+            if (e === 'tico_manual') return '<span class="estado-pill acept">TicoFactura</span>';
             if (e === 'rechazado' || e === 'rechazada' || e === 'error') return '<span class="estado-pill rech">Rechazada</span>';
             return '<span class="estado-pill pend">' + esc(estado || 'Pendiente') + '</span>';
         }
@@ -503,18 +568,52 @@
 
         async function cargarEmitidas() {
             var tbody = document.getElementById('tbody-emitidas');
-            var q = (document.getElementById('buscar').value || '').trim();
+            var filtros = leerFiltrosFe();
             tbody.innerHTML = '<tr><td colspan="7" class="vacio">Cargando…</td></tr>';
             try {
-                var data = await TallerAPI.getFeRecientes(100, q);
+                var data = await TallerAPI.getFeRecientes(500, filtros);
                 facturasCache = (data && data.facturas) ? data.facturas : [];
-                var total = facturasCache.reduce(function (s, f) { return s + (Number(f.total) || 0); }, 0);
-                document.getElementById('card-total').textContent = fmt(total);
-                document.getElementById('card-cant').textContent = facturasCache.length + (q ? ' encontrada(s)' : '');
+                actualizarBannerAlertas(data.alertas);
+                document.getElementById('card-pend').textContent = String((data.alertas && data.alertas.pendientes) || 0);
+                document.getElementById('card-rech').textContent = String((data.alertas && data.alertas.rechazadas) || 0);
+                var resData = await TallerAPI.getFeResumen(filtros);
+                var res = (resData && resData.resumen) ? resData.resumen : {};
+                document.getElementById('card-total').textContent = fmt(res.total_facturado || 0);
+                document.getElementById('card-cant').textContent = String(res.cantidad || facturasCache.length);
+                document.getElementById('card-iva').textContent = fmt(res.iva_estimado || 0);
+                await cargarModoFeResumen();
                 renderEmitidas();
             } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="7" class="vacio">Error: ' + esc(e.message) + '</td></tr>';
             }
+        }
+
+        function exportarFacturasCsv() {
+            window.open(TallerAPI.exportFeCsvUrl(leerFiltrosFe()), '_blank');
+        }
+
+        async function verDetalleFe(id) {
+            try {
+                var data = await TallerAPI.getFeDetalle(id);
+                var f = data.factura || {};
+                var lineasHtml = (f.lineas || []).map(function (l, i) {
+                    return '<tr><td>' + (i + 1) + '</td><td>' + esc(l.descripcion) + '</td><td class="num">' + esc(l.cantidad) + '</td><td class="num">' + fmt(l.total_linea || l.subtotal) + '</td></tr>';
+                }).join('');
+                document.getElementById('detalle-fe-contenido').innerHTML =
+                    '<p><strong>Consecutivo:</strong> ' + esc(f.consecutivo || '—') + '</p>' +
+                    '<p><strong>Clave:</strong> <span class="mono">' + esc(f.clave || '—') + '</span></p>' +
+                    '<p><strong>Cliente:</strong> ' + esc(f.receptor_nombre || '—') + ' · ' + esc(f.receptor_identificacion || '') + '</p>' +
+                    '<p><strong>Total:</strong> ' + fmt(f.total) + ' · <strong>Estado:</strong> ' + esc(f.estado) + '</p>' +
+                    (f.pdf_url ? '<p><a class="btn btn-azul" href="' + esc(f.pdf_url) + '" target="_blank" rel="noopener">📄 PDF oficial Hacienda</a></p>' : '') +
+                    (lineasHtml ? '<table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;"><thead><tr><th>#</th><th>Descripción</th><th class="num">Cant.</th><th class="num">Total</th></tr></thead><tbody>' + lineasHtml + '</tbody></table>' : '');
+                document.getElementById('modal-detalle-fe').classList.add('activo');
+            } catch (e) {
+                alert('No se pudo cargar el detalle: ' + e.message);
+            }
+        }
+
+        function cerrarDetalleFe() {
+            document.getElementById('modal-detalle-fe').classList.remove('activo');
         }
 
         function renderEmitidas() {
@@ -530,17 +629,23 @@
                     ? '<a class="btn btn-azul" href="/index.html?orden=' + esc(f.orden_id) + '">#' + esc(f.orden_id) + '</a>'
                     : '—';
                 var est = String(f.estado || '').toLowerCase();
-                var aceptada = (est === 'aceptado' || est === 'aceptada' || est === 'enviado');
+                var aceptada = (est === 'aceptado' || est === 'aceptada' || est === 'enviado' || est === 'tico_manual');
                 var simulada = (est === 'simulado' || est === 'simulada');
                 var botones = [];
-                if (aceptada) {
+                botones.push('<button class="btn btn-azul" onclick="verDetalleFe(' + f.id + ')">🔍</button>');
+                if (f.pdf_url) {
+                    botones.push('<a class="btn btn-print" href="' + esc(f.pdf_url) + '" target="_blank" rel="noopener" title="PDF Hacienda">📄 PDF</a>');
+                }
+                if (aceptada && est !== 'tico_manual') {
                     botones.push('<span class="estado-pill acept">✓ En Hacienda</span>');
+                } else if (est === 'tico_manual') {
+                    botones.push('<span class="estado-pill acept">TRIBU-CR</span>');
                 } else if (simulada) {
-                    botones.push('<span class="estado-pill sim">Simulada — cobre con modo API</span>');
+                    botones.push('<span class="estado-pill sim">Simulada</span>');
                 } else if (est === 'tiquete') {
-                    botones.push('<span class="estado-pill pend">Tiquete interno</span>');
+                    botones.push('<span class="estado-pill pend">Tiquete</span>');
                 } else {
-                    botones.push('<button class="btn btn-hacienda" onclick="enviarHacienda(' + f.id + ', this)">📤 Reenviar a Hacienda</button>');
+                    botones.push('<button class="btn btn-hacienda" onclick="enviarHacienda(' + f.id + ', this)">📤 Reenviar</button>');
                 }
                 if (f.orden_id) {
                     botones.push('<button class="btn btn-print" title="Imprimir tiquete 80mm" onclick="imprimirFactura(' + f.orden_id + ', \'80\')">🧾 80mm</button>');
@@ -601,6 +706,19 @@
             renderChkCampos(cfg);
         }
 
+        function aplicarLogoPreviewTicket(cfg) {
+            var bloque = document.getElementById('tk-logo-preview');
+            var img = document.getElementById('tk-logo-img');
+            if (!bloque || !img) return;
+            if (cfg && cfg.logo_url) {
+                img.src = cfg.logo_url;
+                bloque.hidden = false;
+            } else {
+                img.removeAttribute('src');
+                bloque.hidden = true;
+            }
+        }
+
         var previewTimer = null;
         async function actualizarPreviewTicket() {
             var prev = document.getElementById('tk-preview');
@@ -610,6 +728,7 @@
                 try {
                     var r = await TallerAPI.getTicketPreview('factura', leerTicketForm());
                     prev.textContent = r.texto || '';
+                    aplicarLogoPreviewTicket(r.config || {});
                 } catch (e) {
                     prev.textContent = 'Vista previa: ' + e.message;
                 }
@@ -619,7 +738,9 @@
         async function cargarTicketDesign() {
             try {
                 var data = await TallerAPI.getTicketConfig();
-                rellenarTicketForm(data.config || data);
+                var cfg = data.config || data;
+                rellenarTicketForm(cfg);
+                aplicarLogoPreviewTicket(cfg);
                 await cargarImpresoras();
                 await actualizarPreviewTicket();
             } catch (e) {
@@ -775,149 +896,44 @@
         function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v == null ? '' : v; }
         function getVal(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
-        var PROV_FE_URLS = {
-            almendro: {
-                prod: 'https://fe.almendro.cr/api/v1/public/vouchers',
-                sandbox: 'https://sandbox.fe.almendro.cr/api/v1/public/vouchers'
-            },
-            factun: { prod: 'https://api.factun.com/v1/comprobantes', sandbox: '' },
-            generico: { prod: '', sandbox: '' }
-        };
+        var guiaTicoCache = null;
 
-        function aplicarProveedorFe() {
-            var prov = document.getElementById('fe-proveedor').value;
-            var urls = PROV_FE_URLS[prov];
-            if (urls && urls.prod) setVal('fe-url', urls.prod);
-            if (urls && urls.sandbox) setVal('fe-url-sandbox', urls.sandbox);
-            if (prov === 'almendro') {
-                setVal('fe-modo', 'api');
-                aplicarModo();
-            }
-            actualizarChecklistFe();
-        }
-
-        function actualizarChecklistFe() {
-            var ced = getVal('fe-cedula');
-            var nom = getVal('fe-nombre');
-            var prov = getVal('fe-proveedor');
-            var url = getVal('fe-url') || (PROV_FE_URLS[prov] && PROV_FE_URLS[prov].prod) || '';
-            var tok = getVal('fe-token');
-            var modo = getVal('fe-modo');
-            var box = document.getElementById('fe-almendro-auto');
-            if (box) box.style.display = (prov === 'almendro' && modo === 'api') ? 'block' : 'none';
-            function pintar(id, ok, txt) {
-                var el = document.getElementById(id);
-                if (!el) return;
-                el.textContent = (ok ? '✓ ' : '○ ') + txt;
-                el.style.color = ok ? '#15803d' : '#64748b';
-            }
-            pintar('chk-emisor', !!(ced && nom), 'Datos del emisor (cédula, nombre)');
-            pintar('chk-proveedor', prov && prov !== 'pendiente', 'Proveedor seleccionado');
-            pintar('chk-url', !!url, 'URL de API configurada');
-            pintar('chk-token', !!tok, 'Token de API (obligatorio para envío automático)');
-            pintar('chk-atv', modo === 'api' && prov === 'almendro' && !!(ced && nom && tok), 'Listo para envío automático al cobrar');
-        }
-
-        function aplicarModo() {
-            var modo = document.getElementById('fe-modo').value;
-            document.body.classList.toggle('modo-api', modo === 'api');
-            actualizarChecklistFe();
-        }
-
-        async function cargarConfig() {
-            var msg = document.getElementById('cfg-msg');
-            msg.textContent = '';
-            try {
-                var data = await TallerAPI.getFeConfig();
-                var cfg = data.config || data || {};
-                setVal('fe-modo', cfg.fe_modo || 'simulacion');
-                setVal('fe-proveedor', cfg.fe_proveedor || 'pendiente');
-                setVal('fe-actividad', cfg.fe_actividad_economica);
-                setVal('fe-cedula', cfg.fe_emisor_cedula);
-                setVal('fe-nombre', cfg.fe_emisor_nombre);
-                setVal('fe-email', cfg.fe_emisor_email);
-                setVal('fe-sucursal', cfg.fe_sucursal);
-                setVal('fe-terminal', cfg.fe_terminal);
-                setVal('fe-url', cfg.fe_api_url);
-                setVal('fe-url-sandbox', cfg.fe_api_url_sandbox);
-                setVal('fe-token', cfg.fe_api_token);
-                var sb = document.getElementById('fe-sandbox');
-                if (sb) sb.checked = cfg.fe_sandbox === '1' || cfg.fe_sandbox === true;
-                aplicarModo();
-                actualizarChecklistFe();
-                document.getElementById('card-modo').textContent = (cfg.fe_modo === 'api') ? 'API / Hacienda' : 'Simulación';
-            } catch (e) {
+        async function registrarTicoManual() {
+            var msg = document.getElementById('tico-reg-msg');
+            var ordenId = parseInt((document.getElementById('tico-orden-id').value || '').trim(), 10);
+            var clave = (document.getElementById('tico-clave-reg').value || '').trim();
+            var consecutivo = (document.getElementById('tico-cons-reg').value || '').trim();
+            var pdfUrl = (document.getElementById('tico-pdf-reg').value || '').trim();
+            if (!ordenId || !clave) {
                 msg.style.color = '#b91c1c';
-                msg.textContent = 'No se pudo cargar la configuración: ' + e.message;
-            }
-        }
-
-        async function guardarConfig() {
-            var msg = document.getElementById('cfg-msg');
-            var datos = {
-                fe_modo: getVal('fe-modo') || 'simulacion',
-                fe_proveedor: getVal('fe-proveedor') || 'pendiente',
-                fe_sandbox: document.getElementById('fe-sandbox') && document.getElementById('fe-sandbox').checked ? '1' : '0',
-                fe_actividad_economica: getVal('fe-actividad'),
-                fe_emisor_cedula: getVal('fe-cedula'),
-                fe_emisor_nombre: getVal('fe-nombre'),
-                fe_emisor_email: getVal('fe-email'),
-                fe_sucursal: getVal('fe-sucursal'),
-                fe_terminal: getVal('fe-terminal'),
-                fe_api_url: getVal('fe-url'),
-                fe_api_url_sandbox: getVal('fe-url-sandbox'),
-                fe_api_token: getVal('fe-token')
-            };
-            if (!datos.fe_emisor_cedula || !datos.fe_emisor_nombre) {
-                msg.style.color = '#b91c1c';
-                msg.textContent = 'La cédula y el nombre del emisor son obligatorios.';
+                msg.textContent = 'Indique orden y clave de Hacienda.';
                 return;
             }
-            if (datos.fe_modo === 'api' && !datos.fe_api_url && PROV_FE_URLS[datos.fe_proveedor]) {
-                datos.fe_api_url = PROV_FE_URLS[datos.fe_proveedor].prod || '';
-            }
-            if (datos.fe_modo === 'api' && !datos.fe_api_url) {
-                msg.style.color = '#b91c1c';
-                msg.textContent = 'En modo API debe indicar la URL del proveedor o seleccionar Almendro.';
-                return;
-            }
-            if (datos.fe_modo === 'api' && !datos.fe_api_token) {
-                msg.style.color = '#b91c1c';
-                msg.textContent = 'En modo API el token es obligatorio (lo obtiene en el panel de Almendro).';
-                return;
-            }
-            if (datos.fe_modo === 'api' && datos.fe_proveedor === 'pendiente') {
-                msg.style.color = '#b91c1c';
-                msg.textContent = 'En modo API seleccione un proveedor o use modo Simulación mientras lo contrata.';
-                return;
-            }
-            try {
-                await TallerAPI.saveFeConfig(datos);
-                msg.style.color = '#15803d';
-                msg.textContent = '✓ Configuración guardada correctamente.';
-                document.getElementById('card-modo').textContent = (datos.fe_modo === 'api') ? 'API / Hacienda' : 'Simulación';
-                actualizarChecklistFe();
-            } catch (e) {
-                msg.style.color = '#b91c1c';
-                msg.textContent = 'No se pudo guardar: ' + e.message;
-            }
-        }
-
-        async function probarConexion() {
-            var msg = document.getElementById('cfg-msg');
             msg.style.color = '#475569';
-            msg.textContent = 'Probando…';
+            msg.textContent = 'Guardando…';
             try {
-                var r = await TallerAPI.probarFeConexion();
-                msg.style.color = r.ok ? '#15803d' : '#b91c1c';
-                msg.textContent = (r.ok ? '✓ ' : '✕ ') + (r.mensaje || 'Sin mensaje');
+                var g = guiaTicoCache || {};
+                var rec = g.receptor || {};
+                var r = await TallerAPI.registrarTicoFactura({
+                    ordenId: ordenId,
+                    clave: clave,
+                    consecutivo: consecutivo,
+                    pdf_url: pdfUrl,
+                    total: g.total,
+                    receptor: {
+                        identificacion: rec.identificacion || '',
+                        nombre: rec.nombre || '',
+                        email: rec.email || ''
+                    }
+                });
+                msg.style.color = '#15803d';
+                msg.textContent = r.ya_registrada ? '✓ Esa clave ya estaba registrada.' : '✓ Factura TRIBU-CR registrada en Sanmy.';
+                cargarEmitidas();
             } catch (e) {
                 msg.style.color = '#b91c1c';
                 msg.textContent = 'Error: ' + e.message;
             }
         }
-
-        var guiaTicoCache = null;
 
         async function cargarGuiaTico() {
             var msg = document.getElementById('tico-msg');
@@ -981,6 +997,10 @@
         }
 
         (function initFacturacionPage() {
+            MetodosPagoUI.cargar().then(function () {
+                MetodosPagoUI.renderSelect('pf-metodo');
+            }).catch(function () { /* defaults vacíos */ });
+
             try {
                 TallerAPI.getTallerConfig().then(function (cfg) {
                     var r = parseFloat(cfg.impuesto_iva);
@@ -991,6 +1011,13 @@
                     }
                 });
             } catch (e) { /* 13% */ }
+
+            var hoy = new Date();
+            var primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            var fd = document.getElementById('filtro-desde');
+            var fh = document.getElementById('filtro-hasta');
+            if (fd) fd.value = primerDia.toISOString().slice(0, 10);
+            if (fh) fh.value = hoy.toISOString().slice(0, 10);
 
             var params = new URLSearchParams(window.location.search);
             var tab = params.get('tab');

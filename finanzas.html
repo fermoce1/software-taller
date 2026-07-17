@@ -45,6 +45,26 @@
         .aviso { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 12px; padding: 18px; font-size: 14px; }
         .aviso h3 { margin-bottom: 6px; }
 
+        tr.fila-cxc { cursor: pointer; }
+        tr.fila-cxc.abierta { background: #eff6ff; }
+        tr.fila-detalle td { background: #f8fafc; padding: 0; border-bottom: 1px solid #e2e8f0; }
+        .detalle-cxc { padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 20px; }
+        .detalle-cxc .vacio { padding: 10px 0; }
+        .detalle-col { min-width: 220px; }
+        .detalle-col h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: #64748b; margin-bottom: 8px; }
+        .detalle-datos { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; }
+        .detalle-datos span:first-child { color: #64748b; }
+        .detalle-datos strong { color: #1e293b; }
+        .lista-abonos { list-style: none; font-size: 13px; display: flex; flex-direction: column; gap: 5px; max-height: 160px; overflow-y: auto; }
+        .lista-abonos li { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; }
+        .lista-abonos .m { color: #64748b; font-size: 11px; }
+        .resumen-montos { display: flex; flex-direction: column; gap: 6px; font-size: 14px; min-width: 180px; }
+        .resumen-montos .fila { display: flex; justify-content: space-between; gap: 12px; }
+        .resumen-montos .fila strong { color: #1e3a5f; }
+        .resumen-montos .fila.saldo strong { color: #b91c1c; }
+        .form-abono { display: flex; gap: 6px; flex-wrap: wrap; align-items: end; }
+        .form-abono input, .form-abono select { padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 13px; }
+        .form-abono input[type="number"] { width: 120px; }
         .estado-pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: bold; }
         .estado-pill.pend { background: #fee2e2; color: #b91c1c; }
         .estado-pill.pag { background: #dcfce7; color: #15803d; }
@@ -71,9 +91,11 @@
         <a class="nav-item" href="/clientes.html"><span class="ico">👥</span>CLIENTES</a>
         <a class="nav-item" href="/inventario.html"><span class="ico">📦</span>REPUESTOS<br>(INVENTARIO)</a>
         <a class="nav-item activo" href="/finanzas.html"><span class="ico">💱</span>FINANZAS<br>(CxC/CxP)</a>
-        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FACTURACIÓN</a>
+        <a class="nav-item" href="/caja.html"><span class="ico">💵</span>CAJA<br>(FACTURAR)</a>
+        <a class="nav-item" href="/facturacion.html"><span class="ico">🧾</span>FE / HACIENDA</a>
         <a class="nav-item" href="/configuracion.html"><span class="ico">⚙️</span>CONFIG.</a>
         <a class="nav-item" href="/usuarios.html"><span class="ico">👤</span>USUARIOS</a>
+        <a class="nav-item" href="/facturacion-responsive.html" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border-color:#7c3aed;"><span class="ico">🆕</span>VISTA PREVIA<br>(NUEVO DISEÑO)</a>
     </nav>
 
     <div class="cuerpo">
@@ -136,7 +158,11 @@
         </div>
     </div>
 
+    <script src="licencia-sanmy.js"></script>
     <script src="taller-api.js"></script>
+    <script src="usuario-sesion.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
     <script src="enter-next.js"></script>
     <script>
         function fmt(v) { var n = Number(v) || 0; return '₡' + n.toLocaleString('es-CR', { maximumFractionDigits: 0 }); }
@@ -244,6 +270,116 @@
             return '<span class="badge">Contado</span>';
         }
 
+        var detalleCxcAbierto = null;
+
+        async function toggleDetalleCxc(ordenId) {
+            var filaDetalle = document.getElementById('detalle-cxc-' + ordenId);
+            var filaCxc = document.getElementById('fila-cxc-' + ordenId);
+            if (!filaDetalle) return;
+
+            // Si ya está abierta esta misma, la cerramos (toggle)
+            if (detalleCxcAbierto === ordenId) {
+                filaDetalle.style.display = 'none';
+                if (filaCxc) filaCxc.classList.remove('abierta');
+                detalleCxcAbierto = null;
+                return;
+            }
+            // Cerrar cualquier otra fila abierta
+            if (detalleCxcAbierto != null) {
+                var prevDetalle = document.getElementById('detalle-cxc-' + detalleCxcAbierto);
+                var prevFila = document.getElementById('fila-cxc-' + detalleCxcAbierto);
+                if (prevDetalle) prevDetalle.style.display = 'none';
+                if (prevFila) prevFila.classList.remove('abierta');
+            }
+
+            detalleCxcAbierto = ordenId;
+            if (filaCxc) filaCxc.classList.add('abierta');
+            filaDetalle.style.display = 'table-row';
+            filaDetalle.querySelector('td').innerHTML = '<div class="detalle-cxc"><p class="vacio">Cargando información…</p></div>';
+
+            try {
+                var data = await TallerAPI.getTallerOrden(ordenId);
+                renderDetalleCxc(ordenId, data);
+            } catch (e) {
+                filaDetalle.querySelector('td').innerHTML = '<div class="detalle-cxc"><p class="vacio">Error al cargar: ' + esc(e.message) + '</p></div>';
+            }
+        }
+
+        function renderDetalleCxc(ordenId, data) {
+            var filaDetalle = document.getElementById('detalle-cxc-' + ordenId);
+            if (!filaDetalle) return;
+            var o = data.orden || {};
+            var abonos = data.abonos || [];
+
+            var htmlVehiculo =
+                '<div class="detalle-col"><h4>🚗 Vehículo</h4><div class="detalle-datos">' +
+                '<span>Placa:</span><strong>' + esc(o.placa || '—') + '</strong>' +
+                '<span>Marca:</span><strong>' + esc(o.marca || '—') + '</strong>' +
+                '<span>Modelo:</span><strong>' + esc(o.modelo || '—') + '</strong>' +
+                '<span>Año:</span><strong>' + esc(o.anio || '—') + '</strong>' +
+                '<span>Kilometraje:</span><strong>' + esc(o.kilometraje || '—') + '</strong>' +
+                '<span>Cliente:</span><strong>' + esc(o.cliente_nombre || '—') + '</strong>' +
+                '<span>Teléfono:</span><strong>' + esc(o.cliente_telefono || '—') + '</strong>' +
+                '</div></div>';
+
+            var totalAbonado = abonos.reduce(function (s, a) { return s + (Number(a.monto) || 0); }, 0);
+            var htmlResumen =
+                '<div class="detalle-col"><h4>💰 Montos</h4><div class="resumen-montos">' +
+                '<div class="fila"><span>Monto inicial (factura):</span><strong>' + fmt(o.total) + '</strong></div>' +
+                '<div class="fila"><span>Total abonado:</span><strong>' + fmt(totalAbonado) + '</strong></div>' +
+                '<div class="fila saldo"><span>Saldo pendiente:</span><strong>' + fmt(o.saldo_pendiente) + '</strong></div>' +
+                '</div></div>';
+
+            var htmlAbonos = '<div class="detalle-col"><h4>📋 Abonos registrados</h4>';
+            if (!abonos.length) {
+                htmlAbonos += '<p class="vacio" style="padding:0;text-align:left;color:#94a3b8;">Aún no se ha registrado ningún abono.</p>';
+            } else {
+                htmlAbonos += '<ul class="lista-abonos">' + abonos.map(function (a) {
+                    var fecha = (a.creado_en || a.fecha || '').toString().slice(0, 16).replace('T', ' ');
+                    return '<li><span>' + fmt(a.monto) + ' <span class="m">(' + esc(a.metodo_pago || '—') + ')</span></span>' +
+                        '<span class="m">' + esc(fecha) + '</span></li>';
+                }).join('') + '</ul>';
+            }
+            htmlAbonos += '</div>';
+
+            var htmlFormAbono = '';
+            var saldo = Number(o.saldo_pendiente) || 0;
+            if (saldo > 0) {
+                htmlFormAbono =
+                    '<div class="detalle-col"><h4>➕ Registrar nuevo abono</h4>' +
+                    '<div class="form-abono">' +
+                    '<input type="number" id="abono-monto-' + ordenId + '" placeholder="Monto" min="0" step="1" max="' + saldo + '">' +
+                    '<select id="abono-metodo-' + ordenId + '">' +
+                    '<option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Transferencia/SINPE">Transferencia/SINPE</option>' +
+                    '</select>' +
+                    '<button type="button" class="btn btn-verde" onclick="registrarAbonoCxc(' + ordenId + ')">✓ Registrar abono</button>' +
+                    '</div><div id="abono-estado-' + ordenId + '" style="font-size:12px;color:#dc2626;margin-top:6px;"></div>' +
+                    '</div>';
+            }
+
+            filaDetalle.querySelector('td').innerHTML =
+                '<div class="detalle-cxc">' + htmlVehiculo + htmlResumen + htmlAbonos + htmlFormAbono + '</div>';
+        }
+
+        async function registrarAbonoCxc(ordenId) {
+            var estado = document.getElementById('abono-estado-' + ordenId);
+            var monto = Number(document.getElementById('abono-monto-' + ordenId).value);
+            var metodo = document.getElementById('abono-metodo-' + ordenId).value;
+            if (!monto || monto <= 0) { estado.textContent = 'Indique un monto válido.'; return; }
+            try {
+                await TallerAPI.abonarTallerOrden(ordenId, { monto: monto, metodo_pago: metodo });
+                await cargarCxC();
+                detalleCxcAbierto = null;
+                if (document.getElementById('detalle-cxc-' + ordenId)) {
+                    await toggleDetalleCxc(ordenId);
+                } else {
+                    alert('✓ Abono registrado. El saldo quedó en ₡0 — la orden ya no aparece en Cuentas por Cobrar.');
+                }
+            } catch (e) {
+                estado.textContent = 'No se pudo registrar: ' + e.message;
+            }
+        }
+
         async function cargarCxC() {
             var tbody = document.getElementById('tbody-cxc');
             try {
@@ -256,7 +392,7 @@
                     return;
                 }
                 tbody.innerHTML = filas.map(function (o) {
-                    return '<tr>' +
+                    return '<tr class="fila-cxc" id="fila-cxc-' + o.id + '" onclick="toggleDetalleCxc(' + o.id + ')">' +
                         '<td>#' + o.numero + '</td>' +
                         '<td><strong>' + esc(o.placa) + '</strong></td>' +
                         '<td>' + esc(o.cliente_nombre || 'Sin cliente') + '</td>' +
@@ -264,8 +400,9 @@
                         '<td>' + tipoLabel(o.tipo_cobro) + '</td>' +
                         '<td class="num">' + fmt(o.total) + '</td>' +
                         '<td class="num saldo">' + fmt(o.saldo_pendiente) + '</td>' +
-                        '<td><a class="btn btn-azul" href="/index.html?orden=' + o.id + '">Ver / cobrar</a></td>' +
-                        '</tr>';
+                        '<td><button type="button" class="btn btn-azul" id="btn-cxc-' + o.id + '" onclick="event.stopPropagation();toggleDetalleCxc(' + o.id + ')">🔎 Ver detalle</button></td>' +
+                        '</tr>' +
+                        '<tr class="fila-detalle" id="detalle-cxc-' + o.id + '" style="display:none;"><td colspan="8"></td></tr>';
                 }).join('');
             } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="8" class="vacio">Error: ' + esc(e.message) + '</td></tr>';

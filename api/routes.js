@@ -4,7 +4,9 @@ const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 const QRCode = require('qrcode');
-const { getDb, DB_PATH, getConfig, setConfig } = require('../db/database');
+const jsQR = require('jsqr');
+const { Jimp } = require('jimp');
+const { getDb, DB_PATH, getConfig, setConfig, closeDb, reopenDb } = require('../db/database');
 const { imprimirTicket, imprimirPrueba } = require('./print-service');
 const tallerService = require('./taller-service');
 const feService = require('./fe-service');
@@ -13,8 +15,13 @@ const whatsappService = require('./whatsapp-service');
 const ticketService = require('./ticket-service');
 const usuarioService = require('./usuario-service');
 const empresaService = require('./empresa-service');
+const licenciaService = require('./licencia-service');
+const metodosPagoService = require('./metodos-pago-service');
+const logoService = require('./logo-service');
+const backupService = require('./backup-service');
 
 const router = express.Router();
+const APP_ROOT = path.join(__dirname, '..');
 
 const TIPOS_DOC_WHATSAPP = ['orden', 'presupuesto', 'factura'];
 
@@ -38,7 +45,7 @@ async function procesarDocumentoFactura(db, body, ordenId, data) {
 
   if (!data.abono_id) {
     return emitirFe
-      ? { ok: false, error: 'No se registró el cobro para vincular la factura' }
+      ? { ok: false, error: 'No se registr? el cobro para vincular la factura' }
       : null;
   }
 
@@ -83,7 +90,7 @@ async function procesarDocumentoFactura(db, body, ordenId, data) {
   } catch (feErr) {
     return {
       ok: false,
-      error: feErr.message || 'Error al emitir factura electrónica'
+      error: feErr.message || 'Error al emitir factura electr?nica'
     };
   }
 }
@@ -122,12 +129,29 @@ function buildTerminalUrl(ip, port) {
   return 'http://' + ip + ':' + port + '/abrir.html';
 }
 
+async function decodificarQrDesdeBuffer(buf) {
+  const img = await Jimp.read(buf);
+  const scales = [1, 1.5, 2, 0.6, 0.75];
+  for (let i = 0; i < scales.length; i++) {
+    const scale = scales[i];
+    const w = Math.max(1, Math.round(img.bitmap.width * scale));
+    const h = Math.max(1, Math.round(img.bitmap.height * scale));
+    const clone = img.clone().resize({ w, h });
+    const { data, width, height } = clone.bitmap;
+    const code = jsQR(new Uint8ClampedArray(data), width, height);
+    if (code && code.data) return String(code.data).trim();
+  }
+  return null;
+}
+
 function pickBestTerminalIp(ips) {
   if (!ips.length) return '';
   const stored = readTerminalIp();
   if (stored && ips.indexOf(stored) >= 0) return stored;
   const lan = ips.filter(function (ip) {
-    return /^192\.168\./.test(ip) && !/^169\.254\./.test(ip);
+    return /^192\.168\./.test(ip) || /^10\./.test(ip) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip);
+  }).filter(function (ip) {
+    return !/^169\.254\./.test(ip) && !/^100\./.test(ip);
   });
   if (lan.length) return lan[0];
   return ips[0];
@@ -142,6 +166,60 @@ function resolveTerminalIp() {
 
 router.get('/health', (req, res) => {
   res.json({ ok: true, servicio: 'Sanmy Taller API', version: '1.0.0' });
+});
+
+router.get('/licencia/estado', (req, res) => {
+  try {
+    const db = getDb();
+    res.json(licenciaService.obtenerEstado(db, APP_ROOT));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/licencia/activar', (req, res) => {
+  try {
+    const db = getDb();
+    res.json(licenciaService.activarLicencia(db, APP_ROOT, req.body || {}));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.post('/red/decodificar-qr', async function (req, res) {
+  try {
+    let buf = null;
+    if (req.body && req.body.imagen) {
+      const raw = String(req.body.imagen);
+      const b64 = raw.replace(/^data:[^;]+;base64,/, '');
+      buf = Buffer.from(b64, 'base64');
+    }
+    if (!buf || !buf.length) {
+      return res.status(400).json({ ok: false, error: 'Envíe la imagen en el campo "imagen" (base64)' });
+    }
+    const texto = await decodificarQrDesdeBuffer(buf);
+    if (!texto) {
+      return res.status(422).json({ ok: false, error: 'No se encontró código QR en la imagen' });
+    }
+    res.json({ ok: true, texto: texto });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message || 'Error al leer QR' });
+  }
+});
+
+router.use(function (req, res, next) {
+  if (licenciaService.licenciaOmitida()) return next();
+  try {
+    const db = getDb();
+    const estado = licenciaService.obtenerEstado(db, APP_ROOT);
+    if (estado.valida) return next();
+    res.status(403).json({
+      error: estado.error || 'Licencia no v?lida o no activada',
+      codigo: 'LICENCIA_REQUERIDA'
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 router.get('/usuarios', (req, res) => {
@@ -245,7 +323,7 @@ router.get('/red/qr.png', async function (req, res) {
       url = buildTerminalUrl(ip, port);
     }
     res.type('png');
-    await QRCode.toFileStream(res, url, { margin: 2, width: 420 });
+    await QRCode.toFileStream(res, url, { margin: 2, width: 512, errorCorrectionLevel: 'M' });
   } catch (e) {
     res.status(500).json({ ok: false, error: 'No se pudo generar el QR' });
   }
@@ -506,14 +584,30 @@ router.delete('/taller/inventario/:id', (req, res) => {
   }
 });
 
+function leerPedirLoginIngreso(db) {
+  return getConfig(db, 'pedir_login_ingreso', '0') === '1';
+}
+
+router.get('/taller/config/acceso', (req, res) => {
+  try {
+    const db = getDb();
+    res.json({ pedir_login_ingreso: leerPedirLoginIngreso(db) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 router.get('/taller/config', (req, res) => {
   try {
     const db = getDb();
     const activaId = empresaService.getEmpresaActivaId(db);
     res.json({
-      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mecánico'),
+      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mec?nico'),
       impuesto_iva: getConfig(db, 'impuesto_iva', '0.13'),
-      empresa_activa_id: activaId
+      empresa_activa_id: activaId,
+      pedir_login_ingreso: leerPedirLoginIngreso(db),
+      metodos_pago: metodosPagoService.getMetodosActivos(db),
+      logo_url: activaId ? logoService.urlLogo(activaId) : null
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -530,13 +624,41 @@ router.patch('/taller/config', (req, res) => {
     if (body.impuesto_iva != null) {
       setConfig(db, 'impuesto_iva', String(body.impuesto_iva));
     }
+    if (body.pedir_login_ingreso != null) {
+      setConfig(db, 'pedir_login_ingreso', body.pedir_login_ingreso ? '1' : '0');
+    }
     empresaService.persistirDesdeConfigGlobal(db, body);
     res.json({
       ok: true,
-      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mecánico'),
+      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mec?nico'),
       impuesto_iva: getConfig(db, 'impuesto_iva', '0.13'),
-      empresa_activa_id: empresaService.getEmpresaActivaId(db)
+      empresa_activa_id: empresaService.getEmpresaActivaId(db),
+      pedir_login_ingreso: leerPedirLoginIngreso(db),
+      metodos_pago: metodosPagoService.getMetodosActivos(db)
     });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.get('/taller/metodos-pago', (req, res) => {
+  try {
+    const db = getDb();
+    const todos = req.query.todos === '1' || req.query.todos === 'true';
+    res.json({
+      metodos: todos ? metodosPagoService.getTodosMetodos(db) : metodosPagoService.getMetodosActivos(db),
+      todos: metodosPagoService.getTodosMetodos(db)
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.put('/taller/metodos-pago', (req, res) => {
+  try {
+    const db = getDb();
+    const lista = metodosPagoService.guardarMetodos(db, (req.body && req.body.metodos) || []);
+    res.json({ ok: true, metodos: lista });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -544,7 +666,7 @@ router.patch('/taller/config', (req, res) => {
 
 // =============================================================================
 // RUTAS DE EMPRESAS (multi-empresa)
-// La pantalla de Configuración llama a estas URLs para crear, editar y activar empresas.
+// La pantalla de Configuraci?n llama a estas URLs para crear, editar y activar empresas.
 // =============================================================================
 
 router.get('/taller/empresas', (req, res) => {
@@ -588,7 +710,7 @@ router.patch('/taller/empresas/:id', (req, res) => {
   }
 });
 
-/** El usuario eligió "Usar esta empresa": la ponemos como activa en todo el sistema. */
+/** El usuario eligi? "Usar esta empresa": la ponemos como activa en todo el sistema. */
 router.post('/taller/empresas/:id/activar', (req, res) => {
   try {
     const db = getDb();
@@ -603,6 +725,51 @@ router.delete('/taller/empresas/:id', (req, res) => {
   try {
     const db = getDb();
     res.json(empresaService.eliminarEmpresa(db, parseInt(req.params.id, 10)));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.get('/taller/logo', (req, res) => {
+  try {
+    const db = getDb();
+    let id = parseInt(req.query.empresa_id, 10);
+    if (!id) id = empresaService.getEmpresaActivaId(db);
+    if (!id) return res.status(404).type('text/plain').send('Sin logo');
+    const info = logoService.leerLogo(id);
+    if (!info) return res.status(404).type('text/plain').send('Sin logo');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.type(info.mime);
+    res.sendFile(info.path);
+  } catch (e) {
+    res.status(500).type('text/plain').send(e.message);
+  }
+});
+
+router.post('/taller/empresas/:id/logo', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const db = getDb();
+    const emp = empresaService.obtenerEmpresa(db, id);
+    if (!emp) return res.status(404).json({ error: 'Empresa no encontrada' });
+    const body = req.body || {};
+    const imagen = body.imagen || body.data || body.base64;
+    if (!imagen) return res.status(400).json({ error: 'Falta la imagen' });
+    const out = logoService.guardarLogoBase64(id, imagen, body.mime || body.tipo);
+    res.json(out);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.delete('/taller/empresas/:id/logo', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const db = getDb();
+    const emp = empresaService.obtenerEmpresa(db, id);
+    if (!emp) return res.status(404).json({ error: 'Empresa no encontrada' });
+    logoService.eliminarLogo(id);
+    res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -629,8 +796,11 @@ router.get('/taller/ordenes/:id/pdf', async (req, res) => {
     const ordenId = parseInt(req.params.id, 10);
     const tipo = normalizarTipoDoc(req.query.tipo);
     const datos = tallerService.prepararDatosTicket(db, ordenId);
+    const activaId = empresaService.getEmpresaActivaId(db);
+    const logoInfo = activaId ? logoService.leerLogo(activaId) : null;
     const config = {
-      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mecánico')
+      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mec?nico'),
+      logo_path: logoInfo ? logoInfo.path : null
     };
     const facturaFe = tipo === 'factura' ? obtenerFacturaFeOrden(db, ordenId) : null;
     const buf = await pdfService.generarPdfOrden(datos, config, tipo, { facturaFe: facturaFe });
@@ -650,7 +820,7 @@ router.get('/taller/ordenes/:id/whatsapp', (req, res) => {
     const tipo = normalizarTipoDoc(req.query.tipo);
     const datos = tallerService.prepararDatosTicket(db, ordenId);
     const config = {
-      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mecánico')
+      nombre_negocio: getConfig(db, 'nombre_negocio', 'SANMY Taller Mec?nico')
     };
     const base = publicBaseUrl(req);
     const pdf_url =
@@ -680,7 +850,7 @@ router.get('/taller/vehiculos/placa', (req, res) => {
     const db = getDb();
     const vehiculo = tallerService.obtenerVehiculoPorPlaca(db, req.query.placa);
     if (!vehiculo) {
-      return res.status(404).json({ error: 'Vehículo no encontrado' });
+      return res.status(404).json({ error: 'Veh?culo no encontrado' });
     }
     res.json({ vehiculo: vehiculo });
   } catch (e) {
@@ -732,6 +902,90 @@ router.get('/servidor/estado', (req, res) => {
   });
 });
 
+router.get('/respaldo/listar', (req, res) => {
+  try {
+    res.json({ ok: true, filas: backupService.listarRespaldos() });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/respaldo/crear', (req, res) => {
+  try {
+    const db = getDb();
+    const info = backupService.crearRespaldo(db);
+    res.json({
+      ok: true,
+      respaldo: info,
+      mensaje: 'Copia de seguridad creada correctamente.'
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'No se pudo crear el respaldo.' });
+  }
+});
+
+router.get('/respaldo/descargar/:nombre', (req, res) => {
+  try {
+    const full = backupService.rutaRespaldoSegura(req.params.nombre);
+    if (!full) return res.status(404).json({ error: 'Respaldo no encontrado.' });
+    res.download(full, path.basename(full));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.delete('/respaldo/:nombre', (req, res) => {
+  try {
+    const full = backupService.rutaRespaldoSegura(req.params.nombre);
+    if (!full) return res.status(404).json({ error: 'Respaldo no encontrado.' });
+    fs.unlinkSync(full);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/respaldo/restaurar/:nombre', (req, res) => {
+  try {
+    const full = backupService.rutaRespaldoSegura(req.params.nombre);
+    if (!full) return res.status(404).json({ error: 'Respaldo no encontrado.' });
+    const db = getDb();
+    const info = backupService.restaurarDesdeArchivo(full, db, DB_PATH, closeDb, reopenDb);
+    res.json({
+      ok: true,
+      mensaje: 'Base de datos restaurada correctamente.',
+      respaldo_previo: info.respaldo_previo
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'No se pudo restaurar el respaldo.' });
+  }
+});
+
+router.post('/respaldo/restaurar-archivo', (req, res) => {
+  let tmp = null;
+  try {
+    const body = req.body || {};
+    tmp = backupService.guardarArchivoTemporal(body.contenido_base64 || body.base64, body.nombre);
+    const db = getDb();
+    const info = backupService.restaurarDesdeArchivo(tmp, db, DB_PATH, closeDb, reopenDb);
+    res.json({
+      ok: true,
+      mensaje: 'Base de datos restaurada correctamente.',
+      respaldo_previo: info.respaldo_previo
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || 'No se pudo restaurar el respaldo.' });
+  } finally {
+    if (tmp && fs.existsSync(tmp)) {
+      try {
+        fs.unlinkSync(tmp);
+      } catch (e2) {
+        /* ignore */
+      }
+    }
+  }
+});
+
 router.get('/fe/proveedores', (req, res) => {
   try {
     res.json({ ok: true, proveedores: feService.getProveedores() });
@@ -773,8 +1027,87 @@ router.post('/fe/probar', async (req, res) => {
 router.get('/fe/recientes', (req, res) => {
   try {
     const db = getDb();
-    const limit = req.query.limit;
-    res.json({ ok: true, facturas: feService.listarFacturas(db, limit, req.query.q) });
+    const facturas = feService.listarFacturas(db, {
+      limit: req.query.limit,
+      q: req.query.q,
+      estado: req.query.estado,
+      desde: req.query.desde,
+      hasta: req.query.hasta,
+      tipo: req.query.tipo
+    });
+    const alertas = feService.contarAlertasFacturas(db);
+    res.json({ ok: true, facturas: facturas, alertas: alertas });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.get('/fe/resumen', (req, res) => {
+  try {
+    const db = getDb();
+    const resumen = feService.resumenFacturas(db, {
+      desde: req.query.desde,
+      hasta: req.query.hasta,
+      estado: req.query.estado,
+      tipo: req.query.tipo
+    });
+    res.json({ ok: true, resumen: resumen });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.get('/fe/export', (req, res) => {
+  try {
+    const db = getDb();
+    const csv = feService.exportarFacturasCsv(db, {
+      desde: req.query.desde,
+      hasta: req.query.hasta,
+      estado: req.query.estado,
+      tipo: req.query.tipo,
+      q: req.query.q
+    });
+    const nombre = 'facturas-sanmy-' + new Date().toISOString().slice(0, 10) + '.csv';
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + nombre + '"');
+    res.send('\uFEFF' + csv);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.get('/fe/validar-orden/:ordenId', (req, res) => {
+  try {
+    const db = getDb();
+    const ordenId = parseInt(req.params.ordenId, 10);
+    if (!ordenId) {
+      return res.status(400).json({ error: 'ID de orden inv?lido' });
+    }
+    res.json(feService.validarOrdenParaFe(db, ordenId));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.post('/fe/tico-registrar', (req, res) => {
+  try {
+    const db = getDb();
+    const result = feService.registrarFacturaTicoManual(db, req.body || {});
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+router.get('/fe/detalle/:id', (req, res) => {
+  try {
+    const db = getDb();
+    const id = parseInt(req.params.id, 10);
+    const detalle = feService.getFacturaDetalle(db, id);
+    if (!detalle) {
+      return res.status(404).json({ error: 'Factura no encontrada' });
+    }
+    res.json({ ok: true, factura: detalle });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -795,7 +1128,7 @@ router.get('/fe/guia-tico/:ordenId', (req, res) => {
     const db = getDb();
     const ordenId = parseInt(req.params.ordenId, 10);
     if (!ordenId) {
-      return res.status(400).json({ error: 'ID de orden inválido' });
+      return res.status(400).json({ error: 'ID de orden inv?lido' });
     }
     res.json(feService.guiaTicoFactura(db, ordenId));
   } catch (e) {
@@ -820,7 +1153,7 @@ router.get('/fe/abono/:abonoId', (req, res) => {
     const abonoId = parseInt(req.params.abonoId, 10);
     const row = feService.getFacturaByAbono(db, abonoId);
     if (!row) {
-      return res.status(404).json({ error: 'Sin factura electrónica para este cobro' });
+      return res.status(404).json({ error: 'Sin factura electr?nica para este cobro' });
     }
     res.json({ ok: true, factura: row });
   } catch (e) {

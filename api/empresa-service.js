@@ -10,6 +10,7 @@
  * =============================================================================
  */
 const { getConfig, setConfig } = require('../db/database');
+const logoService = require('./logo-service');
 
 // Lista de claves de configuración de Factura Electrónica (Hacienda CR)
 const FE_KEYS = [
@@ -109,6 +110,8 @@ function mapEmpresa(row, activaId) {
     datos_aislados: !compartirClientes && !compartirInventario,
     activa: row.activa === 1,
     es_activa: activaId != null && row.id === activaId,
+    tiene_logo: logoService.existeLogo(row.id),
+    logo_url: logoService.urlLogo(row.id),
     config: leerConfigJson(row.config_json)
   };
 }
@@ -325,6 +328,7 @@ function eliminarEmpresa(db, id) {
   }
 
   db.prepare('UPDATE taller_empresas SET activa = 0 WHERE id = ?').run(id);
+  logoService.eliminarLogo(id);
   return { ok: true };
 }
 

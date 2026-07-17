@@ -52,7 +52,7 @@ var UsuarioSesion = (function () {
     if (get()) return get();
     if (redirigir !== false) {
       var dest = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = '/login.html?return=' + dest;
+      window.location.href = '/abrir.html?return=' + dest;
     }
     return null;
   }

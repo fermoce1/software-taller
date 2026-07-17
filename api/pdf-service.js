@@ -1,4 +1,5 @@
 const PDFDocument = require('pdfkit');
+const fs = require('fs');
 const { formatearColones } = require('./whatsapp-service');
 
 function tituloDocumento(tipo) {
@@ -18,6 +19,17 @@ function generarPdfOrden(datos, config, tipo, opciones) {
 
   var negocio = (config && config.nombre_negocio) || 'Sanmy Taller Mecánico';
   var titulo = tituloDocumento(tipo);
+
+  if (config && config.logo_path && fs.existsSync(config.logo_path)) {
+    try {
+      var imgW = 110;
+      var x = (doc.page.width - imgW) / 2;
+      doc.image(config.logo_path, x, doc.y, { width: imgW });
+      doc.moveDown(1.2);
+    } catch (e) {
+      /* texto abajo si la imagen falla */
+    }
+  }
 
   doc.fontSize(20).text(negocio, { align: 'center' });
   doc.moveDown(0.3);

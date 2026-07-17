@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a5f">
+    <title>Importación de Clientes — Sanmy Taller</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+        html, body { height: 100%; }
+        body {
+            min-height: 100dvh; display: flex; flex-direction: column;
+            background: linear-gradient(180deg, #c8d9e8 0%, #d4e4f0 50%, #dbeafe 100%);
+            color: #1e293b;
+        }
+        .imp-header {
+            background: linear-gradient(180deg, #b8cde0 0%, #c8d9e8 100%);
+            border-bottom: 1px solid #94a3b8;
+            padding: 14px 20px 12px; text-align: center; flex-shrink: 0;
+        }
+        .imp-header h1 { font-size: 28px; color: #0f172a; font-weight: bold; }
+        .imp-body { flex: 1; padding: 20px 24px 12px; overflow-y: auto; }
+        .imp-casillas {
+            max-width: 900px; margin: 0 auto 16px;
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+        }
+        .imp-casilla {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 18px; background: #fff; border: 1px solid #64748b;
+            border-radius: 6px; font-size: 15px; font-weight: bold; color: #0f172a;
+            text-decoration: none; cursor: pointer;
+        }
+        .imp-casilla:hover { background: #f8fafc; }
+        .imp-casilla.activa {
+            background: #e2e8f0; border-color: #475569;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,.08);
+        }
+        .imp-casilla input { width: 18px; height: 18px; accent-color: #2563eb; pointer-events: none; }
+        .zona-archivo {
+            max-width: 900px; margin: 0 auto 18px;
+            background: rgba(255,255,255,.65); border: 2px dashed #64748b;
+            border-radius: 8px; padding: 16px; text-align: center;
+            transition: border-color .15s, background .15s;
+        }
+        .zona-archivo.arrastrando { border-color: #2563eb; background: #eff6ff; }
+        .zona-archivo p { font-size: 13px; color: #475569; margin-bottom: 10px; }
+        .zona-archivo input[type="file"] { font-size: 13px; }
+        .imp-grid {
+            max-width: 900px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+            align-items: start;
+        }
+        .imp-col h2 {
+            font-size: 15px; font-weight: bold; color: #0f172a;
+            margin-bottom: 8px; text-align: center;
+        }
+        .lista-origen {
+            background: #fff; border: 1px solid #64748b; border-radius: 2px;
+            min-height: 300px; max-height: 380px; overflow-y: auto;
+            padding: 4px 0;
+        }
+        .item-origen {
+            display: block; width: 100%; text-align: left;
+            border: none; background: transparent; padding: 10px 16px;
+            font-size: 14px; color: #0f172a; cursor: pointer;
+        }
+        .item-origen:hover { background: #e2e8f0; }
+        .item-origen.mapeado { color: #15803d; font-weight: bold; }
+        .lista-destino { display: flex; flex-direction: column; gap: 8px; }
+        .item-destino {
+            width: 100%; min-height: 46px; padding: 10px 14px;
+            border: 1px solid #64748b; border-radius: 2px;
+            background: #f8fafc; font-size: 14px; font-weight: bold;
+            color: #0f172a; text-align: center; cursor: pointer;
+        }
+        .item-destino:hover { background: #f1f5f9; }
+        .item-destino.activo {
+            background: #ffff00;
+            border-color: #a16207;
+            box-shadow: inset 0 0 0 1px #ca8a04;
+        }
+        .item-destino .mapa {
+            display: block; font-size: 11px; font-weight: normal;
+            color: #166534; margin-top: 2px;
+        }
+        .imp-ayuda {
+            max-width: 900px; margin: 16px auto 0;
+            font-size: 13px; color: #334155; text-align: center; line-height: 1.55;
+            background: rgba(255,255,255,.5); border: 1px solid #93c5fd;
+            border-radius: 6px; padding: 10px 14px;
+        }
+        .imp-acciones {
+            max-width: 900px; margin: 16px auto 0;
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+        }
+        .btn {
+            border: 1px solid #64748b; border-radius: 6px; padding: 10px 18px;
+            font-size: 14px; font-weight: bold; cursor: pointer; background: #fff; color: #1e3a5f;
+        }
+        .btn-prim { background: linear-gradient(135deg, #16a34a, #22c55e); color: #fff; border: none; }
+        .btn-prim:disabled { opacity: .55; cursor: wait; }
+        #imp-estado {
+            max-width: 900px; margin: 12px auto 0; font-size: 13px;
+            text-align: center; min-height: 20px;
+        }
+        .imp-footer {
+            flex-shrink: 0; padding: 10px 20px 14px;
+            display: flex; justify-content: flex-end; border-top: 1px solid #94a3b8;
+        }
+        .btn-salir {
+            min-width: 110px; border: 1px solid #64748b; border-radius: 6px;
+            background: #fff; color: #1e3a5f; font-weight: bold; font-size: 14px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center;
+            gap: 4px; padding: 8px 16px; text-decoration: none;
+        }
+        .btn-salir .ico { font-size: 28px; line-height: 1; }
+        @media (max-width: 640px) { .imp-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header class="imp-header">
+        <h1>Importación de Datos</h1>
+    </header>
+
+    <main class="imp-body">
+        <div class="imp-casillas">
+            <span class="imp-casilla activa"><input type="checkbox" checked> 👥 Clientes</span>
+            <a class="imp-casilla" href="/importar-productos.html"><input type="checkbox"> 📦 Productos</a>
+            <a class="imp-casilla" href="/importar.html?tipo=servicios"><input type="checkbox"> 🎨 Servicios</a>
+        </div>
+
+        <div class="zona-archivo" id="zona-archivo">
+            <p><strong>Arrastre aquí su Excel de clientes</strong> (Monica 9, SolverMedia, etc.)</p>
+            <input type="file" id="imp-archivo" accept=".xlsx,.xls,.csv,.ods">
+        </div>
+
+        <div class="imp-grid">
+            <div class="imp-col">
+                <h2>Datos de Origen</h2>
+                <div class="lista-origen" id="lista-origen">
+                    <p style="padding:14px;color:#64748b;font-size:13px;">Cargue un Excel para ver las columnas aquí.</p>
+                </div>
+            </div>
+            <div class="imp-col">
+                <h2>Datos de Destino</h2>
+                <div class="lista-destino" id="lista-destino"></div>
+            </div>
+        </div>
+
+        <p class="imp-ayuda">
+            <strong>Cómo mapear:</strong> clic a la <strong>derecha</strong> (campo en amarillo) → clic a la <strong>izquierda</strong> (columna Excel).
+            Obligatorio mapear <strong>Nombre</strong>. Ideal para export de <strong>Monica 9</strong> (Parámetros → Extraer datos → Clientes).
+        </p>
+
+        <div class="imp-acciones">
+            <button type="button" class="btn-prim" id="btn-importar" onclick="ejecutarImport()" disabled>📥 Importar clientes</button>
+            <button type="button" class="btn" onclick="autoMapear()">↻ Auto-mapear</button>
+            <button type="button" class="btn" onclick="autoMapearMonica()">Monica 9</button>
+            <button type="button" class="btn" onclick="descargarPlantilla()">⬇ Plantilla Excel</button>
+        </div>
+        <div id="imp-estado"></div>
+    </main>
+
+    <footer class="imp-footer">
+        <a class="btn-salir" href="/configuracion.html"><span class="ico">🏠</span>Salir</a>
+    </footer>
+
+    <script src="licencia-sanmy.js"></script>
+    <script src="taller-api.js"></script>
+    <script src="licencia-taller-guard.js"></script>
+    <script src="proteger-sesion.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script>
+        var DESTINOS = [
+            { id: 'nombre', label: 'Nombre', aliases: ['nombre', 'nombres', 'primernombre', 'nombrecomercial'] },
+            { id: 'apellidos', label: 'Apellidos', aliases: ['apellidos', 'apellido', 'apellido1', 'apellido2', 'lastname'] },
+            { id: 'cedula', label: 'Cédula', aliases: ['cedula', 'cif', 'nif', 'cifnif', 'identificacion', 'nit', 'ruc', 'documento'] },
+            { id: 'telefono', label: 'Teléfono / Móvil', aliases: ['telefono', 'tel', 'movil', 'celular', 'movilcelular', 'fono'] },
+            { id: 'email', label: 'E-mail', aliases: ['email', 'correo', 'mail'] }
+        ];
+
+        var MAPEO_MONICA = {
+            nombre: ['nombre', 'razonsocial', 'nombrecomercial'],
+            apellidos: ['apellidos', 'apellido'],
+            cedula: ['cedula', 'cif', 'nit', 'identificacion', 'cifnif'],
+            telefono: ['telefono', 'movil', 'celular', 'tel'],
+            email: ['email', 'correo']
+        };
+
+        var columnasOrigen = [];
+        var filasDatos = [];
+        var mapeo = {};
+        var destinoActivo = 'nombre';
+
+        function normalizarClave(s) {
+            return String(s || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '');
+        }
+
+        function esc(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function escAttr(s) {
+            return esc(s).replace(/'/g, '&#39;');
+        }
+
+        function buscarColumna(candidatos) {
+            var i, j, nk, col;
+            for (i = 0; i < columnasOrigen.length; i++) {
+                col = columnasOrigen[i];
+                nk = normalizarClave(col);
+                for (j = 0; j < candidatos.length; j++) {
+                    if (nk === candidatos[j] || nk.indexOf(candidatos[j]) === 0) return col;
+                }
+            }
+            return '';
+        }
+
+        function pintarDestinos() {
+            var cont = document.getElementById('lista-destino');
+            cont.innerHTML = DESTINOS.map(function (d) {
+                var col = mapeo[d.id] || '';
+                var cls = 'item-destino' + (destinoActivo === d.id ? ' activo' : '');
+                return '<button type="button" class="' + cls + '" onclick="elegirDestino(\'' + d.id + '\')">' +
+                    d.label +
+                    (col ? '<span class="mapa">← ' + esc(col) + '</span>' : '') +
+                    '</button>';
+            }).join('');
+        }
+
+        function pintarOrigen() {
+            var cont = document.getElementById('lista-origen');
+            if (!columnasOrigen.length) {
+                cont.innerHTML = '<p style="padding:14px;color:#64748b;font-size:13px;">Cargue un Excel para ver las columnas aquí.</p>';
+                return;
+            }
+            var usadas = {};
+            Object.keys(mapeo).forEach(function (k) {
+                if (mapeo[k]) usadas[mapeo[k]] = true;
+            });
+            cont.innerHTML = columnasOrigen.map(function (col) {
+                var cls = 'item-origen' + (usadas[col] ? ' mapeado' : '');
+                return '<button type="button" class="' + cls + '" onclick="asignarOrigen(\'' + escAttr(col) + '\')">' + esc(col) + '</button>';
+            }).join('');
+        }
+
+        function elegirDestino(id) {
+            destinoActivo = id;
+            pintarDestinos();
+            var d = DESTINOS.find(function (x) { return x.id === id; });
+            var estado = document.getElementById('imp-estado');
+            if (d && estado) {
+                estado.style.color = '#475569';
+                estado.textContent = 'Campo activo: «' + d.label + '». Ahora haga clic en una columna de la izquierda.';
+            }
+        }
+
+        function asignarOrigen(col) {
+            if (!destinoActivo) {
+                alert('Primero elija un campo destino a la derecha (quedará en amarillo).');
+                return;
+            }
+            mapeo[destinoActivo] = col;
+            var d = DESTINOS.find(function (x) { return x.id === destinoActivo; });
+            var estado = document.getElementById('imp-estado');
+            if (d && estado) {
+                estado.style.color = '#15803d';
+                estado.textContent = '✓ «' + d.label + '» ← columna «' + col + '»';
+            }
+            avanzarDestino();
+            pintarOrigen();
+            pintarDestinos();
+            actualizarBotonImport();
+        }
+
+        function avanzarDestino() {
+            var idx = -1;
+            var i;
+            for (i = 0; i < DESTINOS.length; i++) {
+                if (DESTINOS[i].id === destinoActivo) { idx = i; break; }
+            }
+            for (i = idx + 1; i < DESTINOS.length; i++) {
+                if (!mapeo[DESTINOS[i].id]) {
+                    destinoActivo = DESTINOS[i].id;
+                    return;
+                }
+            }
+            for (i = 0; i < DESTINOS.length; i++) {
+                if (!mapeo[DESTINOS[i].id]) {
+                    destinoActivo = DESTINOS[i].id;
+                    return;
+                }
+            }
+        }
+
+        function autoMapear() {
+            if (!columnasOrigen.length) return;
+            columnasOrigen.forEach(function (col) {
+                var nk = normalizarClave(col);
+                DESTINOS.forEach(function (d) {
+                    if (mapeo[d.id]) return;
+                    for (var i = 0; i < d.aliases.length; i++) {
+                        if (nk === d.aliases[i] || nk.indexOf(d.aliases[i]) === 0) {
+                            mapeo[d.id] = col;
+                            break;
+                        }
+                    }
+                });
+            });
+            if (!mapeo.nombre) destinoActivo = 'nombre';
+            else avanzarDestino();
+            pintarOrigen();
+            pintarDestinos();
+            actualizarBotonImport();
+            document.getElementById('imp-estado').textContent = 'Columnas auto-mapeadas. Revise y ajuste si hace falta.';
+            document.getElementById('imp-estado').style.color = '#15803d';
+        }
+
+        function autoMapearMonica() {
+            if (!columnasOrigen.length) return;
+            mapeo = {};
+            Object.keys(MAPEO_MONICA).forEach(function (campo) {
+                var col = buscarColumna(MAPEO_MONICA[campo]);
+                if (col) mapeo[campo] = col;
+            });
+            destinoActivo = mapeo.nombre ? (mapeo.apellidos ? 'cedula' : 'apellidos') : 'nombre';
+            pintarOrigen();
+            pintarDestinos();
+            actualizarBotonImport();
+            var estado = document.getElementById('imp-estado');
+            estado.style.color = mapeo.nombre ? '#15803d' : '#b45309';
+            estado.textContent = mapeo.nombre
+                ? 'Mapeo Monica 9 aplicado. Revise antes de importar.'
+                : 'No se encontró columna Nombre. Mapee manualmente.';
+        }
+
+        function actualizarBotonImport() {
+            document.getElementById('btn-importar').disabled = !(filasDatos.length && mapeo.nombre);
+        }
+
+        function leerExcel(file) {
+            return new Promise(function (resolve, reject) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    try {
+                        var data = new Uint8Array(e.target.result);
+                        var wb = XLSX.read(data, { type: 'array' });
+                        var sheet = wb.Sheets[wb.SheetNames[0]];
+                        var matriz = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                        if (!matriz.length) {
+                            resolve({ columnas: [], filas: [] });
+                            return;
+                        }
+                        var headers = matriz[0].map(function (h, i) {
+                            var t = String(h == null ? '' : h).trim();
+                            return t || ('columna' + (i + 1));
+                        });
+                        var filas = [];
+                        for (var r = 1; r < matriz.length; r++) {
+                            var row = matriz[r];
+                            var vacia = !row || row.every(function (c) { return String(c == null ? '' : c).trim() === ''; });
+                            if (vacia) continue;
+                            var obj = {};
+                            headers.forEach(function (h, c) {
+                                obj[h] = row[c] != null ? row[c] : '';
+                            });
+                            filas.push(obj);
+                        }
+                        resolve({ columnas: headers, filas: filas });
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        async function cargarArchivo(file) {
+            var estado = document.getElementById('imp-estado');
+            estado.style.color = '#475569';
+            estado.textContent = 'Leyendo Excel…';
+            try {
+                var data = await leerExcel(file);
+                filasDatos = data.filas;
+                columnasOrigen = data.columnas;
+                mapeo = {};
+                destinoActivo = 'nombre';
+                pintarOrigen();
+                autoMapearMonica();
+                if (!mapeo.nombre) autoMapear();
+                destinoActivo = 'nombre';
+                pintarDestinos();
+                estado.style.color = '#15803d';
+                estado.textContent = '✓ ' + filasDatos.length + ' cliente(s). Columnas: ' + columnasOrigen.join(', ');
+            } catch (e) {
+                estado.style.color = '#b91c1c';
+                estado.textContent = 'No se pudo leer: ' + (e.message || e);
+            }
+        }
+
+        function valorMapeado(fila, campoId) {
+            var col = mapeo[campoId];
+            if (!col || fila[col] == null) return '';
+            return String(fila[col]).trim();
+        }
+
+        function telefonoFila(fila) {
+            var t = valorMapeado(fila, 'telefono');
+            if (t) return t;
+            return '';
+        }
+
+        async function ejecutarImport() {
+            if (!mapeo.nombre) {
+                alert('Debe mapear la columna «Nombre».');
+                return;
+            }
+            var estado = document.getElementById('imp-estado');
+            var btn = document.getElementById('btn-importar');
+            btn.disabled = true;
+            var ok = 0, err = 0, msgs = [];
+            estado.style.color = '#475569';
+            estado.textContent = 'Importando…';
+            for (var i = 0; i < filasDatos.length; i++) {
+                var r = filasDatos[i];
+                var nombre = valorMapeado(r, 'nombre');
+                if (!nombre) continue;
+                try {
+                    await TallerAPI.crearCliente({
+                        nombre: nombre,
+                        apellidos: valorMapeado(r, 'apellidos'),
+                        identificacion: valorMapeado(r, 'cedula'),
+                        telefono: telefonoFila(r),
+                        email: valorMapeado(r, 'email')
+                    });
+                    ok++;
+                } catch (e) {
+                    err++;
+                    if (msgs.length < 3) msgs.push('Fila ' + (i + 2) + ': ' + e.message);
+                }
+            }
+            estado.style.color = err ? '#b45309' : '#15803d';
+            estado.textContent = '✓ Importados: ' + ok + (err ? ' · Errores: ' + err : '') +
+                (msgs.length ? ' — ' + msgs.join(' | ') : '');
+            btn.disabled = false;
+        }
+
+        function descargarPlantilla() {
+            if (typeof XLSX === 'undefined') return;
+            var ws = XLSX.utils.aoa_to_sheet([
+                ['Nombre', 'Apellidos', 'Cédula', 'Teléfono', 'Móvil/Celular', 'E_mail'],
+                ['Juan', 'Pérez Mora', '1-2345-6789', '2222-3333', '8888-9999', 'juan@email.com'],
+                ['Taller El Motor', 'S.A.', '3-101-123456', '2555-0101', '', 'info@elmotor.cr']
+            ]);
+            var wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'clientes');
+            XLSX.writeFile(wb, 'plantilla_clientes_sanmy.xlsx');
+        }
+
+        var inputArchivo = document.getElementById('imp-archivo');
+        var zonaArchivo = document.getElementById('zona-archivo');
+
+        inputArchivo.addEventListener('change', function (e) {
+            if (e.target.files && e.target.files[0]) cargarArchivo(e.target.files[0]);
+        });
+
+        zonaArchivo.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            zonaArchivo.classList.add('arrastrando');
+        });
+        zonaArchivo.addEventListener('dragleave', function () {
+            zonaArchivo.classList.remove('arrastrando');
+        });
+        zonaArchivo.addEventListener('drop', function (e) {
+            e.preventDefault();
+            zonaArchivo.classList.remove('arrastrando');
+            var f = e.dataTransfer.files && e.dataTransfer.files[0];
+            if (f) cargarArchivo(f);
+        });
+
+        (function init() {
+            pintarDestinos();
+            elegirDestino('nombre');
+        })();
+    </script>
+</body>
+</html>

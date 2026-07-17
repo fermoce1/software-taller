@@ -56,6 +56,7 @@ echo  Reiniciando servidor (puerto 3020)...
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0instalador\liberar-puerto.ps1" -Port 3020
 timeout /t 2 /nobreak >nul
 echo  Iniciando servidor...
+if exist "%~dp0skip-licencia.local" echo  Modo desarrollo: sin licencia en esta PC
 start "Sanmy Taller Servidor" /MIN "%NODE_EXE%" server.js
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0instalador\esperar-servidor.ps1" -Port 3020 -TimeoutSec 45
 if errorlevel 1 goto ERROR_SERVIDOR

@@ -41,6 +41,7 @@ const CABYS_REPUESTO = '4010151010100';
 
 const feProviders = require('./fe-providers');
 const tallerService = require('./taller-service');
+const metodosPagoService = require('./metodos-pago-service');
 
 const TRIBU_URL = 'https://ovitribucr.hacienda.go.cr';
 
@@ -102,7 +103,10 @@ function generarClaveSimulada(cfg, consecutivo) {
   return '' + suc + term + tipo + cedula + estado + cons + situacion + codigo + y + m + d;
 }
 
-function mapMedioPago(metodo) {
+function mapMedioPago(metodo, db) {
+  if (db) {
+    return metodosPagoService.feMedioParaMetodo(db, metodo);
+  }
   const m = String(metodo || 'efectivo').toLowerCase();
   if (m === 'tarjeta') return '02';
   if (m === 'sinpe') return '04';
@@ -218,18 +222,57 @@ function buildLineaMontoParcial(db, monto, descripcion) {
   ];
 }
 
+function prorratearLineas(lineasOrden, monto) {
+  const totalLineas = lineasOrden.reduce(function (s, l) {
+    return s + l.total_linea;
+  }, 0);
+  if (totalLineas <= 0) return lineasOrden;
+  const ratio = monto / totalLineas;
+  const prorrateadas = lineasOrden.map(function (l) {
+    const cant = parseFloat(l.cantidad) || 1;
+    const subtotal = Math.round(l.subtotal * ratio * 100) / 100;
+    const impuesto = Math.round(l.impuesto * ratio * 100) / 100;
+    const totalLinea = Math.round((subtotal + impuesto) * 100) / 100;
+    return Object.assign({}, l, {
+      subtotal: subtotal,
+      impuesto: impuesto,
+      total_linea: totalLinea,
+      precio_unitario: Math.round((subtotal / cant) * 100) / 100
+    });
+  });
+  const sumPr = prorrateadas.reduce(function (s, l) {
+    return s + l.total_linea;
+  }, 0);
+  const diff = Math.round((monto - sumPr) * 100) / 100;
+  if (Math.abs(diff) >= 0.01 && prorrateadas.length) {
+    const ult = prorrateadas[prorrateadas.length - 1];
+    ult.total_linea = Math.round((ult.total_linea + diff) * 100) / 100;
+    ult.impuesto = Math.round((ult.impuesto + diff / (1 + ult.subtotal ? ult.impuesto / ult.subtotal : 0.13)) * 100) / 100;
+    if (ult.impuesto < 0) ult.impuesto = 0;
+    ult.subtotal = Math.round((ult.total_linea - ult.impuesto) * 100) / 100;
+  }
+  return prorrateadas;
+}
+
 function buildLineas(db, opts) {
   const monto = Math.round(parseFloat(opts.monto) * 100) / 100;
   const ordenTotal = Math.round(parseFloat(opts.ordenTotal) * 100) / 100;
   const lineasOrden = buildLineasDesdeOrden(db, opts.ordenId);
 
-  if (lineasOrden.length && monto >= ordenTotal - 0.01) {
-    const totalLineas = lineasOrden.reduce(function (s, l) {
-      return s + l.total_linea;
-    }, 0);
-    if (Math.abs(totalLineas - monto) < 0.02) {
-      return lineasOrden;
-    }
+  if (!lineasOrden.length) {
+    throw new Error('La orden no tiene líneas para facturar');
+  }
+
+  const totalLineas = lineasOrden.reduce(function (s, l) {
+    return s + l.total_linea;
+  }, 0);
+
+  if (monto >= ordenTotal - 0.01 || Math.abs(totalLineas - monto) < 0.02) {
+    return lineasOrden;
+  }
+
+  if (monto > 0 && monto < ordenTotal - 0.01 && totalLineas > 0) {
+    return prorratearLineas(lineasOrden, monto);
   }
 
   const desc =
@@ -257,7 +300,7 @@ function buildPayload(db, opts) {
   return {
     tipo_documento: 'FE',
     condicion_venta: '01',
-    medio_pago: mapMedioPago(opts.metodo_pago),
+    medio_pago: mapMedioPago(opts.metodo_pago, db),
     consecutivo: consecutivo,
     referencia_interna:
       'SANMY-T' + opts.ordenId + '-A' + (opts.abonoId || '0'),
@@ -575,59 +618,361 @@ function listarFacturasOrden(db, ordenId) {
     .all(ordenId);
 }
 
-function listarFacturas(db, limit, q) {
-  const lim = Math.min(parseInt(limit, 10) || 20, 100);
-  const busqueda = String(q || '').trim().toLowerCase();
-  const empresaService = require('./empresa-service');
-  const empresaId = empresaService.getEmpresaActivaId(db);
-  const filtroEmp = empresaId ? ' AND o.empresa_id = ?' : '';
-  if (!busqueda) {
-    if (empresaId) {
-      return db
-        .prepare(
-          `SELECT fe.id, fe.orden_id, fe.abono_id, fe.clave, fe.consecutivo, fe.estado,
-                  fe.receptor_nombre, fe.total, fe.fecha_emision
-           FROM facturas_electronicas fe
-           LEFT JOIN taller_ordenes o ON o.id = fe.orden_id
-           WHERE o.empresa_id = ?
-           ORDER BY fe.id DESC LIMIT ?`
-        )
-        .all(empresaId, lim);
-    }
-    return db
-      .prepare(
-        `SELECT id, orden_id, abono_id, clave, consecutivo, estado,
-                receptor_nombre, total, fecha_emision
-         FROM facturas_electronicas
-         ORDER BY id DESC LIMIT ?`
-      )
-      .all(lim);
+function parseListOpts(limitOrOpts, q) {
+  if (limitOrOpts && typeof limitOrOpts === 'object') {
+    return limitOrOpts;
   }
-  const like = '%' + busqueda + '%';
-  const params = [like, like, like, like, like, like, like, like];
-  if (empresaId) params.push(empresaId);
+  return { limit: limitOrOpts, q: q };
+}
+
+function sqlFiltroFacturas(opts) {
+  const empresaService = require('./empresa-service');
+  const empresaId = empresaService.getEmpresaActivaId(opts.db);
+  const where = [];
+  const params = [];
+
+  if (empresaId) {
+    where.push('(fe.orden_id IS NULL OR o.empresa_id = ?)');
+    params.push(empresaId);
+  }
+
+  const busqueda = String(opts.q || '').trim().toLowerCase();
+  if (busqueda) {
+    const like = '%' + busqueda + '%';
+    where.push(
+      `(LOWER(IFNULL(fe.receptor_nombre, '')) LIKE ?
+        OR LOWER(IFNULL(fe.consecutivo, '')) LIKE ?
+        OR LOWER(IFNULL(fe.clave, '')) LIKE ?
+        OR LOWER(IFNULL(l.descripcion, '')) LIKE ?
+        OR LOWER(IFNULL(i.codigo, '')) LIKE ?
+        OR LOWER(IFNULL(i.nombre, '')) LIKE ?
+        OR LOWER(IFNULL(i.cabys, '')) LIKE ?
+        OR LOWER(IFNULL(fe.json_envio, '')) LIKE ?)`
+    );
+    params.push(like, like, like, like, like, like, like, like);
+  }
+
+  const estado = String(opts.estado || '').trim().toLowerCase();
+  if (estado === 'aceptada') {
+    where.push("LOWER(IFNULL(fe.estado, '')) IN ('aceptado', 'aceptada', 'enviado')");
+  } else if (estado === 'rechazada') {
+    where.push("LOWER(IFNULL(fe.estado, '')) IN ('rechazado', 'rechazada', 'error')");
+  } else if (estado === 'pendiente') {
+    where.push(
+      "LOWER(IFNULL(fe.estado, '')) NOT IN ('aceptado', 'aceptada', 'enviado', 'tiquete', 'simulado', 'simulada', 'tico_manual')"
+    );
+  } else if (estado === 'tiquete') {
+    where.push("LOWER(IFNULL(fe.estado, '')) = 'tiquete'");
+  } else if (estado === 'simulada') {
+    where.push("LOWER(IFNULL(fe.estado, '')) IN ('simulado', 'simulada')");
+  } else if (estado === 'tico') {
+    where.push("LOWER(IFNULL(fe.estado, '')) = 'tico_manual'");
+  }
+
+  const tipo = String(opts.tipo || '').trim().toLowerCase();
+  if (tipo === 'fe') {
+    where.push("LOWER(IFNULL(fe.estado, '')) NOT IN ('tiquete')");
+  } else if (tipo === 'tiquete') {
+    where.push("LOWER(IFNULL(fe.estado, '')) = 'tiquete'");
+  }
+
+  if (opts.desde) {
+    where.push('date(fe.fecha_emision) >= date(?)');
+    params.push(String(opts.desde).slice(0, 10));
+  }
+  if (opts.hasta) {
+    where.push('date(fe.fecha_emision) <= date(?)');
+    params.push(String(opts.hasta).slice(0, 10));
+  }
+
+  return {
+    empresaId: empresaId,
+    whereSql: where.length ? ' WHERE ' + where.join(' AND ') : '',
+    params: params,
+    joinBusqueda: busqueda
+      ? `
+       LEFT JOIN taller_orden_lineas l ON l.orden_id = fe.orden_id
+       LEFT JOIN taller_inventario i ON i.id = l.inventario_id`
+      : ''
+  };
+}
+
+function listarFacturas(db, limitOrOpts, q) {
+  const opts = parseListOpts(limitOrOpts, q);
+  opts.db = db;
+  const lim = Math.min(parseInt(opts.limit, 10) || 20, 500);
+  const filtro = sqlFiltroFacturas(opts);
+  const params = filtro.params.slice();
   params.push(lim);
   return db
     .prepare(
       `SELECT DISTINCT fe.id, fe.orden_id, fe.abono_id, fe.clave, fe.consecutivo, fe.estado,
-              fe.receptor_nombre, fe.total, fe.fecha_emision
+              fe.receptor_nombre, fe.total, fe.fecha_emision, fe.pdf_url
        FROM facturas_electronicas fe
-       LEFT JOIN taller_ordenes o ON o.id = fe.orden_id
-       LEFT JOIN taller_orden_lineas l ON l.orden_id = fe.orden_id
-       LEFT JOIN taller_inventario i ON i.id = l.inventario_id
-       WHERE (LOWER(IFNULL(fe.receptor_nombre, '')) LIKE ?
-          OR LOWER(IFNULL(fe.consecutivo, '')) LIKE ?
-          OR LOWER(IFNULL(fe.clave, '')) LIKE ?
-          OR LOWER(IFNULL(l.descripcion, '')) LIKE ?
-          OR LOWER(IFNULL(i.codigo, '')) LIKE ?
-          OR LOWER(IFNULL(i.nombre, '')) LIKE ?
-          OR LOWER(IFNULL(i.cabys, '')) LIKE ?
-          OR LOWER(IFNULL(fe.json_envio, '')) LIKE ?)` +
-        filtroEmp + `
+       LEFT JOIN taller_ordenes o ON o.id = fe.orden_id` +
+        filtro.joinBusqueda +
+        filtro.whereSql +
+        `
        ORDER BY fe.id DESC
        LIMIT ?`
     )
     .all(...params);
+}
+
+function contarAlertasFacturas(db) {
+  const filtro = sqlFiltroFacturas({ db: db });
+  const baseFrom =
+    ' FROM facturas_electronicas fe LEFT JOIN taller_ordenes o ON o.id = fe.orden_id';
+  const pendWhere =
+    filtro.whereSql
+      ? filtro.whereSql + " AND LOWER(IFNULL(fe.estado, '')) NOT IN ('aceptado', 'aceptada', 'enviado', 'tiquete', 'simulado', 'simulada', 'tico_manual')"
+      : " WHERE LOWER(IFNULL(fe.estado, '')) NOT IN ('aceptado', 'aceptada', 'enviado', 'tiquete', 'simulado', 'simulada', 'tico_manual')" +
+        (filtro.empresaId ? ' AND (fe.orden_id IS NULL OR o.empresa_id = ?)' : '');
+  const rechWhere =
+    filtro.whereSql
+      ? filtro.whereSql + " AND LOWER(IFNULL(fe.estado, '')) IN ('rechazado', 'rechazada', 'error')"
+      : " WHERE LOWER(IFNULL(fe.estado, '')) IN ('rechazado', 'rechazada', 'error')" +
+        (filtro.empresaId ? ' AND (fe.orden_id IS NULL OR o.empresa_id = ?)' : '');
+
+  const pParams = filtro.empresaId ? filtro.params : [];
+  const pendientes = db.prepare('SELECT COUNT(DISTINCT fe.id) AS c' + baseFrom + pendWhere).get(...pParams).c || 0;
+  const rechazadas = db.prepare('SELECT COUNT(DISTINCT fe.id) AS c' + baseFrom + rechWhere).get(...pParams).c || 0;
+  return { pendientes: pendientes, rechazadas: rechazadas };
+}
+
+function resumenFacturas(db, opts) {
+  opts = opts || {};
+  opts.db = db;
+  const filtro = sqlFiltroFacturas(opts);
+  const rows = db
+    .prepare(
+      `SELECT fe.estado, fe.total, fe.json_envio
+       FROM facturas_electronicas fe
+       LEFT JOIN taller_ordenes o ON o.id = fe.orden_id` +
+        filtro.whereSql
+    )
+    .all(...filtro.params);
+
+  let totalFacturado = 0;
+  let ivaEstimado = 0;
+  let aceptadas = 0;
+  let tiquetes = 0;
+  let simuladas = 0;
+
+  rows.forEach(function (row) {
+    const total = parseFloat(row.total) || 0;
+    totalFacturado += total;
+    const est = String(row.estado || '').toLowerCase();
+    if (est === 'aceptado' || est === 'aceptada' || est === 'enviado') aceptadas += 1;
+    if (est === 'tiquete') tiquetes += 1;
+    if (est === 'simulado' || est === 'simulada') simuladas += 1;
+    let imp = 0;
+    try {
+      const payload = JSON.parse(row.json_envio || '{}');
+      if (payload.totales && payload.totales.impuesto != null) {
+        imp = parseFloat(payload.totales.impuesto) || 0;
+      }
+    } catch (e) {
+      imp = Math.round((total - total / 1.13) * 100) / 100;
+    }
+    ivaEstimado += imp;
+  });
+
+  return {
+    cantidad: rows.length,
+    total_facturado: Math.round(totalFacturado * 100) / 100,
+    iva_estimado: Math.round(ivaEstimado * 100) / 100,
+    aceptadas: aceptadas,
+    tiquetes: tiquetes,
+    simuladas: simuladas
+  };
+}
+
+function csvEscape(val) {
+  const s = val == null ? '' : String(val);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function exportarFacturasCsv(db, opts) {
+  opts = opts || {};
+  opts.db = db;
+  opts.limit = 5000;
+  const filas = listarFacturas(db, opts);
+  const header = [
+    'Consecutivo',
+    'Clave',
+    'Cliente',
+    'Orden',
+    'Total',
+    'Estado',
+    'Fecha',
+    'PDF'
+  ];
+  const lines = [header.join(',')];
+  filas.forEach(function (f) {
+    lines.push(
+      [
+        csvEscape(f.consecutivo),
+        csvEscape(f.clave),
+        csvEscape(f.receptor_nombre),
+        csvEscape(f.orden_id),
+        csvEscape(f.total),
+        csvEscape(f.estado),
+        csvEscape(f.fecha_emision),
+        csvEscape(f.pdf_url)
+      ].join(',')
+    );
+  });
+  return lines.join('\r\n');
+}
+
+function getFacturaDetalle(db, id) {
+  const row = db.prepare('SELECT * FROM facturas_electronicas WHERE id = ?').get(id);
+  if (!row) return null;
+  let payload = {};
+  let respuesta = {};
+  try {
+    payload = JSON.parse(row.json_envio || '{}');
+  } catch (e) {
+    payload = {};
+  }
+  try {
+    respuesta = JSON.parse(row.json_respuesta || '{}');
+  } catch (e2) {
+    respuesta = {};
+  }
+  return {
+    id: row.id,
+    orden_id: row.orden_id,
+    abono_id: row.abono_id,
+    clave: row.clave,
+    consecutivo: row.consecutivo,
+    estado: row.estado,
+    receptor_identificacion: row.receptor_identificacion,
+    receptor_nombre: row.receptor_nombre,
+    receptor_email: row.receptor_email,
+    total: row.total,
+    fecha_emision: row.fecha_emision,
+    pdf_url: row.pdf_url,
+    lineas: payload.lineas || [],
+    totales: payload.totales || {},
+    respuesta: respuesta
+  };
+}
+
+function validarOrdenParaFe(db, ordenId) {
+  const errors = [];
+  const warnings = [];
+
+  try {
+    validarLineasParaFe(db, ordenId);
+  } catch (e) {
+    errors.push(String(e.message || e).replace(/\n• /g, '; '));
+  }
+
+  const orden = db
+    .prepare(
+      `SELECT o.id, o.numero, c.nombre AS cliente_nombre, c.identificacion AS cliente_cedula, c.email AS cliente_email
+       FROM taller_ordenes o
+       LEFT JOIN taller_clientes c ON c.id = o.cliente_id
+       WHERE o.id = ?`
+    )
+    .get(ordenId);
+
+  if (!orden) {
+    errors.push('Orden no encontrada');
+    return { ok: false, errors: errors, warnings: warnings };
+  }
+
+  if (!orden.cliente_cedula) {
+    warnings.push('Cliente sin cédula en ficha — indíquela al cobrar con factura electrónica.');
+  }
+  if (!orden.cliente_nombre) {
+    warnings.push('Cliente sin nombre completo en ficha.');
+  }
+
+  const cfg = getConfig(db);
+  if (cfg.fe_modo === 'api') {
+    if (!cfg.fe_emisor_cedula || !cfg.fe_emisor_nombre) {
+      errors.push('Configure cédula y nombre del emisor en Configuración → Factura electrónica.');
+    }
+    if ((cfg.fe_proveedor || 'pendiente') === 'pendiente') {
+      errors.push('Seleccione proveedor FE en Configuración o use modo Simulación.');
+    }
+    if (!cfg.fe_api_token) {
+      errors.push('Falta token del proveedor FE en Configuración.');
+    }
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors: errors,
+    warnings: warnings,
+    cliente: {
+      nombre: orden.cliente_nombre || '',
+      identificacion: orden.cliente_cedula || '',
+      email: orden.cliente_email || ''
+    }
+  };
+}
+
+function registrarFacturaTicoManual(db, opts) {
+  const ordenId = parseInt(opts.ordenId, 10);
+  const clave = String(opts.clave || '').trim();
+  const consecutivo = String(opts.consecutivo || '').trim();
+  if (!ordenId) throw new Error('Indique la orden');
+  if (!clave) throw new Error('Indique la clave de Hacienda');
+
+  const orden = db
+    .prepare('SELECT id, numero, total FROM taller_ordenes WHERE id = ?')
+    .get(ordenId);
+  if (!orden) throw new Error('Orden no encontrada');
+
+  const existente = db
+    .prepare(
+      "SELECT id FROM facturas_electronicas WHERE orden_id = ? AND estado = 'tico_manual' AND clave = ? LIMIT 1"
+    )
+    .get(ordenId, clave);
+  if (existente) {
+    return { ok: true, ya_registrada: true, id: existente.id, clave: clave, consecutivo: consecutivo };
+  }
+
+  const receptor = opts.receptor || {};
+  const total =
+    opts.total != null ? Math.round(parseFloat(opts.total) * 100) / 100 : parseFloat(orden.total) || 0;
+  const payload = {
+    tipo: 'tico_manual',
+    orden_id: ordenId,
+    clave: clave,
+    consecutivo: consecutivo,
+    receptor: receptor,
+    totales: { total: total },
+    mensaje: 'Registrada manualmente desde TicoFactura / TRIBU-CR'
+  };
+
+  const id = db
+    .prepare(
+      `INSERT INTO facturas_electronicas
+       (orden_id, abono_id, clave, consecutivo, estado,
+        receptor_identificacion, receptor_nombre, receptor_email,
+        total, json_envio, json_respuesta, pdf_url)
+       VALUES (?, NULL, ?, ?, 'tico_manual', ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      ordenId,
+      clave,
+      consecutivo || '',
+      receptor.identificacion || '',
+      receptor.nombre || '',
+      receptor.email || '',
+      total,
+      JSON.stringify(payload),
+      JSON.stringify({ origen: 'tico_manual', registrado: new Date().toISOString() }),
+      opts.pdf_url || null
+    ).lastInsertRowid;
+
+  return { ok: true, id: id, clave: clave, consecutivo: consecutivo, total: total, estado: 'tico_manual' };
 }
 
 function nextConsecutivoTiquete(db) {
@@ -853,6 +1198,12 @@ module.exports = {
   getFacturaByAbono,
   listarFacturasOrden,
   listarFacturas,
+  contarAlertasFacturas,
+  resumenFacturas,
+  exportarFacturasCsv,
+  getFacturaDetalle,
+  validarOrdenParaFe,
+  registrarFacturaTicoManual,
   probarConexion,
   validarLineasParaFe,
   getProveedores: function () {

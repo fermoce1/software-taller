@@ -13,9 +13,44 @@ initDatabase();
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '12mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(function (req, res, next) {
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=()');
+  next();
+});
 
 app.use('/api', apiRoutes);
+
+app.use(function (req, res, next) {
+  const p = (req.path || '').toLowerCase();
+  if (p.indexOf('generador-licencias') >= 0 || p.indexOf('herramientas-vendedor') >= 0) {
+    return res.status(404).type('text/plain').send('No encontrado');
+  }
+  next();
+});
+
+function iconosPwa() {
+  return [
+    {
+      src: '/img/app/icon-192.png',
+      sizes: '192x192',
+      type: 'image/png',
+      purpose: 'any'
+    },
+    {
+      src: '/img/app/icon-512.png',
+      sizes: '512x512',
+      type: 'image/png',
+      purpose: 'any maskable'
+    },
+    {
+      src: '/icon.svg',
+      sizes: 'any',
+      type: 'image/svg+xml',
+      purpose: 'any'
+    }
+  ];
+}
 
 app.get('/manifest.webmanifest', (req, res) => {
   res.type('application/manifest+json');
@@ -31,14 +66,27 @@ app.get('/manifest.webmanifest', (req, res) => {
     background_color: '#1e3a5f',
     theme_color: '#1e3a5f',
     lang: 'es',
-    icons: [
-      {
-        src: '/icon.svg',
-        sizes: 'any',
-        type: 'image/svg+xml',
-        purpose: 'any'
-      }
-    ]
+    icons: iconosPwa()
+  });
+});
+
+app.get('/manifest-app.webmanifest', (req, res) => {
+  res.type('application/manifest+json');
+  res.json({
+    id: '/app.html',
+    name: 'Sanmy Taller',
+    short_name: 'Sanmy Taller',
+    description: 'Conecte el celular al taller por QR e instale el icono en la pantalla de inicio',
+    start_url: '/app.html?fuente=icono',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'any',
+    background_color: '#1e3a5f',
+    theme_color: '#1e3a5f',
+    lang: 'es',
+    icons: iconosPwa(),
+    categories: ['business', 'productivity'],
+    prefer_related_applications: false
   });
 });
 

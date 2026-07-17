@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const { calcTotalesDesdeSubtotal } = require('../db/database');
 // Servicio de empresas: nos dice cuál empresa está activa y si comparte o aísla datos
 const empresaService = require('./empresa-service');
+const metodosPagoService = require('./metodos-pago-service');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const FOTOS_DIR = path.join(DATA_DIR, 'taller-fotos');
@@ -134,9 +135,10 @@ function buscarOCrearCliente(db, datos) {
     const existente = db.prepare(filtrado.sql).get(...filtrado.params);
     if (existente) {
       db.prepare(
-        'UPDATE taller_clientes SET nombre = ?, telefono = COALESCE(?, telefono), email = COALESCE(?, email) WHERE id = ?'
+        'UPDATE taller_clientes SET nombre = ?, apellidos = COALESCE(?, apellidos), telefono = COALESCE(?, telefono), email = COALESCE(?, email) WHERE id = ?'
       ).run(
         nombre,
+        datos.apellidos != null ? String(datos.apellidos).trim() || null : null,
         datos.cliente_telefono || datos.telefono || null,
         datos.cliente_email || datos.email || null,
         existente.id
@@ -146,11 +148,12 @@ function buscarOCrearCliente(db, datos) {
   }
   const result = db
     .prepare(
-      `INSERT INTO taller_clientes (nombre, identificacion, telefono, email, empresa_id)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO taller_clientes (nombre, apellidos, identificacion, telefono, email, empresa_id)
+       VALUES (?, ?, ?, ?, ?, ?)`
     )
     .run(
       nombre,
+      String(datos.apellidos || '').trim() || null,
       identificacion || null,
       datos.cliente_telefono || datos.telefono || null,
       datos.cliente_email || datos.email || null,
@@ -244,9 +247,15 @@ function listarOrdenes(db, query) {
     params.push(estado);
   }
   if (q) {
-    sql += ' AND (v.placa LIKE ? OR c.nombre LIKE ? OR CAST(o.numero AS TEXT) LIKE ?)';
+    sql += ` AND (
+      v.placa LIKE ? OR
+      c.nombre LIKE ? OR
+      c.apellidos LIKE ? OR
+      TRIM(c.nombre || ' ' || IFNULL(c.apellidos, '')) LIKE ? OR
+      CAST(o.numero AS TEXT) LIKE ?
+    )`;
     const like = '%' + q + '%';
-    params.push(like, like, like);
+    params.push(like, like, like, like, like);
   }
   if (placa) {
     sql += ' AND v.placa = ?';
@@ -285,6 +294,11 @@ function obtenerOrden(db, id) {
     )
     .get(id);
   if (!orden) return null;
+
+  const empresaActivaId = empresaService.getEmpresaActivaId(db);
+  if (empresaActivaId && orden.empresa_id != null && orden.empresa_id !== empresaActivaId) {
+    return null;
+  }
 
   const lineas = db
     .prepare('SELECT * FROM taller_orden_lineas WHERE orden_id = ? ORDER BY id')
@@ -528,8 +542,7 @@ function cobrarOrden(db, ordenId, datos) {
     return registrarAbono(db, ordenId, datos);
   }
 
-  const metodos = ['efectivo', 'tarjeta', 'sinpe', 'otro'];
-  const metodo = metodos.includes(datos.metodo_pago) ? datos.metodo_pago : 'efectivo';
+  const metodo = metodosPagoService.normalizarMetodo(db, datos.metodo_pago);
   const total = Number(orden.total) || 0;
   if (total <= 0) throw new Error('La orden no tiene total a cobrar');
 
@@ -589,8 +602,7 @@ function registrarAbono(db, ordenId, datos) {
   const saldoActual = Number(orden.saldo_pendiente) || 0;
   if (saldoActual <= 0) throw new Error('Esta orden no tiene saldo pendiente');
 
-  const metodos = ['efectivo', 'tarjeta', 'sinpe', 'otro'];
-  const metodo = metodos.includes(datos.metodo_pago) ? datos.metodo_pago : 'efectivo';
+  const metodo = metodosPagoService.normalizarMetodo(db, datos.metodo_pago);
   const monto = Number(datos.monto);
   if (!monto || monto <= 0) throw new Error('Monto de abono no válido');
   if (monto > saldoActual) {
@@ -744,7 +756,7 @@ function prepararDatosTicket(db, ordenId) {
     subtotal: o.subtotal,
     iva: o.iva,
     total: o.total,
-    metodo: o.metodo_pago || '',
+    metodo: metodosPagoService.etiquetaMetodo(db, o.metodo_pago) || o.metodo_pago || '',
     montoPagado: o.monto_cobrado || 0,
     items: (data.lineas || []).map(function (l) {
       return {
@@ -766,7 +778,7 @@ function listarClientes(db, query) {
   const fVeh = empresaService.filtroSqlEmpresa(pol.compartir_clientes, 'v.empresa_id', pol.empresa_id);
   const ordenEmpresa = pol.empresa_id ? ' AND o.empresa_id = ?' : '';
   let sql =
-    `SELECT c.id, c.nombre, c.identificacion, c.telefono, c.email, c.fecha_registro,
+    `SELECT c.id, c.nombre, c.apellidos, c.identificacion, c.telefono, c.email, c.fecha_registro,
            (SELECT COUNT(*) FROM taller_vehiculos v WHERE v.cliente_id = c.id` +
     fVeh.clause +
     `) AS vehiculos,
@@ -787,9 +799,9 @@ function listarClientes(db, query) {
   }
   params.push.apply(params, fCli.params);
   if (q) {
-    sql += ' AND (c.nombre LIKE ? OR c.identificacion LIKE ? OR c.telefono LIKE ?)';
+    sql += ' AND (c.nombre LIKE ? OR c.apellidos LIKE ? OR c.identificacion LIKE ? OR c.telefono LIKE ?)';
     const like = '%' + q + '%';
-    params.push(like, like, like);
+    params.push(like, like, like, like);
   }
   sql += ' ORDER BY c.nombre COLLATE NOCASE ASC LIMIT 300';
   const filas = db.prepare(sql).all(...params);
@@ -904,10 +916,11 @@ function crearCliente(db, datos) {
   const empIdReg = empresaIdRegistro(pol.compartir_clientes, pol.empresa_id);
   const r = db
     .prepare(
-      `INSERT INTO taller_clientes (nombre, identificacion, telefono, email, empresa_id) VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO taller_clientes (nombre, apellidos, identificacion, telefono, email, empresa_id) VALUES (?, ?, ?, ?, ?, ?)`
     )
     .run(
       nombre,
+      String(datos.apellidos || '').trim() || null,
       String(datos.identificacion || '').trim() || null,
       String(datos.telefono || '').trim() || null,
       String(datos.email || '').trim() || null,
@@ -925,6 +938,9 @@ function actualizarCliente(db, id, datos) {
     ? String(datos.nombre).trim()
     : String(existente.nombre || '').trim();
   if (!nombre) throw new Error('El nombre del cliente es obligatorio');
+  const apellidos = datos.apellidos != null
+    ? String(datos.apellidos).trim() || null
+    : existente.apellidos;
   const identificacion = datos.identificacion != null
     ? String(datos.identificacion).trim() || null
     : existente.identificacion;
@@ -935,8 +951,8 @@ function actualizarCliente(db, id, datos) {
     ? String(datos.email).trim() || null
     : existente.email;
   db.prepare(
-    `UPDATE taller_clientes SET nombre = ?, identificacion = ?, telefono = ?, email = ? WHERE id = ?`
-  ).run(nombre, identificacion, telefono, email, id);
+    `UPDATE taller_clientes SET nombre = ?, apellidos = ?, identificacion = ?, telefono = ?, email = ? WHERE id = ?`
+  ).run(nombre, apellidos, identificacion, telefono, email, id);
   return db.prepare('SELECT * FROM taller_clientes WHERE id = ?').get(id);
 }
 
